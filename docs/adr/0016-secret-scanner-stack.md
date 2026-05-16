@@ -47,3 +47,11 @@ The CI-runs-only-gitleaks choice is **not** a divergence — it is alignment wit
 ## Flagged for cross-review
 
 The defense-in-depth claim. Cross-review owner: Othman. Triage line will record whether the marginal coverage of running both scanners locally is worth the friction, or whether one scanner would do.
+
+## Amendment — 2026-05-16
+
+The original Decision specified `gitleaks/gitleaks-action@v2` for CI. On first execution against this PR, the action returned an error: the v2 wrapper requires a commercial gitleaks license for organization-owned repositories, and `WBG-ITS-Innovation` does not have one. The CI workflow has been rewritten to invoke the gitleaks binary directly, which is free and open-source.
+
+The substantive control is unchanged — gitleaks still runs on every push and PR, with the same version pin. Only the wrapper changed.
+
+Follow-up: a paid gitleaks license vs. binary-only CI evaluation is tracked at [issue #9](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/9), target Part 9.

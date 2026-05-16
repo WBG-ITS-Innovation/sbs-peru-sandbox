@@ -43,3 +43,11 @@ Some regulator-adjacent repos block at `moderate` from day one. This is defensib
 ## Flagged for cross-review
 
 Yes. Cross-review owner: Othman. The question for the reviewer is whether `high` is the right block level for a regulator-grade handoff project, or whether tightening to `moderate` should happen sooner than Part 9. Triage line will record the disposition.
+
+## Amendment — 2026-05-16
+
+The original Decision specified `actions/dependency-review-action@v4` with `fail-on-severity: high`. On first execution against this PR, the action returned: "Dependency review is not supported on this repository. Please ensure that Dependency graph is enabled along with GitHub Advanced Security." The `WBG-ITS-Innovation` org does not currently have GHAS licensed.
+
+The workflow has been removed for now. Equivalent vulnerability coverage will be reintroduced in Part 9 via `pip-audit` for Python manifests and `npm audit` for Node manifests — both are free, self-contained, and do not require GHAS. The threshold choice (`high` for the build phase, tightening to `moderate` in Part 9) remains the locked decision; only the implementation is deferred.
+
+Follow-up: GHAS-vs-self-hosted evaluation is tracked at [issue #8](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/8), target Part 9.

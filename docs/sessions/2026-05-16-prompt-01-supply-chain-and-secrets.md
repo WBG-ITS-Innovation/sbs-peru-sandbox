@@ -103,3 +103,30 @@ A pre-formatted block the maintainer pastes into the next prompt's opening so th
 ## Notes
 
 Anything that doesn't fit the sections above. Keep brief.
+
+## Mid-PR addendum — 2026-05-16: CI workflows adapted for org constraints
+
+**What was discovered.** On first execution of PR #7's CI, both new workflows failed for environment reasons, not code reasons:
+
+1. `actions/dependency-review-action@v4` requires GitHub Advanced Security. The `WBG-ITS-Innovation` org does not currently have GHAS licensed. Error: "Dependency review is not supported on this repository. Please ensure that Dependency graph is enabled along with GitHub Advanced Security."
+2. `gitleaks/gitleaks-action@v2` requires a commercial gitleaks license for organisation-owned repos. The gitleaks **binary** is free and open-source; only the v2 Action wrapper is licensed.
+
+Neither failure is a bug in the locked decisions (ADRs 0016 and 0019). The substance — gitleaks-on-every-push, dependency-vulnerability-blocking-on-`high`-and-above — remains correct. The implementation paths in those ADRs assumed organisation-level licensing posture we did not have.
+
+**What changed in the follow-up commit.**
+
+- `.github/workflows/dependency-review.yml` removed entirely. No `continue-on-error: true` fake-green replacement. Equivalent coverage will be reintroduced in Part 9 via `pip-audit` and `npm audit` (free, self-hosted, no GHAS needed). Tracked at [issue #8](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/8).
+- `.github/workflows/secret-scan.yml` rewritten to invoke the gitleaks binary directly: download a pinned release tarball (v8.21.2), install to `/usr/local/bin`, run `gitleaks detect --source . --config .gitleaks.toml --no-banner --redact --verbose`. Same scanner, same version pin, same on-PR-and-push trigger. License-vs-binary evaluation tracked at [issue #9](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/9).
+- `.gitleaks.toml` added at repo root with `[extend] useDefault = true` and an `[allowlist].paths` block. Allowlisted paths: `.secrets.baseline`, `.gitleaks.toml` itself, `docs/adr/`, `docs/research/`, `docs/reviews/`, and the Zscaler doc. These contain words like "AWS key", "GitHub token", "JWT" as documentation and would trip gitleaks' default ruleset otherwise. The allowlist is paths-only (not pattern-allowlists), so a real secret inside one of these paths would still be undetectable — flagged for the reviewer of any change to these paths.
+- ADRs 0016 and 0019 received dated `## Amendment — 2026-05-16` sections. The original Decision / Precedent / Divergence sections are unchanged — they are the historical record of what was decided when. The Amendments record what was discovered on first execution and how the implementation diverged.
+
+**Two issues opened on GitHub for Part 9 resolution.** Both labelled `needs-adr`:
+
+- [#8 — Enable GitHub Advanced Security or replace dependency-review with self-hosted equivalents](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/8)
+- [#9 — Evaluate paid gitleaks license vs. continuing with binary-only CI](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/issues/9)
+
+**What this is and isn't.**
+
+This addendum is not a re-decision. The threshold choice (`high` for the build phase), the scanner stack (gitleaks + detect-secrets), and the every-push CI cadence are all locked as originally specified. Only the wrapper / availability mechanics changed. Both ADRs remain Accepted; neither is superseded.
+
+**Verifications.** YAML lint on the new secret-scan.yml: OK. TOML parse on .gitleaks.toml: OK. `pytest tests/` after the rewrite: 36 passed. Local gitleaks binary invocation could not be tested in this environment (no gitleaks installed locally); CI re-run on the follow-up push is the live verification.

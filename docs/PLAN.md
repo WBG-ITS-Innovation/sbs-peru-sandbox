@@ -116,60 +116,102 @@ A signed mTLS request to `POST /v1/complaints` → validated against Annex 1-A �
 
 **Exit:** Triage Agent processes complaint event end-to-end, A2A+MCP calls in traces
 
-### Part 7 — Specialist Agents I
-- [ ] Pattern Detection Agent (temporal + cross-institution)
-- [ ] Institutional Risk Agent (prudential lens — Mariela)
-- [ ] Inter-agent handoffs via A2A
-- [ ] Case file accumulation
-- [ ] New MCP tools as needed
-- [ ] ADR 0010: Multi-agent handoff pattern
-- [ ] Second opinion: Template 1 (clustering thresholds) — Gemini 2.5 Pro
+## Plan restructure — 2026-05-15
 
-**Exit:** scenario replay produces case file with all three agents' contributions
+The plan was extended from 10 to 11 Parts. The earlier Parts 7–10 (Specialist Agents I/II, Frontend, Polish/Deploy/Handoff/Demo) are reorganised into the new structure below:
 
-### Part 8 — Specialist Agents II
-- [ ] Conduct Agent (market-conduct lens — Mariela)
-- [ ] Investigation Agent (evidence + drafting)
-- [ ] Full Orchestrator flow: event → Triage → Pattern → (Institutional + Conduct parallel) → Investigation → approval queue
-- [ ] ADR 0011: Specialist agent roles
-- [ ] Second opinion: Template 1 (agent role boundaries) — GPT-5
-- [ ] Second opinion: Template 5 (agent layer architecture) — Gemini 2.5 Pro
+- Specialist Agents (Pattern, Institutional Risk, Conduct, Investigation) extend the agent infrastructure from Part 6 and are scheduled across follow-up prompts that build on Part 6's scaffolding.
+- Frontend work (Agent Workspace, Approval Queue, dashboards) is now part of Part 8 (Self-Service Onboarding + Per-Institution Ops), framed around the regulator user flows rather than a demo deliverable.
+- Helm / Terraform / runbook / SBS handoff work is now Part 9 (Production Readiness).
+- Demo polish moves into Part 9's exit criteria.
 
-**Exit:** demo scenario produces fully-populated case file with draft alert in queue
+This is a re-scoping, not a de-scoping. Nothing is abandoned; the framing shifts from "demo at end" to "regulator-grade reference handoff".
 
-### Part 9 — Frontend
-- [ ] Next.js 14 + TS + Tailwind + shadcn/ui + TanStack Query + Recharts
-- [ ] Auth against API
-- [ ] Agent Workspace (hero): case file, reasoning trace, tool calls, evidence, draft editor, LangGraph viz
-- [ ] Approval Queue UI
-- [ ] Radar Dashboard (prudential)
-- [ ] Alarm Dashboard (conduct)
-- [ ] Ingestion Monitoring page
-- [ ] i18n EN/ES
-- [ ] ADR 0012: Frontend architecture
-- [ ] Second opinion: Template 5 (UI credibility) — GPT-5 with vision
+### Part 7 — Developer Portal + Onboarding Tier A
 
-**Exit:** all pages render with real data, demo drivable through UI
+Goal: an institution's integration team can self-onboard against a sandbox using documentation, generated SDKs, and a conformance test suite — without a kick-off call.
 
-### Part 10 — Polish, Deployment, Handoff, Demo
-- [ ] Helm chart (tested on k3d)
-- [ ] Terraform modules (network, storage, secrets)
-- [ ] Vendor extension guide
-- [ ] All ADRs finalized
-- [ ] Runbook
-- [ ] Kubernetes deployment guide
-- [ ] README polished
-- [ ] Python SDK polished + documented
-- [ ] Grafana dashboards complete
-- [ ] One-page architecture diagram
-- [ ] Demo run-through ×3
-- [ ] Loom backup recording
-- [ ] scripts/demo.sh hardened
-- [ ] Second opinion: Template 5 (final architecture) — Gemini 2.5 Pro
-- [ ] Second opinion: Template 6 (final OpenAPI) — GPT-5
-- [ ] Second opinion: Template 3 (final security) — GPT-5
+- [ ] Documentation portal (rendered from `docs/`; Scalar or equivalent for the OpenAPI surface).
+- [ ] Sandbox environment formalised (config-driven, isolated from the regulator's prod surface).
+- [ ] SDK generation via `openapi-generator` for **.NET**, **Java**, **Python**, **TypeScript**. Published packages with semantic versioning.
+- [ ] Conformance test suite — a third party can run the suite against any deployment to prove their integration is correct.
+- [ ] Postman + Bruno collections committed and kept in sync with the OpenAPI spec.
+- [ ] Getting-started guide: zero-to-first-signed-request in ≤30 minutes from cold.
+- [ ] Onboarding runbook for SBS staff: how to issue a sandbox credential, rotate it, revoke it.
+- [ ] ADR for SDK distribution and versioning policy.
+- [ ] Plain-language onboarding overview readable by Veronica.
+- [ ] Second-opinion review: onboarding flow vs CFPB and FCA developer portal precedents.
 
-**Exit:** clean demo three times in a row, all artifacts in place
+**Exit:** A fresh integration team can read the docs, generate an SDK, sign a request, hit the sandbox, and pass the conformance suite — without contacting SBS. Verified end-to-end on a clean machine.
+
+### Part 8 — Self-Service Onboarding + Per-Institution Ops (Tier B)
+
+Goal: SBS staff can onboard, monitor, and manage supervised institutions from the platform UI; supervised institutions can manage their own integration metadata.
+
+- [ ] SBS-side onboarding UI: create institution, issue credentials, set per-institution config (rate limits, allowed scopes, taxonomy version).
+- [ ] Institution-side self-service: rotate credentials, view their own ingestion metrics, see their conformance status.
+- [ ] Per-institution observability: dashboards showing ingestion volume, validation error rates, signing errors, latency percentiles by institution.
+- [ ] Per-institution audit log surfaced in the UI.
+- [ ] Agent Workspace + Approval Queue + Radar dashboard + Alarm dashboard, all wired to per-institution scope.
+- [ ] EN/ES localisation across all UI strings.
+- [ ] Plain-language operations guide readable by Sergio.
+- [ ] ADR for the multi-tenancy and credential model.
+- [ ] Second-opinion review: tenancy model against BCB's Sistema de Informações de Crédito tenancy precedent.
+
+**Exit:** Two named sandbox institutions are onboarded and visible end-to-end from the SBS-side UI. Both can self-service rotate credentials. Per-institution dashboards render real data.
+
+### Part 9 — Production Readiness
+
+Goal: this stack is deployable, operable, recoverable, and audit-able by a vendor inheriting it from SBS, on bare-metal or in Azure.
+
+- [ ] Helm chart finalised, with values for dev / staging / SBS / Azure overlay. Tested by a `helm install` on a fresh k3d cluster, no manual steps.
+- [ ] Terraform modules for **bare-metal** (network, storage, secrets, Postgres, Redis, vLLM node) **and** Azure tenancy (AKS, Azure Database for PostgreSQL, Key Vault, ACR).
+- [ ] Runbooks for every operational scenario: ingestion stalled, validator failing, vLLM out of memory, Postgres replication lag, certificate rotation, credential leak, taxonomy version cutover.
+- [ ] DR plan: RPO / RTO targets (illustrative), backup procedure, restore drill script, evidence of a successful restore on a fresh cluster.
+- [ ] Load testing with **k6**: signed Tier 1 path at target throughput, batch ingestion under load, agent pipeline back-pressure.
+- [ ] Security audit: gitleaks, trivy (image scan), bandit (SAST), CycloneDX SBOM, SLSA provenance attached to releases.
+- [ ] SBS handoff package: architecture diagram (one page), data flow diagram, threat model, ADR set printed, runbook bundle, demo recording, on-prem deployment guide, vendor extension guide.
+- [ ] Demo run-throughs ×3 against the production-shape stack (not the dev compose).
+- [ ] Plain-language operations summary readable by Veronica.
+- [ ] Second-opinion review: handoff package against the World Bank SupTech reference architecture.
+
+**Exit:** A vendor can clone the repo, deploy to a fresh cluster, run the conformance suite, restore from backup, and respond to a runbook scenario — all without contacting SBS.
+
+### Part 10 — AI/ML Evaluation Framework
+
+Goal: every classifier, ranker, embedding, and agent decision has a documented evaluation method, a baseline number, a regression test, and a path to re-evaluation when models change.
+
+- [ ] Evaluation dataset: labelled sample of complaints with taxonomy categories, severity, resolution status. Versioned. Stored separately from training data.
+- [ ] Per-model evaluation harness: BETO classifier, XGBoost ranker, embeddings (retrieval quality), agent decisions (precedent-vs-current case agreement).
+- [ ] Metrics defined per model: F1 / precision / recall for classification; NDCG / MAP for ranking; recall@k for retrieval; agreement-with-human-reviewer for agents.
+- [ ] Baseline numbers committed — each labelled measured / illustrative / target.
+- [ ] Regression test gate: a PR that drops any metric by more than a configurable threshold fails CI.
+- [ ] Drift monitoring: data drift, prediction drift, label drift — Grafana dashboards.
+- [ ] Re-evaluation runbook: how to refresh the eval set, how to re-baseline, who approves.
+- [ ] ADR for the eval framework.
+- [ ] Plain-language explainability note: how each model is evaluated, in language Mariela can read.
+- [ ] Second-opinion review: framework against CGAP's "Responsible AI in SupTech" guidance.
+
+**Exit:** Every model in the stack has a numeric baseline (with label), a regression test, and a Grafana drift dashboard. A PR that regresses any model fails CI.
+
+### Part 11 — Standards Pack & Reporting Taxonomy Distribution
+
+Goal: SBS publishes a machine-readable Anexo 1-A that any institution, vendor, or other regulator can consume — turning the taxonomy from a PDF into a versioned, testable, distributable artifact.
+
+- [ ] JSON Schema for every Anexo 1-A object, generated from the YAML taxonomy, validated against the OpenAPI spec.
+- [ ] Code lists published as canonical CSV + JSON, with stable identifiers and a deprecation policy.
+- [ ] Validation rules library: cross-field rules expressed declaratively, runnable against a payload, with stable rule IDs that errors reference.
+- [ ] OpenAPI 3.1 spec with full examples, error catalogue, RFC 9457 problem types, security schemes documented.
+- [ ] Batch manifest schema for Tier 2 ingestion.
+- [ ] Error catalogue: every stable error code with description, RFC 9457 type URI, severity, and remediation guidance.
+- [ ] Sample payloads for every taxonomy variant, including edge cases (Unicode, deprecated codes, partial submissions).
+- [ ] Versioning policy: SemVer for the Standards Pack, breaking-change procedure, deprecation timelines.
+- [ ] Distribution: publish the Standards Pack as an OCI artifact and as a tagged GitHub release with a SHA-256 manifest.
+- [ ] Plain-language Standards Pack overview readable by Sergio and Veronica.
+- [ ] ADR for the versioning and distribution policy.
+- [ ] Second-opinion review: Standards Pack against EBA reporting taxonomy distribution and HMRC's Making Tax Digital schemas.
+
+**Exit:** A third party (vendor, supervised institution, peer regulator) can download v1.0.0 of the Standards Pack, validate sample payloads, generate clients, and integrate — entirely from the published artifact, with no access to SBS staff.
 
 ## Daily discipline
 

@@ -46,6 +46,14 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Target:** When Antoine or Fisnik (or any second human reviewer) is added as a collaborator. Not Part-bound; happens at the personnel event.
 - **Trail:** This entry.
 
+### End-of-Part-1 checkpoint discipline
+- **Status:** Commitment recorded; checkpoint to be executed between last Part 1 prompt and first Part 2 prompt.
+- **What's deferred:** Running the full seven-category audit established before Prompt 3 (repository structural integrity, documentation consistency, harness functional verification, git history sanity, GitHub repo configuration, carry-over fix verification, cross-check against PLAN.md).
+- **Why deferred:** End-of-Part-1 is the right cadence; running it mid-Part would be premature and noisy.
+- **Action when triggered:** Run all seven audit categories; commit output to `docs/checkpoints/end-of-part-1.md`; do not start Part 2 until checkpoint is committed.
+- **Target:** Between Prompt 8 (Part 1 final) and the first Prompt of Part 2.
+- **Trail:** This entry; the audit pattern itself was established in PR #20.
+
 ## How to revisit
 
 At the start of Part 9, the planner reads this document top-to-bottom and produces a Part 9 work plan. Items resolved in earlier Parts should be moved to the "Resolved" section below with a one-line note pointing at the resolving PR/commit.

@@ -39,6 +39,13 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Target Part:** Part 1 (later prompt) or Part 2.
 - **Trail:** Prompt 1 journal, Prompt 2 journal.
 
+### Branch protection: required-approvals set to 0
+- **Status:** `main` branch protection has `required_approving_review_count: 0`.
+- **Why deferred:** Solo work cannot self-approve. Setting it to 1 today would block every PR.
+- **Action needed:** Bump to 1 when a second human joins the repo as a collaborator with review rights.
+- **Target:** When Antoine or Fisnik (or any second human reviewer) is added as a collaborator. Not Part-bound; happens at the personnel event.
+- **Trail:** This entry.
+
 ## How to revisit
 
 At the start of Part 9, the planner reads this document top-to-bottom and produces a Part 9 work plan. Items resolved in earlier Parts should be moved to the "Resolved" section below with a one-line note pointing at the resolving PR/commit.

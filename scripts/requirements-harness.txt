@@ -5,6 +5,6 @@
 # Keep this list short. The harness is meant to be portable.
 
 openai>=1.40,<2.0
-python-dotenv>=1.0,<2.0
+python-dotenv>=1.2.2,<2.0
 gitpython>=3.1,<4.0
 pyyaml>=6.0,<7.0

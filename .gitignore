@@ -39,10 +39,14 @@ Thumbs.db
 
 # Project
 .env
+.env.*
+.envrc
 *.pem
 *.key
 *.crt
+*.p12
 secrets/
+private/
 mlruns/
 data/synthetic/*.json
 data/synthetic/*.parquet

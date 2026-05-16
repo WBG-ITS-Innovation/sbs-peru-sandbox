@@ -11,12 +11,46 @@ pip install -r scripts/requirements-harness.txt
 # Install the pre-push hook (enforces branch naming)
 bash scripts/setup_hooks.sh
 
+# Install pre-commit hooks (gitleaks, detect-secrets, whitespace, .env guard)
+pip install pre-commit
+pre-commit install
+
+# Generate a real detect-secrets baseline before first commit
+# (the committed .secrets.baseline is a stub — see note below).
+detect-secrets scan > .secrets.baseline
+
 # Copy the env template and fill in the four Azure OpenAI vars
 # (WBG ITS tenancy — personal openai.com keys are not supported here)
 cp .env.example .env
 ```
 
 The application stack (uv, FastAPI, Postgres, etc.) lands in Part 3. Until then, the harness above is enough.
+
+### First-time repo bootstrap (maintainer only)
+
+After the repository is first created on GitHub, the maintainer runs this once to create the labels the workflow and CODEOWNERS rules depend on:
+
+```bash
+bash scripts/bootstrap_github_labels.sh
+```
+
+The script is idempotent — re-run it after any label set changes. New contributors do not need to run it.
+
+### Working behind WBG networking
+
+Contributors on WBG-issued laptops need a CA bundle configured so HTTPS-dependent commands work behind Zscaler. See [docs/setup/corporate-proxy-and-zscaler.md](setup/corporate-proxy-and-zscaler.md) — marked **DRAFT** until verified by a colleague on a clean machine. If you hit `CERTIFICATE_VERIFY_FAILED`, `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, or `tls: failed to verify certificate`, that document is the starting point.
+
+### About the committed `.secrets.baseline`
+
+The repository ships a stub `.secrets.baseline` because `detect-secrets` is not yet installed in the maintainer's environment and the baseline has to be generated against a real working tree to be meaningful. On your first clone:
+
+```bash
+pip install detect-secrets
+detect-secrets scan > .secrets.baseline
+git diff .secrets.baseline   # eyeball before committing
+```
+
+Re-commit the baseline only if it materially changes (e.g., a new file pattern was added or an old one removed). The baseline is a developer aid, not a CI gate — CI relies on gitleaks.
 
 ## Branch naming
 
@@ -68,6 +102,8 @@ Closes ADR 0003. Emits to Redis Streams.
 
 4. **Close the prompt.** Run `/close-prompt`. The pipeline runs all six subagents on the staged diff, then a cross-model review, then an adversarial pass, then prompts for typed approval. There is no `-y` flag and no auto-merge. If anything blocks, fix and re-run.
 
+   The cross-review step **hard-fails the closeout** if `scripts/cross_review.py` exits non-zero. If you genuinely cannot run it (VPN off, deliberate Azure-credential gap, scheduled outage), pass `--skip-cross-review-with-reason "<reason>"`. The reason is required, non-empty, and lands in the session journal under the cross-review section. Not appropriate uses: "the review came back ugly", "I don't have time". Backfill the review later via `python3 scripts/cross_review.py --target <whatever>`.
+
 5. **PR review.** CI runs. Read the PR diff yourself. Merge manually via the GitHub UI when ready. Main is protected.
 
 6. **Open the next prompt** with the paste-ready block from the session journal.
@@ -98,7 +134,7 @@ Four env vars must be set in `.env` (or your shell) before `/cross-review` or th
 | `AZURE_OPENAI_DEPLOYMENT` | The deployment **name** (not the model id) | Azure portal: your resource → Deployments |
 | `AZURE_OPENAI_API_VERSION` | API version string, e.g. `2024-10-21` | WBG ITS or the Azure OpenAI release notes |
 
-If any of the four is missing, the script fails with a clear message listing the missing variables. If you don't have WBG-issued credentials yet, run with `--no-cross-review` on `/close-prompt` — the rest of the pipeline still works, and you can backfill cross-reviews later.
+If any of the four is missing, the script fails with a clear message listing the missing variables. If you don't have WBG-issued credentials yet, run with `--skip-cross-review-with-reason "<reason>"` on `/close-prompt` — the rest of the pipeline still works, and you can backfill cross-reviews later.
 
 ## What never happens
 

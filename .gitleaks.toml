@@ -1,0 +1,18 @@
+# Gitleaks config for sbs-suptech-prototype.
+# Allowlists documentation paths that legitimately discuss secret patterns.
+# Extend allowlist.paths cautiously — every path here is a place a real
+# secret could hide. See ADR 0016 for the secret-scanner stack rationale.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlisted paths — documentation and tooling baselines that discuss secret formats by name."
+paths = [
+  '''^\.secrets\.baseline$''',
+  '''^\.gitleaks\.toml$''',
+  '''^docs/adr/''',
+  '''^docs/research/''',
+  '''^docs/reviews/''',
+  '''^docs/setup/corporate-proxy-and-zscaler\.md$''',
+]

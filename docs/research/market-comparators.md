@@ -232,3 +232,7 @@ The market research supports the current SBS architecture, with several refineme
 A defensible market-research conclusion could be written as:
 
 > International comparators show that leading supervisors and consumer-protection authorities increasingly combine standardized complaint taxonomies, digital submission channels, public or internal benchmarking dashboards, and analytics over complaint trends. The SBS proposal is consistent with this direction but adds two locally important features: proportional two-tier ingestion for institutions with different technical capacities, and on-prem AI governance for sensitive complaint data. The closest references are CFPB for complaint data fields and API access, BCB for normalized complaint rankings, FCA for firm-level complaint reporting modernization, CONDUSEF for Spanish-language complaint workflow and public transparency, and BIS/World Bank/Cambridge SupTech work for the broader supervisory-analytics architecture.
+
+---
+
+This document covers the regulator-domain comparator landscape only. Operational precedents for the platform's tooling (supply chain, scanners, SBOM format, environment-variable handling) are in [supply-chain-precedents.md](supply-chain-precedents.md). Both files are valid citation targets for ADR Precedent sections; see [docs/research/README.md](README.md) for the citation rule.

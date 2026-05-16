@@ -1,10 +1,29 @@
 version: 2
 
-# Weekly dependency updates. Grouping reduces PR noise; we still review each batch.
-# The application stack (uv-managed Python, Node frontend) lands in later Parts —
-# entries are present so Dependabot starts watching as soon as those manifests exist.
+# Weekly dependency updates. Grouping reduces PR noise; we still review each
+# batch. The application stack (uv-managed Python, Node frontend) lands in
+# later Parts — pip and npm entries are present so Dependabot starts watching
+# as soon as those manifests exist. The Docker ecosystem is intentionally not
+# listed; it will be added in Part 9 when Dockerfiles land.
+#
+# ADR 0017 (Dependabot, not Renovate, for Part 1) explains the choice.
 
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Brussels"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -15,7 +34,12 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "python"
+      - "security"
+    groups:
+      pip-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -30,37 +54,12 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "javascript"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Europe/Brussels"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "ci"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Europe/Brussels"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "docker"
+      - "security"
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
     commit-message:
       prefix: "chore"
       include: "scope"

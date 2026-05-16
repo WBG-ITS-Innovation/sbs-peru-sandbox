@@ -71,6 +71,50 @@ Bad (rejected at push time):
 
 Rename a branch with: `git branch -m part-NN/<slug>`.
 
+## Starting a new prompt chat
+
+Each prompt is executed in its own chat (Claude.ai or Claude Code instance). Cold-start chats can't see repo files; they need the current state of key project files pasted in as the first message. This avoids drift between summarized prior-chat memory and the actual state of `main`.
+
+The workflow:
+
+1. **Generate the context bundle.** From the repo root:
+
+```bash
+   bash scripts/prompt_chat_context.sh <part-number> | pbcopy
+```
+
+   On Linux, replace `pbcopy` with `xclip -selection clipboard`.
+
+2. **Open a new chat** (Claude.ai or Claude Code). Paste the context bundle as the first message.
+
+3. **Paste the prompt spec** as the next part of the same message (or as a follow-up message).
+
+4. **Proceed.** The new chat now has real state to work against, not summarized memory.
+
+The principle: **cold-start instances need real files, not prior-chat context.** Don't try to bypass this with "you already know the project" — that path leads to drift.
+
+## Drafting the next prompt's spec
+
+After a prompt merges, the next prompt's spec can be partially scaffolded:
+
+```bash
+bash scripts/next_prompt_scaffold.sh <next-prompt-number> <slug>
+```
+
+This generates a draft with:
+- Mechanical scaffolding (predecessor commit, plan section, ADR numbering, standard checklists, standard closeout block) — auto-filled
+- Strategic sections (scope adjustments, decisions to lock, ADRs to write, cross-review flags) — marked **TODO**
+
+Edit the draft to fill in the TODOs. **Never paste a draft with TODOs into Claude Code.** The mechanical parts are automated; the strategic shaping is your judgment work.
+
+Recommended workflow:
+1. Generate the draft: `bash scripts/next_prompt_scaffold.sh 3 uv-project > /tmp/prompt-03-draft.md`
+2. Open the draft in your editor
+3. Fill in TODOs (typically 20-30 minutes of strategic shaping)
+4. Optionally discuss the draft in your meta chat before pasting to Claude Code
+5. Strip the "END DRAFT" line, then paste into the new prompt chat
+
+
 ## Commit messages
 
 Conventional Commits. Type: one of `feat`, `fix`, `chore`, `docs`, `refactor`, `test`.

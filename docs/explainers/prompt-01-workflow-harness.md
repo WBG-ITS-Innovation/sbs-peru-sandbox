@@ -30,7 +30,7 @@ The SBS engagement has hard constraints that most software projects don't have:
 - **Hard deadline.** July 2026, tied to a presidential transition. No room to slip.
 - **Regulator-grade quality.** SBS will deploy this in production to ingest complaint data from 20–60 supervised institutions. Bugs aren't an inconvenience — they're a regulatory event.
 - **On-premises deployment.** PII never leaves SBS's perimeter. Architecture has to be deployable to bare-metal or SBS's own Azure tenancy without modification.
-- **Multiple reviewers with non-technical backgrounds.** Mariela (prudential + market conduct), Sergio (Superintendent), Veronica (reviewer), Diego, Luis Daniel. Documentation has to be readable by them, not just engineers.
+- **Multiple reviewers with non-technical backgrounds.**
 - **Audit trail is the deliverable.** Every decision must be traceable years later by people who weren't in the room.
 
 Building this directly — writing API code, training models, deploying agents — without the discipline layer first is the failure mode that wrecks regulator projects. The discipline layer is harder to retrofit than to install upfront. So Prompt 1 installed it.

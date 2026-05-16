@@ -20,7 +20,7 @@ Every change must serve these. If a change violates one, raise it before writing
 
 5. **Plain-language explainability.** Every architectural artifact has a parallel plain-language version readable by Mariela (supervisor), Sergio (compliance lead), and Veronica (executive). No jargon without a glossary entry. No AI-sounding phrasing ("leverage", "delve", "unlock", "robust", "seamless", "cutting-edge"). Write like a calm, senior engineer briefing a regulator.
 
-6. **Built on benchmarked precedent, not invention.** Every major design decision cites a comparator from [docs/research/market-comparators.md](docs/research/market-comparators.md) (CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP). Each ADR has a "Precedent" section naming the comparator(s) and a "Divergence" section explaining where SBS departs and why. The `benchmark-checker` subagent enforces this.
+6. **Built on benchmarked precedent, not invention.** Every major design decision cites a comparator from a research file under [docs/research/](docs/research/) — regulator-domain (CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP) lives in [market-comparators.md](docs/research/market-comparators.md); supply-chain (Yelp `detect-secrets`, CISA, OpenSSF, 12-factor, public-sector OSS orgs) lives in [supply-chain-precedents.md](docs/research/supply-chain-precedents.md). Each ADR has a "Precedent" section naming the comparator(s) and a "Divergence" section explaining where SBS departs and why. The `benchmark-checker` subagent enforces this — the rule is *specificity of section and comparator*, not filename.
 
 ---
 
@@ -43,6 +43,8 @@ Read these before acting. They are authoritative; this file is a pointer index.
 - [docs/prompts/second-opinion-templates.md](docs/prompts/second-opinion-templates.md) — second-opinion prompt templates.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — workflow walkthrough and branch conventions.
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deployment guide (TOC scaffold until Part 9).
+- [SECURITY.md](SECURITY.md) — disclosure path, sensitive-data rules, supported branches.
+- [docs/setup/corporate-proxy-and-zscaler.md](docs/setup/corporate-proxy-and-zscaler.md) — WBG networking / CA bundle setup (DRAFT).
 
 ---
 

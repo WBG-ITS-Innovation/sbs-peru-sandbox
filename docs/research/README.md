@@ -1,28 +1,31 @@
 # Research index
 
-This directory holds the comparator research that anchors the project's design decisions. North-star principle 6 (CLAUDE.md): every major design decision cites a comparator from [market-comparators.md](market-comparators.md). The `benchmark-checker` subagent enforces this.
+This directory holds the comparator research that anchors the project's design decisions. North-star principle 6 (CLAUDE.md): every major design decision cites a comparator from a research file under `docs/research/`. The `benchmark-checker` subagent enforces this — the rule is *specificity of section and comparator*, not the filename.
 
 ## Files
 
-- [market-comparators.md](market-comparators.md) — primary research document. Comparators across CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP. Cite specific sections, not the document as a whole.
+- [market-comparators.md](market-comparators.md) — regulator-domain comparators across CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP, AFCA, CONDUSEF. Cite for API design, taxonomy, complaint workflow, dashboards, supervisory analytics, AI/ML governance in supervision.
+- [supply-chain-precedents.md](supply-chain-precedents.md) — operational supply-chain comparators (secret scanners, dependency tooling, SBOM format, dependency-review thresholds, environment-variable handling). Cite for ADRs that lock infrastructure-of-the-build decisions. New sections may be appended as Part 9 work lands (image signing, provenance, license compliance, container scanning).
+
+Cite specific sections, not the document as a whole. Both files are valid citation targets.
 
 ## How to cite
 
-In an ADR, PLAN.md design section, or any user-facing spec, use this pattern:
+In an ADR, PLAN.md design section, or any user-facing spec, use this pattern. The `## Precedent` section points at a specific section of any research file under `docs/research/`; `## Divergence` records where SBS departs and why.
 
 ```markdown
 ## Precedent
 
-- <Comparator> (docs/research/market-comparators.md §X.Y) — what they do, what we adopt.
+- <Comparator> (docs/research/<file>.md §X) — what they do, what we adopt.
 
 ## Divergence
 
 - Where SBS departs and why.
 ```
 
-If `market-comparators.md` does not yet cover a topic, the author has three options:
+If no existing file covers a topic, the author has three options:
 
-1. Commission research to extend the document.
+1. Commission research to extend an existing file or add a new one.
 2. Cite the closest analogue and label it as such ("closest analogue: BIS Innovation Hub …").
 3. Declare the design exploratory and accept higher second-opinion scrutiny.
 
@@ -58,8 +61,14 @@ Notation: a missing comparator for a Part means we do not yet have one on file �
 
 ## Maintenance
 
-When [market-comparators.md](market-comparators.md) is edited:
+When any research file is edited:
 
 1. Update the table above if section numbers shift.
 2. Re-run `benchmark-checker` against the ADRs that cite the moved sections.
 3. Add a one-line entry to [docs/DECISIONS.md](../DECISIONS.md) noting the research update.
+
+When a new research file is added under `docs/research/`:
+
+1. Add a one-line entry in the "Files" section above naming its scope.
+2. Update the `benchmark-checker` subagent definition if the citation rule needs adjusting (the default rule is "any file under `docs/research/`" — usually no change needed).
+3. Add a one-line entry in [docs/DECISIONS.md](../DECISIONS.md).

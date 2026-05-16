@@ -4,7 +4,7 @@ This index lists every ADR with its current status. New ADRs are scaffolded via 
 
 Statuses: `Proposed` (queued, not yet written), `Draft` (file exists, content in progress), `Accepted` (locked — referenced by code or docs), `Superseded` (replaced by a later ADR, retained for history).
 
-Every Accepted ADR must contain a `## Precedent` section citing [docs/research/market-comparators.md](../research/market-comparators.md). The `benchmark-checker` subagent enforces this.
+Every Accepted ADR must contain a `## Precedent` section citing a specific section of a research file under [docs/research/](../research/) — typically [market-comparators.md](../research/market-comparators.md) for regulator-domain decisions or [supply-chain-precedents.md](../research/supply-chain-precedents.md) for operational supply-chain decisions. The `benchmark-checker` subagent enforces this; the rule is *specificity of section and comparator*, not filename.
 
 ## Index
 
@@ -25,6 +25,11 @@ Every Accepted ADR must contain a `## Precedent` section citing [docs/research/m
 | 0013 | standards-pack-distribution           | Proposed | Part 11              | Standards Pack versioning, OCI artifact + GitHub release distribution |
 | 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with Antoine |
 | 0015 | cross-review-llm-backend-azure        | Proposed | Prompt 1.5 / Part 2  | Cross-review LLM backend: Azure OpenAI via WBG tenancy (no personal openai.com keys); aligns with likely SBS Azure-tenancy production posture |
+| 0016 | secret-scanner-stack                  | Accepted | Prompt 2 / Part 1    | gitleaks + detect-secrets locally; gitleaks only in CI; committed baseline is a developer aid, not a CI gate |
+| 0017 | dependency-update-tooling-dependabot  | Accepted | Prompt 2 / Part 1    | Dependabot (not Renovate) for Part 1, weekly schedule, grouped minor+patch for pip and npm; docker ecosystem deferred to Part 9 |
+| 0018 | sbom-format-cyclonedx-via-syft        | Accepted | Prompt 2 / Part 1    | SBOM format is CycloneDX JSON produced by syft; implementation workflow deferred to Part 9 |
+| 0019 | dependency-review-threshold-high      | Accepted | Prompt 2 / Part 1    | dependency-review-action fails on `high` and above; `moderate` reported but non-blocking; revisit at Part 9 |
+| 0020 | env-handling-policy                   | Accepted | Prompt 2 / Part 1    | `.env` and `.env.*` never committed; secrets via GitHub Actions secrets in CI and local `.env` for developers; no personal data in repo |
 
 ## How to add an ADR
 

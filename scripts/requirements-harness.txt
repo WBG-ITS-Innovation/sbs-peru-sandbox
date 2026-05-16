@@ -7,4 +7,10 @@
 openai>=2.37.0,<3.0
 python-dotenv>=1.0,<2.0
 gitpython>=3.1.50,<4.0
-pyyaml>=6.0,<7.0
+pyyaml>=6.0.3,<7.0
+
+# Test deps for tests/ (regression tests for the harness scripts).
+# Kept in this file so contributors run one install command. When Part 3
+# brings uv, the application's dev deps will live in pyproject.toml; these
+# harness/test deps stay here.
+pytest>=8.0,<9.0

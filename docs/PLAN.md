@@ -33,13 +33,24 @@ A signed mTLS request to `POST /v1/complaints` → validated against Annex 1-A �
 ## The 10 parts
 
 ### Part 1 — Foundation
-- [ ] Repo + uv project initialized
-- [ ] Tooling: ruff, pyright strict, pre-commit, gitleaks, conventional commits, spectral
-- [ ] Project structure: api/, agents/, tools/, frontend/, infra/, docs/, scripts/, sdk/
+
+Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for partial completion with a note; `[ ]` is untouched; `[x]` is done.
+
+- [~] Repo + uv project initialized — repo initialized; `uv` project lands in Prompt 3.
+- [~] Tooling: ruff, pyright strict, pre-commit, gitleaks, conventional commits, spectral — `pre-commit`, `gitleaks` (binary via CI), Conventional Commits (pre-push hook + CLAUDE.md) ✓; `ruff`, `pyright strict`, `spectral` land in Prompt 3.
+- [~] Project structure: api/, agents/, tools/, frontend/, infra/, docs/, scripts/, sdk/ — `docs/`, `scripts/`, `tests/` exist; `api/`, `agents/`, `tools/`, `frontend/`, `infra/`, `sdk/` land in their respective Parts.
 - [ ] Docker Compose: Postgres+pgvector, Redis, vLLM (Qwen 2.5 14B), Prometheus, Grafana, Loki, OTel collector
 - [ ] OTel collector configured, Grafana provisioned
-- [ ] CI: lint + test + type-check on PR
-- [ ] ADR 0001 written: MCP+A2A+LangGraph three-layer
+- [~] CI: lint + test + type-check on PR — `secret-scan` workflow (gitleaks binary, history-aware) ✓; lint/test/type-check workflows land with the tooling in Prompt 3.
+- [ ] ADR 0001 written: MCP+A2A+LangGraph three-layer — deferred to Prompt 9 per Prompt 1 session journal.
+
+**Additionally landed in Prompts 1–2 that the original Part 1 checklist did not enumerate:**
+
+- [x] Workflow harness: six subagents, eight slash commands, closeout pipeline with typed approval gate (Prompt 1).
+- [x] Supply-chain controls: secret scanning (`.pre-commit-config.yaml` + CI `secret-scan.yml`), `.gitleaks.toml` allowlist, `.secrets.baseline`, Dependabot (3 ecosystems, grouped), `.env` handling policy. (Prompt 2)
+- [x] ADRs 0015–0020 Accepted (cross-review backend, scanner stack, dependency tooling, SBOM format, dependency-review threshold, env handling).
+- [x] Two research files under `docs/research/`: regulator-domain (`market-comparators.md`) and operational supply-chain (`supply-chain-precedents.md`).
+- [x] Deferred-work tracker (`docs/DEFERRED.md`) and PR template, CODEOWNERS, issue templates.
 
 **Exit:** `docker compose up` clean, CI green
 

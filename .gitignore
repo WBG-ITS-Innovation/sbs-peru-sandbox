@@ -47,5 +47,8 @@ mlruns/
 data/synthetic/*.json
 data/synthetic/*.parquet
 
+# Local-only cross-review notes (not for commit)
+docs/reviews/*.local.md
+
 # Allow example envs
 !.env.example

@@ -1,0 +1,23 @@
+# CODEOWNERS — who must approve changes to which paths.
+#
+# Format: <pattern> <owner> [<owner>...]
+# GitHub matches the LAST matching rule. More specific rules go below.
+# Placeholders below are commented until co-owners' GitHub handles are confirmed.
+
+# Default: maintainer owns everything.
+*                       @omakhlouk
+
+# Infrastructure — Antoine co-reviews when ready.
+# /infra/                @omakhlouk @<antoine-handle>
+# /helm/                 @omakhlouk @<antoine-handle>
+# /terraform/            @omakhlouk @<antoine-handle>
+
+# Agent layer — Antoine co-reviews when ready.
+# /agents/               @omakhlouk @<antoine-handle>
+
+# ADRs — Fisnik co-reviews when ready.
+# /docs/adr/             @omakhlouk @<fisnik-handle>
+
+# Standards Pack and OpenAPI — both co-reviewers when ready.
+# /docs/research/        @omakhlouk
+# /api/openapi*          @omakhlouk

@@ -33,6 +33,7 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0021 | package-manager-uv                    | Accepted | Prompt 3 / Part 1    | uv (Astral) is the Python package manager and project tool; root `pyproject.toml` + committed `uv.lock`; harness `requirements-harness.txt` retired |
 | 0022 | python-version-3-12                   | Accepted | Prompt 3 / Part 1    | Python 3.12 only; `requires-python = ">=3.12,<3.13"`; no CI matrix on Python versions |
 | 0023 | workspace-layout-uv-members           | Accepted | Prompt 3 / Part 1    | uv workspace with members `api/`, `agents/`, `tools/`, `sdk/`; `frontend/` and `infra/` outside the workspace; flat per-member layout for now |
+| 0025 | may-25-sprint-critical-path           | Proposed | Prompt 4 / Part 1    | May 25 sprint kickoff scope: Parts 2/3/4 full, Parts 5/6/7/8/11 reduced, Parts 9/10 deferred entirely; PLAN.md restructure. Proposed until a sprint-phasing comparator lands in docs/research/. |
 
 ## How to add an ADR
 

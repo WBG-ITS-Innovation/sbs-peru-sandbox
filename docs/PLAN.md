@@ -30,6 +30,32 @@ A reference implementation that:
 
 A signed mTLS request to `POST /v1/complaints` → validated against Annex 1-A → persisted → event emitted → audit log → trace in Grafana. End-to-end, observable, repeatable.
 
+## May 25 sprint kickoff critical path
+
+The May 25 sprint kickoff in Lima is the next milestone. The audience is the SBS policy and technical reviewers and the WBG delivery team. (Named attendees are kept in meeting notes, not in this plan.)
+
+The 11-Part scope is the July deliverable, not the May 25 deliverable. This section documents the May 25 critical path: the 13-prompt sequence from Prompt 1 through May 25, of which Prompts 1-3 are already closed and Prompts 4-13 remain, the per-Part scope (full / reduced / deferred), and the target dates for deferred work. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md) for full rationale.
+
+### The 13-prompt sequence
+
+- Prompts 1-3: closed. Workflow harness, supply chain & secrets, uv project + Python tooling.
+- Prompt 4: May 25 scope-lock and PLAN.md restructure. *This document.*
+- Prompt 5: ruff + pyright + pre-commit hardening + Prompt 3 carry-over fixes (writer/reader contract on `## Triage`, silent `--slug` fallback, deploy-test `.gitkeep` false positive).
+- Prompts 6-7: OpenAPI 3.1 spec + Pydantic v2 models + JSON Schema export; FastAPI scaffold + Tier 1 endpoints + Postgres + RFC 9457 problem+json.
+- Prompt 8: mTLS + HMAC + OAuth client_credentials.
+- Prompt 9: Tier 2 batch + synthetic data generator (10k complaints, 3 scenarios, deterministic seeds).
+- Prompts 10-11: UI wiring against the real API + pretrained BETO classifier (Spanish, no fine-tuning).
+- Prompts 12-13: two agents live (pattern detection + supervisory query authoring) + (stretch) three more.
+- Day 9 (May 25 morning): rehearsal + standards pack v0.1 generated and version-stamped + brief k6 load test.
+
+### Per-Part May 25 scope
+
+Each Part's May 25 scope is documented in a "May 25 scope" subsection under that Part below. Deferred items name a target date (June or July post-sprint) and the follow-up Part that owns them.
+
+### Schedule risk
+
+If Prompts 9-13 slip, the demonstration runs against Prompts 5-8 alone: Tier 1 near-real-time ingestion (signed and authenticated, RFC 9457, idempotency) end-to-end, preserving the minimum observable chain from the vertical slice target — a signed mTLS request to `POST /v1/complaints` → validated against Annex 1-A → persisted → event emitted → audit log → trace in Grafana. Tier 2 batch upload and the synthetic data generator are framed as the post-sprint roadmap. The UI shows the Tier 1 ingestion path; bulk-load and historical backfill come post-sprint. The pretrained BETO classifier (Part 5 reduced scope) and the two live agents (Part 6 reduced scope) are also deferred to the post-sprint roadmap under this fallback; the UI shows the architecture story for these surfaces without live behaviour. This is a thinner fallback than the full demonstration and the audience expectation is calibrated to it in advance, not at the demo. If any of Prompts 5-8 itself slips, the demonstration loses the signed-ingestion floor entirely; in that case the maintainer escalates to the WBG tech lead and the WBG manager before May 25 to either compress remaining prompts, reduce Prompts 5-8 scope, or shift the demonstration to an architecture-walkthrough format. That escalation is the load-bearing risk control for the critical path. See [ADR 0025 Consequences](adr/0025-may-25-sprint-critical-path.md#consequences).
+
 ## The 10 parts
 
 ### Part 1 — Foundation
@@ -67,6 +93,8 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 
 **Exit:** Scalar docs render, trace visible in Grafana
 
+**May 25 scope.** Full. OpenAPI 3.1 spec, Pydantic v2 models from the Annex 1-A YAML loader, Alembic baseline, FastAPI scaffold with `/health` triad, Scalar docs site, structured logging and OTel tracing. `GET /v1/complaints` returns empty list with proper headers. No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+
 ### Part 3 — Ingestion Tier 1
 - [ ] mTLS termination + dev CA scripted
 - [ ] OAuth 2.0 client_credentials flow
@@ -86,6 +114,8 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 
 **Exit:** signed mTLS request → 201 → event → audit log → trace
 
+**May 25 scope.** Full. Near-real-time API endpoint accepting complaint submissions mapped to the Annex 1-A taxonomy. mTLS termination, OAuth 2.0 client_credentials, HMAC request signing, idempotency keys, RFC 9457 problem+json error model. No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+
 ### Part 4 — Ingestion Tier 2 + Synthetic Data
 - [ ] POST /v1/batches (signed multipart)
 - [ ] Async batch processing (arq)
@@ -99,6 +129,8 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 
 **Exit:** VERTICAL SLICE — Tier 1 + Tier 2 end-to-end. Loom recording for safekeeping.
 
+**May 25 scope.** Full. Tier 2 batch file upload mapped to the same Annex 1-A taxonomy. Synthetic complaint generator (10k complaints, 3 scenarios, deterministic seeds) replaces real production data for the sandbox. **Slip-case: this Part is the largest single risk to the demonstration; under the Prompts-5-8 fallback it becomes post-sprint roadmap. Cut line if Tier 2 slips: ship Tier 1 only with an explicit "Tier 2 batch deferred to post-sprint" card in the demo deck.** See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+
 ### Part 5 — ML Substrate
 - [ ] BETO classification worker (ONNX export)
 - [ ] pgvector embeddings worker
@@ -110,6 +142,8 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 - [ ] Second opinion: Template 5 (mid-build architecture review) — Gemini 2.5 Pro
 
 **Exit:** new complaint classified, embedded, ranked within seconds; all MCP tools tested
+
+**May 25 scope.** Reduced. Pretrained BETO classifier only (Spanish, no fine-tuning), demonstrating the classifier interface against synthetic complaints. **Deferred to post-sprint (July):** BETO fine-tuning on SBS historical data, XGBoost ranker, SHAP explainer, MLflow registry, full ML pipeline. The classifier contract is documented in an ADR; the full ML pipeline lands in July. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 6 — Agent Infrastructure
 - [ ] A2A server scaffolding per specialist agent
@@ -126,6 +160,8 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 - [ ] Second opinion: Template 2 (A2A SDK verification) — GPT-5
 
 **Exit:** Triage Agent processes complaint event end-to-end, A2A+MCP calls in traces
+
+**May 25 scope.** Reduced. Two agents live: pattern detection and supervisory query authoring. Three agents (institutional risk, conduct, investigation) ship pre-generated output. All five named and described in the UI; the three pre-generated agents render archived output. The three pre-generated agents render output that is generated by the same agent code path running against curated synthetic complaints in advance, not hand-written prose; the demonstration can show the generation command and the output file together. Architecture documents how the three pre-generated agents are wired. Stretch goal: all five live by end of Day 8. **Deferred to post-sprint (June):** three pre-generated agents go live. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ## Plan restructure — 2026-05-15
 
@@ -155,6 +191,8 @@ Goal: an institution's integration team can self-onboard against a sandbox using
 
 **Exit:** A fresh integration team can read the docs, generate an SDK, sign a request, hit the sandbox, and pass the conformance suite — without contacting SBS. Verified end-to-end on a clean machine.
 
+**May 25 scope.** Minimal. Stoplight or Redoc rendering of the OpenAPI spec; OpenAPI + JSON Schema generated and version-stamped as the v0.1 standards pack (paired with Part 11 work). **Deferred to post-sprint (June/July):** SDK generation for .NET, Java, Python, TypeScript via `openapi-generator`; conformance test suite; getting-started guide; full onboarding portal. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+
 ### Part 8 — Self-Service Onboarding + Per-Institution Ops (Tier B)
 
 Goal: SBS staff can onboard, monitor, and manage supervised institutions from the platform UI; supervised institutions can manage their own integration metadata.
@@ -170,6 +208,8 @@ Goal: SBS staff can onboard, monitor, and manage supervised institutions from th
 - [ ] Second-opinion review: tenancy model against BCB's Sistema de Informações de Crédito tenancy precedent.
 
 **Exit:** Two named sandbox institutions are onboarded and visible end-to-end from the SBS-side UI. Both can self-service rotate credentials. Per-institution dashboards render real data.
+
+**May 25 scope.** Reduced. Per-institution dashboard (already in prototype-v2 HTML) rendering data from the real API for at least one named institution. **Deferred to post-sprint (June/July):** self-service credential portal, full per-institution operations surface (rate limit configuration, scope management, credential rotation), Tier B onboarding flows. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 9 — Production Readiness
 
@@ -188,6 +228,8 @@ Goal: this stack is deployable, operable, recoverable, and audit-able by a vendo
 
 **Exit:** A vendor can clone the repo, deploy to a fresh cluster, run the conformance suite, restore from backup, and respond to a runbook scenario — all without contacting SBS.
 
+**May 25 scope.** Deferred entirely. The demonstration runs on a Mac with Homebrew services. A brief k6 load test on Day 9 gives one illustrative number for "how does it scale." **This is a deliberate, time-bounded exception to [CLAUDE.md](../CLAUDE.md) north-star principle #1 (one-command deploy); the exception ends when Part 9 lands (June/July 2026).** **Deferred to post-sprint (June/July):** full deployment substrate (Docker Compose for dev, Helm chart, Terraform modules), production hardening, capacity planning, deployment to SBS Azure tenancy or bare-metal. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+
 ### Part 10 — AI/ML Evaluation Framework
 
 Goal: every classifier, ranker, embedding, and agent decision has a documented evaluation method, a baseline number, a regression test, and a path to re-evaluation when models change.
@@ -204,6 +246,8 @@ Goal: every classifier, ranker, embedding, and agent decision has a documented e
 - [ ] Second-opinion review: framework against CGAP's "Responsible AI in SupTech" guidance.
 
 **Exit:** Every model in the stack has a numeric baseline (with label), a regression test, and a Grafana drift dashboard. A PR that regresses any model fails CI.
+
+**May 25 scope.** Deferred entirely. The demonstration uses curated synthetic data. **Deferred to post-sprint (July):** per-model evaluation datasets, metrics, regression gates, drift dashboards, evaluation against real complaint data once data access is in place. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 11 — Standards Pack & Reporting Taxonomy Distribution
 
@@ -223,6 +267,8 @@ Goal: SBS publishes a machine-readable Anexo 1-A that any institution, vendor, o
 - [ ] Second-opinion review: Standards Pack against EBA reporting taxonomy distribution and HMRC's Making Tax Digital schemas.
 
 **Exit:** A third party (vendor, supervised institution, peer regulator) can download v1.0.0 of the Standards Pack, validate sample payloads, generate clients, and integrate — entirely from the published artifact, with no access to SBS staff.
+
+**May 25 scope.** Reduced. Standards pack v0.1 (OpenAPI + JSON Schema) generated and version-stamped as part of Part 7's May 25 work. **Deferred to post-sprint (June/July):** SemVer versioning policy, code lists distribution, OCI artifact publishing, GitHub release distribution, full standards pack governance. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ## Daily discipline
 

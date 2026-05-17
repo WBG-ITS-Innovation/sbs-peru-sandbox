@@ -34,6 +34,8 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0022 | python-version-3-12                   | Accepted | Prompt 3 / Part 1    | Python 3.12 only; `requires-python = ">=3.12,<3.13"`; no CI matrix on Python versions |
 | 0023 | workspace-layout-uv-members           | Accepted | Prompt 3 / Part 1    | uv workspace with members `api/`, `agents/`, `tools/`, `sdk/`; `frontend/` and `infra/` outside the workspace; flat per-member layout for now |
 | 0025 | may-25-sprint-critical-path           | Proposed | Prompt 4 / Part 1    | May 25 sprint kickoff scope: Parts 2/3/4 full, Parts 5/6/7/8/11 reduced, Parts 9/10 deferred entirely; PLAN.md restructure. Proposed until a sprint-phasing comparator lands in docs/research/. |
+| 0026 | anexo-1a-curated-subset               | Accepted | Prompt 5 / Part 2    | 15-field subset of Anexo 1-A for the May 25 sandbox, reconciled against Resolución SBS N° 04036-2022; PII fields and Anexos B/C/D code-list distribution deferred to Part 11. |
+| 0027 | openapi-as-canonical-contract         | Accepted | Prompt 5 / Part 2    | The OpenAPI 3.1 specification (`api/openapi/sbs-api-v1.yaml`) is the canonical contract; Pydantic v2 models implement it; JSON Schemas exported from Pydantic; match-test enforces alignment. |
 
 ## How to add an ADR
 

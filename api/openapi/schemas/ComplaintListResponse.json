@@ -1,0 +1,151 @@
+{
+  "$defs": {
+    "Channel": {
+      "description": "Channel through which the complaint was registered — Resolución Anexo 1-A #7 (Anexo A).\n\nRepresentative subset of Anexo A channel codes.",
+      "enum": [
+        "AGENCIA",
+        "WEB",
+        "APP_MOVIL",
+        "TELEFONO",
+        "CORREO",
+        "PRESENCIAL_SBS",
+        "OTRO"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "ComplaintListItem": {
+      "additionalProperties": false,
+      "description": "One row of ``GET /v1/complaints`` list response.\n\nA reduced view of the full :class:`Complaint` payload. Free-text fields\n(description_text) are omitted from list responses to keep payloads small;\ninstitutions fetch the full :class:`Complaint` via the by-id endpoint.",
+      "properties": {
+        "channel": {
+          "$ref": "#/$defs/Channel"
+        },
+        "complaint_id": {
+          "title": "Complaint Id",
+          "type": "string"
+        },
+        "institution_id": {
+          "title": "Institution Id",
+          "type": "string"
+        },
+        "motivo_code": {
+          "$ref": "#/$defs/MotivoCode"
+        },
+        "product_category": {
+          "$ref": "#/$defs/ProductCategory"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "received_date": {
+          "format": "date",
+          "title": "Received Date",
+          "type": "string"
+        },
+        "resolution_status": {
+          "$ref": "#/$defs/ResolutionStatus"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        }
+      },
+      "required": [
+        "complaint_id",
+        "institution_id",
+        "received_date",
+        "product_category",
+        "channel",
+        "motivo_code",
+        "severity",
+        "resolution_status",
+        "received_at"
+      ],
+      "title": "ComplaintListItem",
+      "type": "object"
+    },
+    "MotivoCode": {
+      "description": "Motivo del reclamo — Resolución Anexo 1-A #15 (Anexo C).\n\nRepresentative subset of Anexo C motivos. The full code list is deferred\nto Part 11.",
+      "enum": [
+        "COBRO_INDEBIDO",
+        "OPERACION_NO_RECONOCIDA",
+        "DEMORA_ATENCION",
+        "INFORMACION_INCORRECTA",
+        "INCUMPLIMIENTO_CONTRATO",
+        "CALIDAD_SERVICIO",
+        "PUBLICIDAD_ENGANOSA",
+        "OTRO"
+      ],
+      "title": "MotivoCode",
+      "type": "string"
+    },
+    "ProductCategory": {
+      "description": "Product / service / operation category — Resolución Anexo 1-A #14 (Anexo B).\n\nRepresentative subset. The full Anexo B code list is deferred to Part 11.",
+      "enum": [
+        "DEPOSITOS",
+        "CREDITOS",
+        "TARJETA_CREDITO",
+        "TARJETA_DEBITO",
+        "SEGUROS",
+        "AFP_PENSIONES",
+        "COOPAC",
+        "OTRO"
+      ],
+      "title": "ProductCategory",
+      "type": "string"
+    },
+    "ResolutionStatus": {
+      "description": "Estado del reclamo — Resolución Anexo 1-A #22.\n\nResolución values: ``pendiente``, ``atendido``, ``anulado``. Mirrored here\nin lowercase to match the resolución wording.",
+      "enum": [
+        "pendiente",
+        "atendido",
+        "anulado"
+      ],
+      "title": "ResolutionStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "description": "Severity tag set by the institution at submission time.\n\nNo counterpart in Anexo 1-A; this is a prototype-level field used by the\nsupervisory agents (Part 5+) for triage. See ADR 0026 for the divergence\nrationale.",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/complaints`` (collection).",
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ComplaintListItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Opaque cursor. If null, there are no more pages. Pass back as the next_cursor query parameter to fetch the next page.",
+      "title": "Next Cursor"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "ComplaintListResponse",
+  "type": "object"
+}

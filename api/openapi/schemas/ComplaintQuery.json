@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "Channel": {
+      "description": "Channel through which the complaint was registered — Resolución Anexo 1-A #7 (Anexo A).\n\nRepresentative subset of Anexo A channel codes.",
+      "enum": [
+        "AGENCIA",
+        "WEB",
+        "APP_MOVIL",
+        "TELEFONO",
+        "CORREO",
+        "PRESENCIAL_SBS",
+        "OTRO"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "MotivoCode": {
+      "description": "Motivo del reclamo — Resolución Anexo 1-A #15 (Anexo C).\n\nRepresentative subset of Anexo C motivos. The full code list is deferred\nto Part 11.",
+      "enum": [
+        "COBRO_INDEBIDO",
+        "OPERACION_NO_RECONOCIDA",
+        "DEMORA_ATENCION",
+        "INFORMACION_INCORRECTA",
+        "INCUMPLIMIENTO_CONTRATO",
+        "CALIDAD_SERVICIO",
+        "PUBLICIDAD_ENGANOSA",
+        "OTRO"
+      ],
+      "title": "MotivoCode",
+      "type": "string"
+    },
+    "ProductCategory": {
+      "description": "Product / service / operation category — Resolución Anexo 1-A #14 (Anexo B).\n\nRepresentative subset. The full Anexo B code list is deferred to Part 11.",
+      "enum": [
+        "DEPOSITOS",
+        "CREDITOS",
+        "TARJETA_CREDITO",
+        "TARJETA_DEBITO",
+        "SEGUROS",
+        "AFP_PENSIONES",
+        "COOPAC",
+        "OTRO"
+      ],
+      "title": "ProductCategory",
+      "type": "string"
+    },
+    "ResolutionStatus": {
+      "description": "Estado del reclamo — Resolución Anexo 1-A #22.\n\nResolución values: ``pendiente``, ``atendido``, ``anulado``. Mirrored here\nin lowercase to match the resolución wording.",
+      "enum": [
+        "pendiente",
+        "atendido",
+        "anulado"
+      ],
+      "title": "ResolutionStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Query parameters for ``GET /v1/complaints``.\n\nAll filters are optional and combined with AND semantics. Pagination is\ncursor-based; institutions pass the ``next_cursor`` echoed in the\nprevious response.",
+  "properties": {
+    "channel": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Channel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "institution_id": {
+      "anyOf": [
+        {
+          "pattern": "^SBS-\\d{4,6}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Filter by institution. SBS supervisor users may scope queries across institutions; institution users see only their own.",
+      "title": "Institution Id"
+    },
+    "motivo_code": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MotivoCode"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 8,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Opaque pagination cursor. Pass the value from the previous response's `next_cursor` field. Omit on the first page.",
+      "title": "Next Cursor"
+    },
+    "page_size": {
+      "default": 50,
+      "maximum": 200,
+      "minimum": 1,
+      "title": "Page Size",
+      "type": "integer"
+    },
+    "product_category": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProductCategory"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "received_date_from": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Inclusive lower bound on received_date.",
+      "title": "Received Date From"
+    },
+    "received_date_to": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Inclusive upper bound on received_date.",
+      "title": "Received Date To"
+    },
+    "resolution_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResolutionStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "title": "ComplaintQuery",
+  "type": "object"
+}

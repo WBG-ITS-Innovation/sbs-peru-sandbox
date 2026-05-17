@@ -1,0 +1,1053 @@
+openapi: 3.1.0
+
+info:
+  title: SBS SupTech Complaints API
+  version: 0.1.0
+  summary: Institution-to-regulator complaint reporting against Anexo 1-A.
+  description: |
+    The SBS SupTech Complaints API is the institution-facing surface through
+    which supervised institutions (banks, financieras, AFPs, COOPACs,
+    insurers, and other entities under SBS supervision) submit complaint
+    records to the Superintendencia de Banca, Seguros y AFP (SBS) for
+    regulatory analysis.
+
+    Two ingestion tiers are offered. Tier 1 is a near-real-time per-complaint
+    HTTP API for institutions with mature integration capability. Tier 2 is
+    a signed batch upload for institutions whose operational capacity does
+    not yet support per-event submission. Both tiers carry the same Anexo 1-A
+    payload schema and the same validation rules.
+
+    This v0.1.0 contract is the May 25, 2026 sprint kickoff scope. The
+    payload model implements a curated 15-field subset of the Anexo 1-A
+    taxonomy from Resolución SBS N° 04036-2022. Full Anexo 1-A coverage
+    arrives in a later release alongside the Standards Pack v1.0.0
+    distribution (see PLAN.md Part 11).
+
+    See ADR 0026 for the field-by-field reconciliation of the 15-field
+    subset against the resolución, and ADR 0027 for the rule that this
+    specification — not the Pydantic implementation — is the canonical
+    contract.
+  contact:
+    name: SBS SupTech engineering
+    url: https://www.sbs.gob.pe
+  license:
+    name: Internal — see repository LICENSE
+    url: https://github.com/wbg-suptech/sbs-suptech-prototype/blob/main/LICENSE
+  x-status: draft
+  x-canonical-source: api/openapi/sbs-api-v1.yaml
+
+servers:
+  - url: https://api-sandbox.sbs.gob.pe/v1
+    description: Sandbox (illustrative URL; placeholder pending SBS confirmation).
+  - url: http://localhost:8000/v1
+    description: Local development server (FastAPI scaffold, lands in Prompt 6).
+
+tags:
+  - name: Ingestion (Tier 1)
+    description: Near-real-time per-complaint submission and retrieval.
+  - name: Ingestion (Tier 2)
+    description: Signed batch upload for institutions with batch-only capability.
+  - name: Institutions
+    description: Per-institution operational status.
+  - name: Meta
+    description: Health and version metadata.
+
+security:
+  - mtls: []
+    oauth2_client_credentials: [complaints.write]
+    hmac_signature: []
+
+paths:
+
+  /complaints:
+    post:
+      tags: [Ingestion (Tier 1)]
+      summary: Submit a single complaint
+      operationId: createComplaint
+      description: |
+        Submit one complaint to SBS. The body carries the Anexo 1-A 15-field
+        payload wrapped in a submission envelope. The request must carry an
+        `Idempotency-Key` HTTP header (UUID v4 recommended) for at-least-once
+        delivery semantics. On retry with the same key within 24 hours, the
+        server replays the original response without re-processing.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/TraceparentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintSubmission"
+            examples:
+              valid:
+                $ref: "#/components/examples/ValidComplaintSubmission"
+      responses:
+        "201":
+          description: Complaint accepted.
+          headers:
+            Location:
+              schema: { type: string }
+              description: URL of the created complaint resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintCreated"
+              examples:
+                created:
+                  $ref: "#/components/examples/ComplaintCreatedExample"
+        "400": { $ref: "#/components/responses/Problem400" }
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "409": { $ref: "#/components/responses/Problem409" }
+        "422": { $ref: "#/components/responses/Problem422" }
+        "429": { $ref: "#/components/responses/Problem429" }
+        "500": { $ref: "#/components/responses/Problem500" }
+    get:
+      tags: [Ingestion (Tier 1)]
+      summary: List complaints
+      operationId: listComplaints
+      description: |
+        Retrieve a paginated list of complaints. Supervisor users may filter
+        across institutions; institution users see only their own. Pagination
+        is cursor-based.
+      parameters:
+        - in: query
+          name: institution_id
+          schema: { type: string, pattern: "^SBS-\\d{4,6}$" }
+        - in: query
+          name: received_date_from
+          schema: { type: string, format: date }
+        - in: query
+          name: received_date_to
+          schema: { type: string, format: date }
+        - in: query
+          name: product_category
+          schema: { $ref: "#/components/schemas/ProductCategory" }
+        - in: query
+          name: channel
+          schema: { $ref: "#/components/schemas/Channel" }
+        - in: query
+          name: motivo_code
+          schema: { $ref: "#/components/schemas/MotivoCode" }
+        - in: query
+          name: resolution_status
+          schema: { $ref: "#/components/schemas/ResolutionStatus" }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - in: query
+          name: next_cursor
+          schema: { type: string, minLength: 8, maxLength: 256 }
+        - $ref: "#/components/parameters/TraceparentHeader"
+      responses:
+        "200":
+          description: Page of complaints.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintListResponse"
+              examples:
+                page:
+                  $ref: "#/components/examples/ComplaintListExample"
+        "400": { $ref: "#/components/responses/Problem400" }
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "422": { $ref: "#/components/responses/Problem422" }
+        "429": { $ref: "#/components/responses/Problem429" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /complaints/{complaint_id}:
+    parameters:
+      - $ref: "#/components/parameters/ComplaintIdPath"
+      - $ref: "#/components/parameters/TraceparentHeader"
+    get:
+      tags: [Ingestion (Tier 1)]
+      summary: Retrieve a complaint by id
+      operationId: getComplaintById
+      description: Return the full Anexo 1-A complaint payload for a given complaint_id.
+      responses:
+        "200":
+          description: Complaint found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Complaint"
+              examples:
+                complaint:
+                  $ref: "#/components/examples/ValidComplaintBody"
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "404": { $ref: "#/components/responses/Problem404" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /complaints/{complaint_id}/status:
+    parameters:
+      - $ref: "#/components/parameters/ComplaintIdPath"
+      - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      - $ref: "#/components/parameters/TraceparentHeader"
+    patch:
+      tags: [Ingestion (Tier 1)]
+      summary: Update the resolution status of a complaint
+      operationId: patchComplaintStatus
+      description: |
+        Transition a complaint's resolution status. A reason is required when
+        transitioning to `atendido` or `anulado`. The audit log records both
+        the prior and new state along with the reason.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintStatusPatch"
+            examples:
+              resolve:
+                summary: Resolve a complaint
+                value:
+                  resolution_status: atendido
+                  reason: >-
+                    Cargo revertido el 2026-05-14. Cliente notificado por
+                    correo electrónico el mismo día.
+      responses:
+        "200":
+          description: Status updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintCreated"
+        "400": { $ref: "#/components/responses/Problem400" }
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "404": { $ref: "#/components/responses/Problem404" }
+        "409": { $ref: "#/components/responses/Problem409" }
+        "422": { $ref: "#/components/responses/Problem422" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /batches:
+    post:
+      tags: [Ingestion (Tier 2)]
+      summary: Submit a batch manifest (Tier 2)
+      operationId: createBatchManifest
+      description: |
+        Submit a manifest describing a batch file the institution intends to
+        upload. The server responds with a presigned upload URL valid for
+        sixty minutes. The institution uploads the file via PUT to that URL,
+        out-of-band of this API. Tier 2 file processing is asynchronous;
+        poll the batch status endpoint or rely on the webhook callback
+        configured per-institution.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/TraceparentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchManifest"
+            examples:
+              valid:
+                $ref: "#/components/examples/ValidBatchManifest"
+      responses:
+        "202":
+          description: Manifest accepted; ready for upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchSubmission"
+        "400": { $ref: "#/components/responses/Problem400" }
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "409": { $ref: "#/components/responses/Problem409" }
+        "422": { $ref: "#/components/responses/Problem422" }
+        "429": { $ref: "#/components/responses/Problem429" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /batches/{batch_id}:
+    parameters:
+      - $ref: "#/components/parameters/BatchIdPath"
+      - $ref: "#/components/parameters/TraceparentHeader"
+    get:
+      tags: [Ingestion (Tier 2)]
+      summary: Retrieve batch status
+      operationId: getBatchStatus
+      description: Return the lifecycle state and per-row counts for a previously submitted batch.
+      responses:
+        "200":
+          description: Current batch state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchStatus"
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "404": { $ref: "#/components/responses/Problem404" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /batches/{batch_id}/results:
+    parameters:
+      - $ref: "#/components/parameters/BatchIdPath"
+      - $ref: "#/components/parameters/TraceparentHeader"
+      - in: query
+        name: page_size
+        schema: { type: integer, minimum: 1, maximum: 1000, default: 200 }
+      - in: query
+        name: next_cursor
+        schema: { type: string, minLength: 8, maxLength: 256 }
+    get:
+      tags: [Ingestion (Tier 2)]
+      summary: Retrieve per-row results of a processed batch
+      operationId: getBatchResults
+      description: |
+        Each row of the source file is reported here with its acceptance
+        outcome. Accepted rows carry the assigned `complaint_id`; rejected
+        rows carry an RFC 9457 problem detail with field-level errors.
+      responses:
+        "200":
+          description: Page of result rows.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResultsResponse"
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "404": { $ref: "#/components/responses/Problem404" }
+        "409":
+          description: Batch not yet completed.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /institutions/{institution_id}/status:
+    parameters:
+      - in: path
+        name: institution_id
+        required: true
+        schema: { type: string, pattern: "^SBS-\\d{4,6}$" }
+      - $ref: "#/components/parameters/TraceparentHeader"
+    get:
+      tags: [Institutions]
+      summary: Retrieve operational status for an institution
+      operationId: getInstitutionStatus
+      description: Return the onboarding state, rate-limit allocation, and recent-activity summary for one institution.
+      responses:
+        "200":
+          description: Status snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionStatus"
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "404": { $ref: "#/components/responses/Problem404" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /health:
+    get:
+      tags: [Meta]
+      summary: Health probe
+      operationId: getHealth
+      description: |
+        Aggregate health. Returns `ok`, `degraded`, or `down`. Distinct from
+        the Kubernetes liveness/readiness probes that the FastAPI scaffold
+        will expose under `/health/live` and `/health/ready` (Prompt 6); this
+        endpoint is the institution-facing summary.
+      security: []
+      responses:
+        "200":
+          description: Health snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Service down.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /version:
+    get:
+      tags: [Meta]
+      summary: Version metadata
+      operationId: getVersion
+      description: Return the running API version, the build commit SHA, and the active Anexo 1-A schema version.
+      security: []
+      responses:
+        "200":
+          description: Version snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionInfo"
+
+components:
+
+  securitySchemes:
+    mtls:
+      type: mutualTLS
+      description: |
+        Institutions present a client certificate issued by the SBS CA. mTLS
+        termination happens at the edge; per-call validation is enforced by
+        the API service. Implementation details land in Prompt 7.
+    oauth2_client_credentials:
+      type: oauth2
+      description: |
+        OAuth 2.0 client_credentials flow scoped per institution. The token
+        endpoint and scope catalog are published in the developer portal.
+        Implementation details land in Prompt 7.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth-sandbox.sbs.gob.pe/oauth2/token
+          scopes:
+            complaints.write: Submit and update complaints
+            complaints.read: Read complaints
+            batches.write: Submit batches
+            batches.read: Read batch status and results
+    hmac_signature:
+      type: apiKey
+      name: X-SBS-Signature
+      in: header
+      description: |
+        HMAC-SHA256 signature over a canonical request envelope (method, path,
+        body hash, timestamp, idempotency key). Detached from the OAuth bearer
+        token because both layers serve different purposes: the bearer asserts
+        institutional identity at the edge, the HMAC binds a specific request
+        body. Implementation details land in Prompt 7.
+
+  parameters:
+    IdempotencyKeyHeader:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema: { type: string, format: uuid }
+      description: |
+        UUID v4. Required on every POST and PATCH. Replays of the same key
+        within 24 hours return the original response (a cached representation),
+        not a fresh execution. Keys are scoped per institution.
+    TraceparentHeader:
+      in: header
+      name: traceparent
+      required: false
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
+      description: |
+        W3C traceparent identifier. If absent, the server generates one and
+        returns it in the response.
+    ComplaintIdPath:
+      in: path
+      name: complaint_id
+      required: true
+      schema:
+        type: string
+        pattern: "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$"
+        minLength: 6
+        maxLength: 32
+    BatchIdPath:
+      in: path
+      name: batch_id
+      required: true
+      schema:
+        type: string
+        pattern: "^batch_[A-Za-z0-9]{16,32}$"
+
+  responses:
+    Problem400:
+      description: Bad request (malformed envelope).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem401:
+      description: Authentication failed (invalid certificate, token, or signature).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem403:
+      description: Authorization failed (scope missing or institution not onboarded).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem404:
+      description: Resource not found.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem409:
+      description: Conflict (duplicate complaint_id, idempotency replay mismatch, illegal status transition).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem422:
+      description: Validation failed (body shape correct, content invalid).
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem429:
+      description: Per-institution rate limit exceeded.
+      headers:
+        Retry-After:
+          schema: { type: integer }
+          description: Seconds to wait before retrying.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem500:
+      description: Internal server error.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  schemas:
+
+    Complaint:
+      type: object
+      additionalProperties: false
+      required:
+        - complaint_id
+        - institution_id
+        - received_date
+        - complainant_doc_type
+        - product_category
+        - channel
+        - motivo_code
+        - severity
+        - description_text
+        - description_language
+        - complainant_age_range
+        - complainant_district
+        - submission_method
+        - resolution_status
+      properties:
+        complaint_id:
+          type: string
+          minLength: 6
+          maxLength: 32
+          pattern: "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$"
+          description: Anexo 1-A #1 — Código del reclamo (institution-assigned).
+        institution_id:
+          type: string
+          minLength: 8
+          maxLength: 10
+          pattern: "^SBS-\\d{4,6}$"
+          description: SBS-assigned institution code (Empresa código).
+        received_date:
+          type: string
+          format: date
+          description: Anexo 1-A #6 — Fecha de ingreso.
+        complainant_doc_type:
+          $ref: "#/components/schemas/ComplainantDocType"
+        product_category:
+          $ref: "#/components/schemas/ProductCategory"
+        channel:
+          $ref: "#/components/schemas/Channel"
+        motivo_code:
+          $ref: "#/components/schemas/MotivoCode"
+        severity:
+          $ref: "#/components/schemas/Severity"
+        description_text:
+          type: string
+          minLength: 10
+          maxLength: 8000
+          description: Anexo 1-A #17 — Detalle completo de reclamo.
+        description_language:
+          $ref: "#/components/schemas/DescriptionLanguage"
+        complainant_age_range:
+          $ref: "#/components/schemas/ComplainantAgeRange"
+        complainant_district:
+          type: string
+          pattern: "^\\d{4}$"
+          description: Anexo 1-A #13 — INEI ubigeo at department+province precision.
+        submission_method:
+          $ref: "#/components/schemas/SubmissionMethod"
+        original_reference_id:
+          type: [string, "null"]
+          maxLength: 32
+          pattern: "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$"
+          description: Anexo 1-A #23 — Reclamo previo (optional).
+        resolution_status:
+          $ref: "#/components/schemas/ResolutionStatus"
+      examples:
+        - complaint_id: BCO-2026-000017
+          institution_id: SBS-001234
+          received_date: 2026-05-12
+          complainant_doc_type: DNI
+          product_category: TARJETA_CREDITO
+          channel: APP_MOVIL
+          motivo_code: COBRO_INDEBIDO
+          severity: HIGH
+          description_text: >-
+            Se realizó un cargo no autorizado por S/ 245.00 en la tarjeta
+            de crédito el 10 de mayo. El cliente solicita reversa
+            inmediata y revisión del estado de cuenta.
+          description_language: es
+          complainant_age_range: "35_44"
+          complainant_district: "1501"
+          submission_method: APP_MOVIL
+          original_reference_id: null
+          resolution_status: pendiente
+
+    ComplaintSubmission:
+      type: object
+      additionalProperties: false
+      required: [complaint]
+      properties:
+        complaint:
+          $ref: "#/components/schemas/Complaint"
+        client_submission_id:
+          type: [string, "null"]
+          minLength: 8
+          maxLength: 64
+          description: Optional institution-side correlation id.
+
+    ComplaintCreated:
+      type: object
+      additionalProperties: false
+      required: [complaint_id, institution_id, received_at, resolution_status]
+      properties:
+        complaint_id: { type: string }
+        institution_id: { type: string }
+        received_at:
+          type: string
+          format: date-time
+          description: Server-assigned receipt timestamp (UTC).
+        resolution_status:
+          $ref: "#/components/schemas/ResolutionStatus"
+        client_submission_id:
+          type: [string, "null"]
+
+    ComplaintListItem:
+      type: object
+      additionalProperties: false
+      required:
+        - complaint_id
+        - institution_id
+        - received_date
+        - product_category
+        - channel
+        - motivo_code
+        - severity
+        - resolution_status
+        - received_at
+      properties:
+        complaint_id: { type: string }
+        institution_id: { type: string }
+        received_date: { type: string, format: date }
+        product_category: { $ref: "#/components/schemas/ProductCategory" }
+        channel: { $ref: "#/components/schemas/Channel" }
+        motivo_code: { $ref: "#/components/schemas/MotivoCode" }
+        severity: { $ref: "#/components/schemas/Severity" }
+        resolution_status: { $ref: "#/components/schemas/ResolutionStatus" }
+        received_at: { type: string, format: date-time }
+
+    ComplaintListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ComplaintListItem" }
+        next_cursor:
+          type: [string, "null"]
+
+    ComplaintStatusPatch:
+      type: object
+      additionalProperties: false
+      required: [resolution_status]
+      properties:
+        resolution_status:
+          $ref: "#/components/schemas/ResolutionStatus"
+        reason:
+          type: [string, "null"]
+          minLength: 10
+          maxLength: 2000
+      # JSON Schema 2020-12 conditional: reason is required when
+      # resolution_status transitions to a terminal state ('atendido' or
+      # 'anulado'). Generates SBS-422-002 on violation.
+      allOf:
+        - if:
+            properties:
+              resolution_status:
+                enum: [atendido, anulado]
+            required: [resolution_status]
+          then:
+            required: [reason]
+            properties:
+              reason:
+                type: string
+                minLength: 10
+                maxLength: 2000
+
+    BatchManifest:
+      type: object
+      additionalProperties: false
+      required:
+        - file_name
+        - institution_id
+        - reporting_period_start
+        - reporting_period_end
+        - schema_version
+        - row_count
+        - sha256
+        - submitted_at
+      properties:
+        file_name:
+          type: string
+          minLength: 4
+          maxLength: 255
+          pattern: "^[A-Za-z0-9._-]+\\.(csv|jsonl|json)$"
+        institution_id:
+          type: string
+          pattern: "^SBS-\\d{4,6}$"
+        reporting_period_start: { type: string, format: date }
+        reporting_period_end: { type: string, format: date }
+        schema_version:
+          type: string
+          pattern: "^v\\d+\\.\\d+\\.\\d+$"
+        row_count:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        sha256:
+          type: string
+          pattern: "^[a-f0-9]{64}$"
+        submitted_at: { type: string, format: date-time }
+
+    BatchSubmission:
+      type: object
+      additionalProperties: false
+      required: [batch_id, upload_url, upload_expires_at, status]
+      properties:
+        batch_id:
+          type: string
+          pattern: "^batch_[A-Za-z0-9]{16,32}$"
+        upload_url: { type: string, format: uri }
+        upload_expires_at: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [pending_upload]
+
+    BatchStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - batch_id
+        - institution_id
+        - status
+        - submitted_at
+        - row_count_submitted
+        - row_count_accepted
+        - row_count_rejected
+      properties:
+        batch_id:
+          type: string
+          pattern: "^batch_[A-Za-z0-9]{16,32}$"
+        institution_id:
+          type: string
+          pattern: "^SBS-\\d{4,6}$"
+        status:
+          type: string
+          enum:
+            - pending_upload
+            - received
+            - processing
+            - completed
+            - completed_with_errors
+            - failed
+        submitted_at: { type: string, format: date-time }
+        completed_at:
+          type: [string, "null"]
+          format: date-time
+        row_count_submitted: { type: integer, minimum: 0 }
+        row_count_accepted: { type: integer, minimum: 0 }
+        row_count_rejected: { type: integer, minimum: 0 }
+
+    BatchResultRow:
+      type: object
+      additionalProperties: false
+      required: [row_index, accepted]
+      properties:
+        row_index: { type: integer, minimum: 0 }
+        accepted: { type: boolean }
+        complaint_id:
+          type: [string, "null"]
+        problem:
+          oneOf:
+            - $ref: "#/components/schemas/ProblemDetail"
+            - type: "null"
+
+    BatchResultsResponse:
+      type: object
+      additionalProperties: false
+      required: [batch_id, rows]
+      properties:
+        batch_id:
+          type: string
+          pattern: "^batch_[A-Za-z0-9]{16,32}$"
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/BatchResultRow" }
+        next_cursor:
+          type: [string, "null"]
+
+    InstitutionStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - institution_id
+        - onboarded
+        - rate_limit_per_minute
+        - complaints_received_today
+        - schema_version
+      properties:
+        institution_id:
+          type: string
+          pattern: "^SBS-\\d{4,6}$"
+        onboarded: { type: boolean }
+        rate_limit_per_minute: { type: integer, minimum: 0 }
+        complaints_received_today: { type: integer, minimum: 0 }
+        last_submission_at:
+          type: [string, "null"]
+          format: date-time
+        schema_version:
+          type: string
+          pattern: "^v\\d+\\.\\d+\\.\\d+$"
+
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [status, version, checked_at]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        version: { type: string }
+        checked_at: { type: string, format: date-time }
+
+    VersionInfo:
+      type: object
+      additionalProperties: false
+      required: [api_version, build_sha, schema_version]
+      properties:
+        api_version: { type: string }
+        build_sha:
+          type: string
+          minLength: 7
+          maxLength: 40
+        schema_version:
+          type: string
+          pattern: "^v\\d+\\.\\d+\\.\\d+$"
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            RFC 9457 type — URI identifying the problem class. Placeholder
+            namespace pending SBS confirmation.
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: [string, "null"]
+          maxLength: 2000
+        instance:
+          type: [string, "null"]
+        code:
+          type: string
+          pattern: "^SBS-\\d{3}-\\d{3}$"
+          description: Stable machine-readable error code (see api/openapi/error-catalog.md).
+        trace_id:
+          type: [string, "null"]
+        errors:
+          type: [array, "null"]
+          items: { $ref: "#/components/schemas/ProblemFieldError" }
+
+    ProblemFieldError:
+      type: object
+      additionalProperties: false
+      required: [field, rule, message]
+      properties:
+        field:
+          type: string
+          minLength: 1
+          maxLength: 200
+        rule:
+          type: string
+          minLength: 1
+          maxLength: 64
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+    # --- taxonomy enums -----------------------------------------------------
+
+    ComplainantDocType:
+      type: string
+      enum: [DNI, CE, PASAPORTE, RUC, OTRO]
+      description: Document-type code identifying the complainant — Anexo 1-A #2 (Anexo A subset).
+
+    ProductCategory:
+      type: string
+      enum:
+        - DEPOSITOS
+        - CREDITOS
+        - TARJETA_CREDITO
+        - TARJETA_DEBITO
+        - SEGUROS
+        - AFP_PENSIONES
+        - COOPAC
+        - OTRO
+      description: Product / service / operation category — Anexo 1-A #14 (Anexo B subset).
+
+    Channel:
+      type: string
+      enum:
+        - AGENCIA
+        - WEB
+        - APP_MOVIL
+        - TELEFONO
+        - CORREO
+        - PRESENCIAL_SBS
+        - OTRO
+      description: Channel through which the complaint was registered — Anexo 1-A #7 (Anexo A subset).
+
+    SubmissionMethod:
+      type: string
+      enum:
+        - AGENCIA
+        - CAJERO
+        - APP_MOVIL
+        - WEB
+        - POS
+        - AGENTE_CORRESPONSAL
+        - OTRO
+      description: Channel through which the underlying operation occurred — Anexo 1-A #8.
+
+    MotivoCode:
+      type: string
+      enum:
+        - COBRO_INDEBIDO
+        - OPERACION_NO_RECONOCIDA
+        - DEMORA_ATENCION
+        - INFORMACION_INCORRECTA
+        - INCUMPLIMIENTO_CONTRATO
+        - CALIDAD_SERVICIO
+        - PUBLICIDAD_ENGANOSA
+        - OTRO
+      description: Motivo del reclamo — Anexo 1-A #15 (Anexo C subset).
+
+    Severity:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      description: Severity tag set by the institution. No counterpart in Anexo 1-A; see ADR 0026.
+
+    DescriptionLanguage:
+      type: string
+      enum: [es, qu, ay, en]
+      description: ISO 639 language code for description_text. No counterpart in Anexo 1-A.
+
+    ComplainantAgeRange:
+      type: string
+      enum:
+        - UNDER_25
+        - "25_34"
+        - "35_44"
+        - "45_54"
+        - "55_64"
+        - OVER_64
+        - UNKNOWN
+      description: Bucketed age range; included in lieu of Anexo 1-A's PII fields.
+
+    ResolutionStatus:
+      type: string
+      enum: [pendiente, atendido, anulado]
+      description: Anexo 1-A #22 — Estado.
+
+  examples:
+    ValidComplaintBody:
+      summary: A valid Anexo 1-A complaint payload
+      value:
+        complaint_id: BCO-2026-000017
+        institution_id: SBS-001234
+        received_date: 2026-05-12
+        complainant_doc_type: DNI
+        product_category: TARJETA_CREDITO
+        channel: APP_MOVIL
+        motivo_code: COBRO_INDEBIDO
+        severity: HIGH
+        description_text: >-
+          Se realizó un cargo no autorizado por S/ 245.00 en la tarjeta de
+          crédito el 10 de mayo. El cliente solicita reversa inmediata.
+        description_language: es
+        complainant_age_range: "35_44"
+        complainant_district: "1501"
+        submission_method: APP_MOVIL
+        original_reference_id: null
+        resolution_status: pendiente
+    ValidComplaintSubmission:
+      summary: A valid complaint submission
+      value:
+        complaint:
+          complaint_id: BCO-2026-000017
+          institution_id: SBS-001234
+          received_date: 2026-05-12
+          complainant_doc_type: DNI
+          product_category: TARJETA_CREDITO
+          channel: APP_MOVIL
+          motivo_code: COBRO_INDEBIDO
+          severity: HIGH
+          description_text: >-
+            Se realizó un cargo no autorizado por S/ 245.00 en la tarjeta
+            de crédito el 10 de mayo.
+          description_language: es
+          complainant_age_range: "35_44"
+          complainant_district: "1501"
+          submission_method: APP_MOVIL
+          original_reference_id: null
+          resolution_status: pendiente
+        client_submission_id: sub-2026-05-12-abc123
+    ComplaintCreatedExample:
+      summary: 201 Created response
+      value:
+        complaint_id: BCO-2026-000017
+        institution_id: SBS-001234
+        received_at: 2026-05-12T15:42:11Z
+        resolution_status: pendiente
+        client_submission_id: sub-2026-05-12-abc123
+    ComplaintListExample:
+      summary: One page of complaints
+      value:
+        items:
+          - complaint_id: BCO-2026-000017
+            institution_id: SBS-001234
+            received_date: 2026-05-12
+            product_category: TARJETA_CREDITO
+            channel: APP_MOVIL
+            motivo_code: COBRO_INDEBIDO
+            severity: HIGH
+            resolution_status: pendiente
+            received_at: 2026-05-12T15:42:11Z
+        next_cursor: null
+    ValidBatchManifest:
+      summary: A valid batch manifest
+      value:
+        file_name: BCO-2026-05.jsonl
+        institution_id: SBS-001234
+        reporting_period_start: 2026-05-01
+        reporting_period_end: 2026-05-31
+        schema_version: v0.1.0
+        row_count: 412
+        sha256: cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe
+        submitted_at: 2026-06-01T08:30:00Z

@@ -1,0 +1,43 @@
+{
+  "$defs": {
+    "ResolutionStatus": {
+      "description": "Estado del reclamo — Resolución Anexo 1-A #22.\n\nResolución values: ``pendiente``, ``atendido``, ``anulado``. Mirrored here\nin lowercase to match the resolución wording.",
+      "enum": [
+        "pendiente",
+        "atendido",
+        "anulado"
+      ],
+      "title": "ResolutionStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``PATCH /v1/complaints/{complaint_id}/status``.\n\nOnly the :class:`ResolutionStatus` field is mutable post-creation in the\nMay 25 sandbox. The reason field is required when transitioning to\n'atendido' or 'anulado'; the model-level validator below enforces this.\nViolations are reported as SBS-422-002 by the error catalog.",
+  "properties": {
+    "reason": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "minLength": 10,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Required when transitioning to 'atendido' or 'anulado'. Free text capturing the rationale; recorded in the audit log.",
+      "title": "Reason"
+    },
+    "resolution_status": {
+      "$ref": "#/$defs/ResolutionStatus",
+      "description": "New resolution status. Must differ from the current state."
+    }
+  },
+  "required": [
+    "resolution_status"
+  ],
+  "title": "ComplaintStatusPatch",
+  "type": "object"
+}

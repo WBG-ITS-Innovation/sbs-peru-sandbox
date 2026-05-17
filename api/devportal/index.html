@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SBS SupTech Complaints API — Developer Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Developer portal for the SBS SupTech Complaints API. Renders the OpenAPI 3.1 specification as a navigable reference for supervised institutions."
+    />
+
+    <!-- Stoplight Elements styles. CDN dependency; vendoring is a Prompt 9 concern. -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@stoplight/elements@8.4.10/styles.min.css"
+    />
+
+    <style>
+      :root {
+        --wbg-navy: #002244;
+        --wbg-cyan: #00a3e0;
+        --wbg-grey: #4a4a4a;
+        --wbg-bg: #f5f7fa;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background: var(--wbg-bg);
+        color: var(--wbg-grey);
+      }
+      header.sbs-banner {
+        background: var(--wbg-navy);
+        color: white;
+        padding: 14px 22px;
+        border-bottom: 3px solid var(--wbg-cyan);
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+      }
+      header.sbs-banner h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+      header.sbs-banner span.tagline {
+        font-size: 13px;
+        opacity: 0.85;
+      }
+      header.sbs-banner span.version {
+        margin-left: auto;
+        font-size: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 3px 8px;
+        border-radius: 3px;
+      }
+      main.portal {
+        height: calc(100vh - 56px);
+      }
+      .sandbox-note {
+        background: #fff8e1;
+        border-left: 4px solid #ffb300;
+        color: #5d4037;
+        padding: 10px 16px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="sbs-banner">
+      <h1>SBS SupTech Complaints API</h1>
+      <span class="tagline"
+        >Sandbox developer portal — Anexo 1-A reporting against
+        Resolución SBS N° 04036-2022</span
+      >
+      <span class="version" id="version-pill">v0.1.0</span>
+    </header>
+
+    <div class="sandbox-note">
+      Sandbox environment. Use synthetic data only. The
+      <code>type</code> URI namespace for error responses is provisional
+      pending SBS confirmation.
+    </div>
+
+    <main class="portal">
+      <elements-api
+        id="docs"
+        apiDescriptionUrl="../openapi/sbs-api-v1.yaml"
+        router="hash"
+        layout="sidebar"
+        hideSchemas="false"
+        hideInternal="true"
+        tryItCredentialsPolicy="omit"
+      ></elements-api>
+    </main>
+
+    <script
+      src="https://unpkg.com/@stoplight/elements@8.4.10/web-components.min.js"
+    ></script>
+  </body>
+</html>

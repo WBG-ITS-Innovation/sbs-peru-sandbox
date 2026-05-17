@@ -40,6 +40,34 @@ The repo root holds shared dev dependencies (harness scripts, tests). Each works
 
 The four commands you'll use day to day are `uv sync`, `uv run <cmd>`, `uv add <pkg>`, and `uv lock`. See [docs/setup/uv-quickstart.md](setup/uv-quickstart.md) for the short tour, including WBG-laptop installer notes and the Zscaler caveats. Locked decisions: [ADR 0021](adr/0021-package-manager-uv.md), [ADR 0022](adr/0022-python-version-3-12.md), [ADR 0023](adr/0023-workspace-layout-uv-members.md).
 
+### Running the developer portal locally
+
+The OpenAPI specification at [api/openapi/sbs-api-v1.yaml](../api/openapi/sbs-api-v1.yaml) is rendered as a navigable docs site via Stoplight Elements. To browse it locally:
+
+```bash
+bash scripts/serve-devportal.sh
+# opens a server on http://localhost:8080/devportal/
+```
+
+The page loads Stoplight Elements from the unpkg CDN (vendoring is a Part 7 / Prompt 9 concern; see [ADR 0027](adr/0027-openapi-as-canonical-contract.md)). The OpenAPI document is the canonical contract; the Pydantic models in `api/sbs_api/models/` implement it. Whenever you change the models, regenerate the standalone JSON Schemas:
+
+```bash
+bash scripts/regenerate-schemas.sh
+# writes api/openapi/schemas/<ModelName>.json
+```
+
+The integration test `tests/test_openapi_pydantic_match.py` asserts the OpenAPI specification and the exported Pydantic schemas agree on required fields, types, enums, formats, and patterns. Run it after any spec or model change:
+
+```bash
+uv run pytest tests/test_openapi_pydantic_match.py -v
+```
+
+To lint the OpenAPI specification with Spectral (project-local install — `npm install --no-save @stoplight/spectral-cli` if it is not already on disk):
+
+```bash
+./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml
+```
+
 ### First-time repo bootstrap (maintainer only)
 
 After the repository is first created on GitHub, the maintainer runs this once to create the labels the workflow and CODEOWNERS rules depend on:

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "202 response from ``POST /v1/batches`` (manifest accepted).",
+  "properties": {
+    "batch_id": {
+      "description": "Server-assigned batch identifier.",
+      "pattern": "^batch_[A-Za-z0-9]{16,32}$",
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "pending_upload",
+      "description": "Initial status. Transitions to 'processing' on receipt.",
+      "title": "Status",
+      "type": "string"
+    },
+    "upload_expires_at": {
+      "description": "Expiry of upload_url. Absolute UTC.",
+      "format": "date-time",
+      "title": "Upload Expires At",
+      "type": "string"
+    },
+    "upload_url": {
+      "description": "Presigned URL the institution PUTs the batch file to. Expires 60 minutes after issue.",
+      "format": "uri",
+      "minLength": 1,
+      "title": "Upload Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "batch_id",
+    "upload_url",
+    "upload_expires_at",
+    "status"
+  ],
+  "title": "BatchSubmission",
+  "type": "object"
+}

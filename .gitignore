@@ -56,3 +56,5 @@ docs/reviews/*.local.md
 
 # Allow example envs
 !.env.example
+# Certificate bundles — never commit (see docs/setup/corporate-proxy-and-zscaler.md)
+certs/

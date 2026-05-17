@@ -78,6 +78,63 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Target:** Between Prompt 8 (Part 1 final) and the first Prompt of Part 2.
 - **Trail:** This entry; the audit pattern itself was established in PR #20.
 
+### Sprint brief extraction from PLAN.md (Finding 1 + R1)
+- **Status:** Cross-review (gpt-5.4) flagged PLAN.md as mixing plan + sprint control + demo narrative.
+- **What's deferred:** Extracting the sprint-control prose (audience description, escalation paragraphs, fallback narrative) from PLAN.md's "May 25 sprint kickoff critical path" section into a separate `docs/sprint-briefs/2026-05-25-lima.md`. PLAN.md keeps per-Part scope subsections (durable plan content).
+- **Why deferred:** Out of scope for Prompt 4's paper-only scope-lock; rewriting the document structure tonight would expand the diff beyond agreed scope.
+- **Action when triggered:** Create `docs/sprint-briefs/` directory; move sprint-control prose; leave a PLAN.md pointer.
+- **Target:** Prompt 5 (once tooling lands).
+- **Trail:** Cross-review 2026-05-17, Triage Finding 1 + R1.
+
+### Per-Part "May 25 acceptance" checklist items (Finding 2 + R3)
+- **Status:** Cross-review flagged the per-Part "May 25 scope" subsections as describing deliverables without "done means" acceptance criteria. "Full / Reduced / Deferred" is not tied to test evidence.
+- **What's deferred:** Adding explicit "May 25 acceptance" checklist items in each Part's checklist section, anchored to the per-Part May 25 scope subsection. Each Part needs: live / recorded / static exemplar / architecture-only evidence type, acceptance check, owner, latest cut date.
+- **Why deferred:** Each Part owns its own acceptance criteria; landing them as a batch tonight would expand Prompt 4 outside paper-only.
+- **Action when triggered:** Each Part's first prompt (Prompts 5-8) adds the "May 25 acceptance" checklist.
+- **Target:** Prompts 5-8.
+- **Trail:** Cross-review 2026-05-17, Triage Finding 2 + R3.
+
+### DEFERRED.md hygiene pass (Finding 4)
+- **Status:** Cross-review flagged that decision gates / exit conditions for deferred work are not consistently stated across this file.
+- **What's deferred:** A pass to ensure every active deferral has: a clear trigger condition, a target Part or date, and a documented re-entry criterion. ADR 0025 introduces the Promotion criteria pattern; older entries lack it.
+- **Why deferred:** Document-wide hygiene pass is its own task and not in scope for the May 25 scope-lock.
+- **Action when triggered:** Walk every entry; add Promotion criteria / re-entry triggers where missing; mark stale entries Resolved.
+- **Target:** End of Part 1 (between Prompt 8 and Part 2 start, as part of the existing end-of-Part-1 checkpoint).
+- **Trail:** Cross-review 2026-05-17, Triage Finding 4.
+
+### Scripted local bring-up (`scripts/dev-up.sh` or `make dev-up`) (D1)
+- **Status:** Cross-review reviewer would not accept "Part 9 fully deferred" without a minimum reproducibility bar for the May 25 demo. The ADR addresses this by naming May 25 as a deliberate, time-bounded exception to the one-command-deploy north-star.
+- **What's deferred:** A one-command local bring-up — `scripts/dev-up.sh` or `make dev-up` — that brings up Homebrew Postgres + Redis + a venv-installed FastAPI process. Compensating control while Helm/Terraform are deferred.
+- **Why deferred:** Adding this tonight expands Prompt 4 from paper-only into infra scaffolding work; it is the right Part-5-or-6 deliverable.
+- **Action when triggered:** Write the script, document required Homebrew formulae, smoke-test on the maintainer's machine, link from ADR 0025 Consequences.
+- **Target:** Prompt 5 or 6.
+- **Trail:** Cross-review 2026-05-17, Triage D1.
+
+### PLAN.md "13-prompt sequence" needs date column (R6)
+- **Status:** Cross-review flagged that the prompt sequence in PLAN.md is written as if prompts are near-linear and bounded, hiding cross-prompt rework and calendar pressure.
+- **What's deferred:** A one-column "date landed / target date" alongside each prompt in the 13-prompt sequence list, so a future reader sees both the count and the calendar pressure.
+- **Why deferred:** Readability improvement, not a contradiction; out of paper-only scope tonight.
+- **Action when triggered:** Add a date column to the prompt list during a PLAN.md hygiene pass.
+- **Target:** Prompt 5 or as part of any PLAN.md restructure.
+- **Trail:** Cross-review 2026-05-17, Triage R6.
+
+### Zscaler CA bundle path mismatch with setup doc
+- **Status:** Surfaced during Prompt 4 closeout when `scripts/cross_review.py` failed with `CERTIFICATE_VERIFY_FAILED`.
+- **What's deferred:** Updating `docs/setup/corporate-proxy-and-zscaler.md` to reflect what actually works on the maintainer's machine.
+- **What was observed:** (a) The conventional `~/certs/wbg-ca-bundle.pem` path the setup doc references does not exist on the maintainer's machine. (b) The WBG CAs are installed in the macOS System keychain (`security find-certificate -a /Library/Keychains/System.keychain` shows "WBG Issuing CA1 G2", "...CA2 G2", "...CA6 G2", "...CA7 G2" plus "World Bank Group JSS Built-in Certificate Authority"). (c) The openai SDK uses `httpx`, which honours `SSL_CERT_FILE` but does NOT consult the macOS System keychain by default. (d) Working path: export the keychain certs (`security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/keychain.pem`), concatenate with certifi's bundle (`cat $(python -c 'import certifi;print(certifi.where())') /tmp/keychain.pem > combined.pem`), and set `SSL_CERT_FILE=combined.pem REQUESTS_CA_BUNDLE=combined.pem`.
+- **Why deferred:** Out of scope for Prompt 4 (paper-only scope-lock).
+- **Action when triggered:** Update `docs/setup/corporate-proxy-and-zscaler.md` to document the macOS keychain path explicitly, with a recipe for combining keychain + certifi bundles. Consider also adding a helper script `scripts/build-ca-bundle.sh` that produces the combined bundle.
+- **Target:** Next time the setup doc is touched.
+- **Trail:** Prompt 4 session journal.
+
+### Sprint-phasing comparator research note (ADR 0025 promotion blocker)
+- **Status:** ADR 0025 is Proposed pending a sprint-phasing or minimum-credible-demo comparator in `docs/research/`.
+- **What's deferred:** A research note added to `docs/research/market-comparators.md` (or a sibling file) that documents at least one externally-verifiable precedent for how supervisory authorities or comparable institutions stage a short-horizon kickoff demonstration. Candidates worth checking: FCA Regulatory Sandbox cohort phasing, BIS Innovation Hub project staging, Cambridge SupTech Lab post-mortems, GDS / 18F sprint-zero patterns, World Bank / CGAP SupTech project sequencing notes.
+- **Why deferred:** Prompt 4's job was to lock May 25 scope. Producing the research note in the same prompt would have either delayed the scope-lock or fabricated a precedent. The honest move is to land the scope-lock as Proposed and own the research-note gap.
+- **Action when triggered:** Open a follow-up prompt scoped to the research note alone. Add the section to `docs/research/`. Update ADR 0025 Precedent to cite it. Flip ADR 0025 status to Accepted in `docs/adr/README.md` and in the ADR itself. Update [docs/DECISIONS.md](DECISIONS.md) with a one-line note that ADR 0025 was promoted.
+- **Target:** Before May 25 (so the scope-lock decision is fully grounded by sprint kickoff). Must land off the critical path (i.e., interleaved between or after Prompts 5-8, not inside them) — Prompts 5-8 are the signed-ingestion stack and displacing one of them directly increases the schedule risk that ADR 0025 Consequences names as "real."
+- **Trail:** ADR 0025 Promotion criteria, Prompt 4 session journal, [docs/reviews/2026-05-17-may-25-critical-path-restructure.md](reviews/2026-05-17-may-25-critical-path-restructure.md) (benchmark-checker finding).
+
 ## How to revisit
 
 At the start of Part 9, the planner reads this document top-to-bottom and produces a Part 9 work plan. Items resolved in earlier Parts should be moved to the "Resolved" section below with a one-line note pointing at the resolving PR/commit.

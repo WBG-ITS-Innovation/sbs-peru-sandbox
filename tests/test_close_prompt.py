@@ -232,7 +232,6 @@ def test_journal_records_skip_reason(tmp_path: pathlib.Path, monkeypatch: pytest
     sessions = tmp_path / "sessions"
     sessions.mkdir()
     monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
-    monkeypatch.setattr(cp, "SESSION_TEMPLATE", sessions / "_template.md")  # not present
 
     journal = cp.write_session_journal(
         slug="supply-chain-and-secrets",
@@ -257,7 +256,6 @@ def test_journal_records_review_path(tmp_path: pathlib.Path, monkeypatch: pytest
     review.write_text("# review\n")
 
     monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
-    monkeypatch.setattr(cp, "SESSION_TEMPLATE", sessions / "_template.md")
     monkeypatch.setattr(cp, "REPO_ROOT", tmp_path)
 
     journal = cp.write_session_journal(
@@ -293,7 +291,6 @@ def _build_journal_for_format_test(
     sessions = tmp_path / "sessions"
     sessions.mkdir(exist_ok=True)
     monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
-    monkeypatch.setattr(cp, "SESSION_TEMPLATE", sessions / "_template.md")
     monkeypatch.setattr(cp, "REPO_ROOT", tmp_path)
 
     journal = cp.write_session_journal(
@@ -419,7 +416,6 @@ def test_journal_filename_uses_prompt_number_not_part(
     sessions = tmp_path / "sessions"
     sessions.mkdir()
     monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
-    monkeypatch.setattr(cp, "SESSION_TEMPLATE", sessions / "_template.md")
     monkeypatch.setattr(cp, "REPO_ROOT", tmp_path)
 
     journal = cp.write_session_journal(
@@ -594,3 +590,53 @@ def test_cross_review_slug_stability(monkeypatch: pytest.MonkeyPatch) -> None:
     # And the default (no override) is still the legacy `staged-diff` slug.
     _, slug_default = cr.collect_target("staged", slug_override=None)
     assert slug_default == "staged-diff"
+
+def test_journal_does_not_contain_template_placeholder_markers(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The generated journal must be a complete, self-contained document.
+
+    Regression for a bug surfaced during Prompt 3 closeout:
+    write_session_journal concatenated docs/sessions/_template.md to the
+    bottom of the generated journal, leaving every output with a duplicated
+    H1 (`# Session journal — <YYYY-MM-DD> — <slug>`) and visible
+    `<YYYY-MM-DD>`-style placeholder markers. The fix: emit the complete
+    structure inline; do not read or append the template file at runtime.
+
+    The test asserts: no template-style placeholders leak into the journal,
+    and exactly one H1 heading exists.
+    """
+    sessions = tmp_path / "sessions"
+    sessions.mkdir()
+    monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
+    monkeypatch.setattr(cp, "REPO_ROOT", tmp_path)
+    journal = cp.write_session_journal(
+        slug="example-prompt",
+        part=1,
+        prompt=99,
+        cross_review_path=None,
+        cross_review_skip_reason="test fixture",
+        adversarial_summary="no objections",
+        files=["pyproject.toml", "scripts/example.py"],
+    )
+    body = journal.read_text(encoding="utf-8")
+
+    # No template-shape placeholders leaked in.
+    for marker in ("<YYYY-MM-DD>",):
+        assert marker not in body, (
+            f"Template placeholder {marker!r} leaked into generated journal:\n"
+            f"{body}"
+        )
+
+    # Exactly one H1 heading (the metadata one — no duplicate from a
+    # concatenated template body).
+    h1_lines = [
+        line for line in body.splitlines()
+        if line.startswith("# ") and not line.startswith("## ")
+    ]
+    assert len(h1_lines) == 1, (
+        f"Expected exactly one H1 heading, found {len(h1_lines)}: {h1_lines}"
+    )
+    assert "# Session journal" in h1_lines[0], (
+        f"Unexpected H1 content: {h1_lines[0]!r}"
+    )

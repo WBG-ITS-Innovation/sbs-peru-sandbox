@@ -65,7 +65,6 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 REVIEWS_DIR = REPO_ROOT / "docs" / "reviews"
 SESSIONS_DIR = REPO_ROOT / "docs" / "sessions"
 PR_TEMPLATE = REPO_ROOT / ".github" / "pull_request_template.md"
-SESSION_TEMPLATE = SESSIONS_DIR / "_template.md"
 
 APPROVAL_STRINGS = {"approve", "APPROVE"}
 
@@ -206,10 +205,6 @@ def write_session_journal(
     journal_name = f"{date}-prompt-{prompt:02d}-{slug.replace('/', '-')}.md"
     path = SESSIONS_DIR / journal_name
 
-    template_body = ""
-    if SESSION_TEMPLATE.exists():
-        template_body = SESSION_TEMPLATE.read_text(encoding="utf-8")
-
     if cross_review_path:
         try:
             cr_display = cross_review_path.relative_to(REPO_ROOT)
@@ -256,11 +251,41 @@ def write_session_journal(
         "",
         adversarial_summary or "_See inline report during /close-prompt run._",
         "",
-        "---",
+        "## What landed",
+        "",
+        "_Operator fills in: one paragraph, plain language, readable by Veronica._",
+        "",
+        "## Decisions locked",
+        "",
+        "_Operator fills in: one line per decision, with the ADR if any._",
+        "",
+        "## Decisions deferred (to a named future prompt / part)",
+        "",
+        "_Operator fills in: one line per deferral, with target prompt or Part._",
+        "",
+        "## Decisions flagged for cross-model review",
+        "",
+        "_Operator fills in: one line per flag, naming the model and owner._",
+        "",
+        "## Subagent verdicts",
+        "",
+        "_Operator fills in: one line per subagent run on the staged diff. "
+        "Format: `<subagent>: <verdict> — <headline finding>`._",
+        "",
+        "## Paste-ready block for the maintainer",
+        "",
+        "> Prompt N closed. Branch: `part-NN/<slug>`. PR: <url>. "
+        "Locked: <one line>. Deferred: <one line>. "
+        "Flagged for cross-review: <one line>. Active Part: <N>. "
+        "Next prompt opens with: <pointer>.",
+        "",
+        "## Notes",
+        "",
+        "_Operator fills in: anything that doesn't fit above. Keep brief._",
         "",
     ]
     summary = "\n".join(parts) + "\n"
-    path.write_text(summary + template_body, encoding="utf-8")
+    path.write_text(summary, encoding="utf-8")
     return path
 
 

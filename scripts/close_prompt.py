@@ -27,10 +27,27 @@ Deploy-test trigger (carry-over fix #2):
     names like scripts/setup_hooks.sh do not falsely trigger the warning.
 
 Usage:
-    python scripts/close_prompt.py [--dry-run]
+    python scripts/close_prompt.py --prompt 3 --part 1
+                                   --slug uv-project-and-python-tooling
+                                   [--dry-run]
                                    [--skip-cross-review-with-reason "<reason>"]
-                                   [--slug part-01/supply-chain-and-secrets]
-                                   [--part 1]
+
+--prompt N is required (Prompt-3 carry-over fix #1). The journal filename
+uses the prompt number directly; the prior regex-from-slug heuristic mis-
+named Prompt 2's journal as `prompt-01-...` and was renamed in PR #17 after
+the fact. No fallback is allowed — explicit is the only path.
+
+Triage-line gate (Prompt-3 carry-over fix #3): after `run_cross_review`
+returns successfully, the closeout reads the cross-review file and refuses
+the typed-approval gate if the literal `_TODO: human-filled` substring is
+still present in the file's `## Triage` section. The operator must fill in
+the disposition (accept / defer / reject + reason) for each finding before
+typing `approve`.
+
+Cross-review filename stability (Prompt-3 carry-over fix #4): the slug
+threaded into cross_review.py via `--slug` is the branch's prompt slug, so
+same-day re-runs land at distinct filenames per prompt rather than all
+overwriting `<date>-staged-diff.md`.
 """
 
 from __future__ import annotations
@@ -178,7 +195,7 @@ def generate_pr_body(
 def write_session_journal(
     slug: str,
     part: int,
-    subagent_summary: str,
+    prompt: int,
     cross_review_path: pathlib.Path | None,
     cross_review_skip_reason: str | None,
     adversarial_summary: str,
@@ -186,9 +203,7 @@ def write_session_journal(
 ) -> pathlib.Path:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     date = dt.date.today().isoformat()
-    prompt_num_match = re.search(r"prompt-?(\d+)", slug)
-    prompt_num = prompt_num_match.group(1) if prompt_num_match else f"{part:02d}"
-    journal_name = f"{date}-prompt-{prompt_num}-{slug.replace('/', '-')}.md"
+    journal_name = f"{date}-prompt-{prompt:02d}-{slug.replace('/', '-')}.md"
     path = SESSIONS_DIR / journal_name
 
     template_body = ""
@@ -219,18 +234,19 @@ def write_session_journal(
     if len(files) > 60:
         file_lines.append("  - ... and more")
 
+    # The `## Subagent verdicts` heading + boilerplate that used to live here
+    # was removed in Prompt 3 (carry-over fix #5). Subagent verdicts now go
+    # inline in the journal's template-driven section, written by the operator
+    # at closeout. The structured top is metadata + cross-review + adversarial.
     parts: list[str] = [
         f"# Session journal — {date} — {slug}",
         "",
         f"- **Date:** {date}",
+        f"- **Prompt:** {prompt}",
         f"- **Part:** {part}",
         f"- **Slug:** {slug}",
         f"- **Files touched ({len(files)}):**",
         *file_lines,
-        "",
-        "## Subagent verdicts",
-        "",
-        subagent_summary or "_See inline reports during /close-prompt run._",
         "",
         "## Cross-model review — triage line",
         "",
@@ -312,9 +328,86 @@ AZURE_ENV_VARS = (
     "AZURE_OPENAI_API_VERSION",
 )
 
+# Literal substring written by cross_review.py's enforce_sections() into the
+# `## Triage` section when the cross-review file lands. The operator must
+# overwrite this with `accept` / `defer` / `reject` + reason before approving.
+TRIAGE_TODO_MARKER = "_TODO: human-filled"
+
+
+def _extract_last_triage_section(body: str) -> str | None:
+    """Return the body of the last `## Triage` h2 section, slice spanning from
+    the heading to the next `## ` heading (or EOF), or None if no `## Triage`
+    heading exists.
+
+    The "last" rule handles hand-edited files with duplicated headings — the
+    operator's most recent state is what gates approval.
+
+    Headings are matched on `## Triage` at line start; `### Triage` (h3) does
+    not match. Section termination is any subsequent line starting with `## ` —
+    the cross-review file format is one `# H1` followed by `## H2` sections,
+    so anchoring to `## ` is sufficient and avoids over-matching on `###`.
+    """
+    lines = body.splitlines(keepends=True)
+    triage_starts = [
+        i for i, line in enumerate(lines) if line.startswith("## Triage")
+    ]
+    if not triage_starts:
+        return None
+    start = triage_starts[-1]
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            end = i
+            break
+    return "".join(lines[start:end])
+
+
+def check_triage_filled(review_path: pathlib.Path) -> None:
+    """Raise RuntimeError if the cross-review file's `## Triage` section still
+    contains the placeholder marker. The closeout cannot proceed until the
+    operator dispositions each finding.
+
+    Prompt-3 carry-over fix #3. The Prompt 2 retrospective noted that the
+    placeholder was being committed unchanged, defeating the audit-trail
+    purpose of the triage line.
+
+    Section-anchored (post-Prompt-3 adversarial review). The earlier whole-file
+    substring check was the same brittle-stringy pattern the slug-regex fix was
+    retiring: any cross-review that quoted the marker in `## Summary` or
+    `## Disagreements` (a self-aware meta-review of the gating logic, for
+    example) would permanently jam the gate. The check now slices the file to
+    the last `## Triage` section and scans only inside it.
+    """
+    if not review_path.exists():
+        raise RuntimeError(
+            f"Triage-line gate: expected cross-review file is missing: {review_path}."
+        )
+    body = review_path.read_text(encoding="utf-8")
+    try:
+        display = review_path.relative_to(REPO_ROOT)
+    except ValueError:
+        display = review_path
+
+    triage_slice = _extract_last_triage_section(body)
+    if triage_slice is None:
+        raise RuntimeError(
+            f"Triage-line gate: {display} has no `## Triage` section. "
+            "scripts/cross_review.py:enforce_sections should have written one; "
+            "the file is malformed. Re-run the cross-review or repair the file "
+            "by hand before retrying /close-prompt."
+        )
+    if TRIAGE_TODO_MARKER in triage_slice:
+        raise RuntimeError(
+            f"Triage-line gate: {display} still contains the placeholder "
+            f"`{TRIAGE_TODO_MARKER}` in its `## Triage` section.\n"
+            "Open the file and disposition each finding as `accept` / `defer` "
+            "/ `reject` with a one-line reason, then re-run /close-prompt."
+        )
+
 
 def run_cross_review(
     skip_reason: str | None,
+    slug: str | None = None,
 ) -> tuple[pathlib.Path | None, str | None]:
     """Return (review_file_path, skip_reason).
 
@@ -330,6 +423,10 @@ def run_cross_review(
     If skip_reason is None and one of the four AZURE_OPENAI_* env vars is
     missing, we fail and instruct the operator to either fix the env or pass
     --skip-cross-review-with-reason. We deliberately do NOT silently skip.
+
+    `slug`, when provided, is threaded into cross_review.py via `--slug` so
+    the output filename reflects the current prompt rather than the generic
+    `staged-diff` (Prompt-3 carry-over fix #4).
     """
     if skip_reason is not None:
         if not skip_reason.strip():
@@ -349,9 +446,12 @@ def run_cross_review(
             "--skip-cross-review-with-reason '<reason>'."
         )
 
-    print("[cross-review] calling scripts/cross_review.py --target staged")
-    r = run([sys.executable, str(REPO_ROOT / "scripts" / "cross_review.py"),
-             "--target", "staged"])
+    cmd = [sys.executable, str(REPO_ROOT / "scripts" / "cross_review.py"),
+           "--target", "staged"]
+    if slug:
+        cmd.extend(["--slug", slug])
+    print(f"[cross-review] calling {' '.join(cmd[1:])}")
+    r = run(cmd)
     if r.returncode != 0:
         # carry-over fix #1a: a non-zero exit must hard-fail. Prompt 1
         # silently tolerated this and committed anyway.
@@ -416,6 +516,17 @@ def main() -> int:
     )
     parser.add_argument("--slug", default=None)
     parser.add_argument("--part", type=int, default=None)
+    parser.add_argument(
+        "--prompt",
+        type=int,
+        required=True,
+        help=(
+            "Prompt number (required). Used directly in the session-journal "
+            "filename. Prompt-3 carry-over fix #1: removes the prior "
+            "regex-from-slug heuristic that mis-named Prompt 2's journal as "
+            "`prompt-01-...`."
+        ),
+    )
     args = parser.parse_args()
 
     files = git_staged_files()
@@ -425,27 +536,33 @@ def main() -> int:
     part = args.part or infer_part_number()
     branch_now = git_current_branch()
     slug = args.slug or infer_slug_from_branch(branch_now, default="workflow-harness")
+    prompt = args.prompt
 
+    print(f"[prompt] {prompt}")
     print(f"[part] {part}")
     print(f"[branch] {branch_now or '(detached)'}")
     print(f"[slug] {slug}")
     print(f"[files staged] {len(files)}")
 
-    # Step 2 — subagent reviews (stubbed; handled by Claude session).
-    subagent_summary = (
-        "Subagent reviews are run by the Claude session that invokes "
-        "/close-prompt. This script records their outputs in the session "
-        "journal. If you are running this directly, complete the subagent "
-        "passes before approving."
-    )
+    # Step 2 — subagent reviews are run by the Claude session that invokes
+    # /close-prompt; verdicts are recorded inline in the journal's template-
+    # driven `## Subagent verdicts` section by the operator at closeout.
     print("\n[subagents] Run reviewer, architect-guard, doc-sync, "
           "regulator-readability, benchmark-checker, second-opinion via the "
           "Claude session. Block on any BLOCK verdict.")
 
     # Step 3 — cross-model review (hard-fail on error; staged on success).
     cross_review_path, cross_review_skip_reason = run_cross_review(
-        args.skip_cross_review_with_reason
+        args.skip_cross_review_with_reason,
+        slug=slug,
     )
+
+    # Step 3b — triage-line gate. The cross-review file's `## Triage` section
+    # ships with a placeholder `_TODO: human-filled` that the operator must
+    # replace with `accept` / `defer` / `reject` + reason for each finding.
+    # Prompt-3 carry-over fix #3.
+    if cross_review_path is not None:
+        check_triage_filled(cross_review_path)
 
     # Step 4 — adversarial review (stubbed for the Claude session).
     adversarial_summary = (
@@ -503,7 +620,7 @@ def main() -> int:
     journal = write_session_journal(
         slug=slug,
         part=part,
-        subagent_summary=subagent_summary,
+        prompt=prompt,
         cross_review_path=cross_review_path,
         cross_review_skip_reason=cross_review_skip_reason,
         adversarial_summary=adversarial_summary,

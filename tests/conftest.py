@@ -1,10 +1,13 @@
 """Pytest configuration for the workflow-harness regression tests.
 
-The application stack arrives in Part 3 with uv. Until then these tests cover
-the harness scripts under scripts/. Run from repo root:
+The repo is a uv workspace; dev dependencies (pytest, openai, python-dotenv,
+gitpython, pyyaml) live in the root pyproject.toml's `dev` group. Run from
+repo root:
 
-    pip install -r scripts/requirements-harness.txt
-    pytest tests/
+    uv sync
+    uv run pytest tests/
+
+See docs/setup/uv-quickstart.md for the short tour.
 """
 
 from __future__ import annotations

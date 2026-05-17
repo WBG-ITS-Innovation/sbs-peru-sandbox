@@ -86,8 +86,16 @@ def load_dotenv_if_present() -> None:
         load_dotenv(env_path)
 
 
-def collect_target(target: str) -> tuple[str, str]:
-    """Return (combined_content, slug). Slug is used in the output filename."""
+def collect_target(target: str, slug_override: str | None = None) -> tuple[str, str]:
+    """Return (combined_content, slug). Slug is used in the output filename.
+
+    If slug_override is provided and target == "staged", the override replaces
+    the hardcoded "staged-diff" slug. This is Prompt-3 carry-over fix #4: it
+    lets close_prompt.py thread the branch's prompt slug through so same-day
+    re-runs from different prompts do not overwrite each other's audit trail.
+    For non-staged targets the override is ignored — those targets already
+    derive a slug from the path.
+    """
     if target == "staged":
         result = subprocess.run(
             ["git", "diff", "--staged"],
@@ -98,7 +106,8 @@ def collect_target(target: str) -> tuple[str, str]:
         )
         if not result.stdout.strip():
             sys.exit("No staged changes. Stage something with `git add` and try again.")
-        return result.stdout, "staged-diff"
+        slug = _slugify(slug_override) if slug_override else "staged-diff"
+        return result.stdout, slug
 
     matches = sorted(glob.glob(target, recursive=True))
     if not matches:
@@ -158,8 +167,8 @@ def call_azure_openai(content: str, deployment: str) -> str:
         from openai import AzureOpenAI  # type: ignore
     except ImportError:
         sys.exit(
-            "openai package not installed. Run: "
-            "pip install -r scripts/requirements-harness.txt"
+            "openai package not installed. Run `uv sync` from the repo root; "
+            "see docs/setup/uv-quickstart.md."
         )
 
     env = check_azure_env()
@@ -230,13 +239,24 @@ def main() -> int:
         default=os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
         help="Azure OpenAI deployment name (default: env AZURE_OPENAI_DEPLOYMENT).",
     )
+    parser.add_argument(
+        "--slug",
+        default=None,
+        help=(
+            "Optional slug override for the output filename. Honored only when "
+            "--target staged; ignored for path/glob targets (those derive their "
+            "slug from the target). Prompt-3 carry-over fix #4: lets the "
+            "closeout pipeline thread the branch's prompt slug through so "
+            "same-day re-runs land at distinct filenames per prompt."
+        ),
+    )
     args = parser.parse_args()
 
     # Validate up-front so the user sees a clean error before any file I/O.
     check_azure_env()
     deployment = args.deployment or os.environ["AZURE_OPENAI_DEPLOYMENT"]
 
-    content, slug = collect_target(args.target)
+    content, slug = collect_target(args.target, slug_override=args.slug)
     body = call_azure_openai(content, deployment)
     body = enforce_sections(body)
     path = write_review(slug, body, deployment)

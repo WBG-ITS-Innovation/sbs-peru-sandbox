@@ -36,12 +36,12 @@ A signed mTLS request to `POST /v1/complaints` → validated against Annex 1-A �
 
 Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for partial completion with a note; `[ ]` is untouched; `[x]` is done.
 
-- [~] Repo + uv project initialized — repo initialized; `uv` project lands in Prompt 3.
-- [~] Tooling: ruff, pyright strict, pre-commit, gitleaks, conventional commits, spectral — `pre-commit`, `gitleaks` (binary via CI), Conventional Commits (pre-push hook + CLAUDE.md) ✓; `ruff`, `pyright strict`, `spectral` land in Prompt 3.
-- [~] Project structure: api/, agents/, tools/, frontend/, infra/, docs/, scripts/, sdk/ — `docs/`, `scripts/`, `tests/` exist; `api/`, `agents/`, `tools/`, `frontend/`, `infra/`, `sdk/` land in their respective Parts.
+- [x] Repo + uv project initialized — uv workspace, root `pyproject.toml`, `.python-version` pinned to 3.12, `uv.lock` committed (Prompt 3). See [ADR 0021](adr/0021-package-manager-uv.md), [ADR 0022](adr/0022-python-version-3-12.md), [ADR 0023](adr/0023-workspace-layout-uv-members.md).
+- [~] Tooling: ruff, pyright strict, pre-commit, gitleaks, conventional commits, spectral — `pre-commit`, `gitleaks` (binary via CI), Conventional Commits (pre-push hook + CLAUDE.md) ✓; `ruff`, `pyright strict`, `spectral` land in Prompt 4.
+- [x] Project structure: api/, agents/, tools/, frontend/, infra/, docs/, scripts/, sdk/ — all directories present (Prompt 3). `api/`, `agents/`, `tools/`, `sdk/` are uv workspace members with stub `pyproject.toml`; `frontend/` and `infra/` are `.gitkeep` placeholders for Parts 8 and 9.
 - [ ] Docker Compose: Postgres+pgvector, Redis, vLLM (Qwen 2.5 14B), Prometheus, Grafana, Loki, OTel collector
 - [ ] OTel collector configured, Grafana provisioned
-- [~] CI: lint + test + type-check on PR — `secret-scan` workflow (gitleaks binary, history-aware) ✓; lint/test/type-check workflows land with the tooling in Prompt 3.
+- [~] CI: lint + test + type-check on PR — `secret-scan` workflow (gitleaks binary, history-aware) ✓; lint/test/type-check workflows land with the tooling in Prompt 4.
 - [ ] ADR 0001 written: MCP+A2A+LangGraph three-layer — deferred to Prompt 9 per Prompt 1 session journal.
 
 **Additionally landed in Prompts 1–2 that the original Part 1 checklist did not enumerate:**

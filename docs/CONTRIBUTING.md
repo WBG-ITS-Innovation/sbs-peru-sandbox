@@ -5,26 +5,40 @@ This is the project workflow. Read [CLAUDE.md](../CLAUDE.md) first — it define
 ## One-time setup
 
 ```bash
-# Workflow harness dependencies (separate from the application stack)
-pip install -r scripts/requirements-harness.txt
+# Install uv (Astral). See docs/setup/uv-quickstart.md for WBG-laptop notes.
+# Once uv is on PATH, this single command creates .venv and installs all
+# project + dev dependencies from pyproject.toml / uv.lock:
+uv sync
 
 # Install the pre-push hook (enforces branch naming)
 bash scripts/setup_hooks.sh
 
 # Install pre-commit hooks (gitleaks, detect-secrets, whitespace, .env guard)
-pip install pre-commit
-pre-commit install
+uv run pre-commit install
 
 # Generate a real detect-secrets baseline before first commit
 # (the committed .secrets.baseline is a stub — see note below).
-detect-secrets scan > .secrets.baseline
+uv run detect-secrets scan > .secrets.baseline
 
 # Copy the env template and fill in the four Azure OpenAI vars
 # (WBG ITS tenancy — personal openai.com keys are not supported here)
 cp .env.example .env
 ```
 
-The application stack (uv, FastAPI, Postgres, etc.) lands in Part 3. Until then, the harness above is enough.
+`uv sync` is the single install path. The application stack (FastAPI, Postgres, etc.) lands in Part 2 onward and is added to the relevant workspace member's `pyproject.toml`.
+
+### Working with the Python project
+
+The repo is a uv workspace. Members live under:
+
+- `api/` — FastAPI service surface (scaffolded in Part 2).
+- `agents/` — LangGraph agent layer (scaffolded in Part 6).
+- `tools/` — MCP tool servers (scaffolded in Part 5).
+- `sdk/` — generated client SDKs and shared client surface (scaffolded in Part 3).
+
+The repo root holds shared dev dependencies (harness scripts, tests). Each workspace member has its own `pyproject.toml` for package-local dependencies.
+
+The four commands you'll use day to day are `uv sync`, `uv run <cmd>`, `uv add <pkg>`, and `uv lock`. See [docs/setup/uv-quickstart.md](setup/uv-quickstart.md) for the short tour, including WBG-laptop installer notes and the Zscaler caveats. Locked decisions: [ADR 0021](adr/0021-package-manager-uv.md), [ADR 0022](adr/0022-python-version-3-12.md), [ADR 0023](adr/0023-workspace-layout-uv-members.md).
 
 ### First-time repo bootstrap (maintainer only)
 

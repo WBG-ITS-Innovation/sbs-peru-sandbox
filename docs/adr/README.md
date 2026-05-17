@@ -30,6 +30,9 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0018 | sbom-format-cyclonedx-via-syft        | Accepted | Prompt 2 / Part 1    | SBOM format is CycloneDX JSON produced by syft; implementation workflow deferred to Part 9 |
 | 0019 | dependency-review-threshold-high      | Accepted | Prompt 2 / Part 1    | dependency-review-action fails on `high` and above; `moderate` reported but non-blocking; revisit at Part 9 |
 | 0020 | env-handling-policy                   | Accepted | Prompt 2 / Part 1    | `.env` and `.env.*` never committed; secrets via GitHub Actions secrets in CI and local `.env` for developers; no personal data in repo |
+| 0021 | package-manager-uv                    | Accepted | Prompt 3 / Part 1    | uv (Astral) is the Python package manager and project tool; root `pyproject.toml` + committed `uv.lock`; harness `requirements-harness.txt` retired |
+| 0022 | python-version-3-12                   | Accepted | Prompt 3 / Part 1    | Python 3.12 only; `requires-python = ">=3.12,<3.13"`; no CI matrix on Python versions |
+| 0023 | workspace-layout-uv-members           | Accepted | Prompt 3 / Part 1    | uv workspace with members `api/`, `agents/`, `tools/`, `sdk/`; `frontend/` and `infra/` outside the workspace; flat per-member layout for now |
 
 ## How to add an ADR
 

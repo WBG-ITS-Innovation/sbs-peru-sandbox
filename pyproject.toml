@@ -1,0 +1,25 @@
+[project]
+name = "sbs-suptech-prototype"
+version = "0.0.0"
+description = "Regulator-grade SupTech reference implementation for SBS Peru."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12,<3.13"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+# frontend/ (Next.js, npm) and infra/ (Helm, Terraform) are deliberately
+# excluded — they use different toolchains and are not uv workspace members.
+# See ADR 0023 (docs/adr/0023-workspace-layout-uv-members.md).
+members = ["api", "agents", "tools", "sdk"]
+
+[dependency-groups]
+dev = [
+    "openai>=2.37.0,<3.0",
+    "python-dotenv>=1.2.2,<2.0",
+    "gitpython>=3.1.50,<4.0",
+    "pyyaml>=6.0.3,<7.0",
+    "pytest>=9.0.3,<10.0",
+]

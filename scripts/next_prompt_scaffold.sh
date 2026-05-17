@@ -173,11 +173,18 @@ push back. Owner: Othman (or whoever should adjudicate).
 
 ## Closeout (standard)
 
-Run \`/close-prompt\`. The typed approval gate is non-bypassable. The closeout
-commit must include the cross-review file under
-\`docs/reviews/<date>-${SLUG}.md\`. If cross-review can't run (Zscaler / Azure
-creds), use \`--skip-cross-review-with-reason "<reason>"\` and verify the skip
-line lands in the journal. Paste-ready block lands in
+Run \`/close-prompt --prompt ${PROMPT_N} --part ${ACTIVE_PART} --slug ${SLUG}\`.
+\`--prompt\` is required (Prompt-3 carry-over fix #1: the journal filename
+uses the prompt number directly, no slug-regex heuristic). The typed approval
+gate is non-bypassable. The closeout commit must include the cross-review
+file under \`docs/reviews/<date>-${SLUG}.md\` (slug threaded via
+\`cross_review.py --slug\`, Prompt-3 carry-over fix #4). The triage-line gate
+will refuse the typed-approval prompt until the cross-review's \`## Triage\`
+section's \`_TODO: human-filled\` placeholder is replaced with
+\`accept\` / \`defer\` / \`reject\` per finding (Prompt-3 carry-over fix #3).
+If cross-review can't run (Zscaler / Azure creds), use
+\`--skip-cross-review-with-reason "<reason>"\` and verify the skip line
+lands in the journal. Paste-ready block lands in
 \`docs/sessions/<date>-prompt-${PROMPT_PADDED}-${SLUG}.md\`, matching the
 established naming pattern.
 

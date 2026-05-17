@@ -1,17 +1,28 @@
-"""Regression tests for the two close_prompt.py carry-over fixes from Prompt 1.
+"""Regression tests for close_prompt.py carry-over fixes (Prompts 1, 2, 3).
 
-Carry-over #1 (cross-review handling):
+Carry-over #1 (cross-review handling, Prompt 1):
     1a. A non-zero exit from cross_review.py must hard-fail the closeout.
     1b. On success, the produced docs/reviews file must be staged so it lands
         in the same commit as the change it documents.
     1c. --skip-cross-review-with-reason "<reason>" is the only sanctioned
         bypass; the reason must be non-empty and propagated to the journal.
 
-Carry-over #2 (deploy-test trigger):
+Carry-over #2 (deploy-test trigger, Prompt 1):
     The trigger uses anchored regexes, not substring matching. Generic
     harness scripts (scripts/setup_hooks.sh, scripts/bootstrap_github_labels.sh)
     must NOT trigger. Real infra paths (infra/, helm/, terraform/, docker/,
     Dockerfile, compose*.yaml) MUST trigger.
+
+Prompt-3 carry-over fixes:
+    #1 (journal filename): write_session_journal takes an explicit `prompt`
+       argument and the filename uses it directly. The Prompt 2 journal was
+       mis-named `prompt-01-...` by the prior slug-regex heuristic and had
+       to be renamed in PR #17 after the fact.
+    #3 (triage-line gate): check_triage_filled raises if the cross-review
+       file still contains the `_TODO: human-filled` placeholder.
+    #4 (cross-review slug stability): cross_review.py's collect_target accepts
+       a slug_override so same-day re-runs from different prompts land at
+       distinct filenames rather than all overwriting `<date>-staged-diff.md`.
 
 These tests do not push to git or call Azure. They patch subprocess.run and
 exercise the in-process functions directly.
@@ -27,6 +38,7 @@ from unittest import mock
 import pytest
 
 import close_prompt as cp
+import cross_review as cr
 
 
 # -- carry-over #2: deploy_touched regex tests --------------------------------
@@ -225,7 +237,7 @@ def test_journal_records_skip_reason(tmp_path: pathlib.Path, monkeypatch: pytest
     journal = cp.write_session_journal(
         slug="supply-chain-and-secrets",
         part=1,
-        subagent_summary="reviewer: APPROVE",
+        prompt=2,
         cross_review_path=None,
         cross_review_skip_reason="VPN off",
         adversarial_summary="no objections",
@@ -251,7 +263,7 @@ def test_journal_records_review_path(tmp_path: pathlib.Path, monkeypatch: pytest
     journal = cp.write_session_journal(
         slug="supply-chain-and-secrets",
         part=1,
-        subagent_summary="reviewer: APPROVE",
+        prompt=2,
         cross_review_path=review,
         cross_review_skip_reason=None,
         adversarial_summary="no objections",
@@ -287,7 +299,7 @@ def _build_journal_for_format_test(
     journal = cp.write_session_journal(
         slug="supply-chain-and-secrets",
         part=1,
-        subagent_summary="reviewer: APPROVE\narchitect-guard: APPROVE",
+        prompt=2,
         cross_review_path=cross_review_path,
         cross_review_skip_reason=cross_review_skip_reason,
         adversarial_summary="no material objections",
@@ -351,9 +363,11 @@ def test_journal_headings_present_and_unindented(
         cross_review_path=None,
         cross_review_skip_reason="VPN off",
     )
+    # `## Subagent verdicts` was removed from the script-generated body in
+    # Prompt-3 carry-over fix #5 — that section now lives only in the operator-
+    # edited template appended after the script-generated block.
     required_headings = [
         "# Session journal — ",
-        "## Subagent verdicts",
         "## Cross-model review — triage line",
         "## Adversarial review",
     ]
@@ -390,3 +404,193 @@ def test_journal_no_six_space_indent_anywhere(
             f"Six-space-indented lines found in journal body "
             f"(input: {path_kw}):\n" + "\n".join(repr(x) for x in offenders)
         )
+
+
+# -- Prompt-3 carry-over #1: journal filename uses prompt number, not part ----
+
+
+def test_journal_filename_uses_prompt_number_not_part(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression for the Prompt 2 mis-naming: the journal file was named
+    `prompt-01-...` because the script inferred the prompt number from the
+    branch's part-NN/ slug. write_session_journal now takes an explicit
+    `prompt` argument and uses it directly in the filename."""
+    sessions = tmp_path / "sessions"
+    sessions.mkdir()
+    monkeypatch.setattr(cp, "SESSIONS_DIR", sessions)
+    monkeypatch.setattr(cp, "SESSION_TEMPLATE", sessions / "_template.md")
+    monkeypatch.setattr(cp, "REPO_ROOT", tmp_path)
+
+    journal = cp.write_session_journal(
+        slug="uv-project-and-python-tooling",
+        part=1,
+        prompt=3,
+        cross_review_path=None,
+        cross_review_skip_reason="VPN off",
+        adversarial_summary="no objections",
+        files=["pyproject.toml"],
+    )
+    name = journal.name
+    assert "prompt-03" in name, (
+        f"Expected `prompt-03` in journal filename, got {name!r}."
+    )
+    assert "prompt-01" not in name, (
+        f"Journal filename {name!r} contains `prompt-01`; the regression "
+        "from the Prompt 2 mis-naming bug has returned."
+    )
+
+
+# -- Prompt-3 carry-over #3: triage-line enforcement --------------------------
+
+
+def test_triage_line_enforcement_blocks_on_unfilled_todo(
+    tmp_path: pathlib.Path,
+) -> None:
+    """check_triage_filled raises if the cross-review file still has the
+    `_TODO: human-filled` placeholder. The Prompt 2 retrospective noted that
+    the placeholder was being committed unchanged, defeating the audit-trail
+    purpose of the triage line."""
+    review = tmp_path / "fixture-review.md"
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\nbody\n\n"
+        "## Triage\n\n"
+        "_TODO: human-filled. Disposition each finding above as accept / "
+        "defer / reject, with reason._\n"
+    )
+    with pytest.raises(RuntimeError, match="placeholder"):
+        cp.check_triage_filled(review)
+
+
+def test_triage_line_enforcement_passes_when_filled(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Positive case: a triage section with real dispositions passes."""
+    review = tmp_path / "filled-review.md"
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\nbody\n\n"
+        "## Triage\n\n"
+        "- Finding 1: accept — adopting the rename in this PR.\n"
+        "- Finding 2: defer — tracked in DEFERRED.md.\n"
+    )
+    # Should not raise.
+    cp.check_triage_filled(review)
+
+
+def test_triage_gate_ignores_marker_in_summary(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Post-Prompt-3 adversarial fix: the gate scans only the `## Triage`
+    section. A quoted instance of the marker in `## Summary` (or any other
+    non-Triage section) must not block. Earlier whole-file substring check
+    would have falsely jammed the gate when a future cross-review quoted the
+    marker while discussing the gate itself."""
+    review = tmp_path / "meta-review.md"
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\n\n"
+        "The closeout pipeline gates approval on the literal string "
+        "`_TODO: human-filled` appearing in the Triage section. This is a "
+        "deliberate, in-band marker.\n\n"
+        "## Disagreements with primary review\n\n"
+        "None.\n\n"
+        "## Risks not flagged elsewhere\n\n"
+        "None.\n\n"
+        "## Recommended actions\n\n"
+        "None.\n\n"
+        "## Triage\n\n"
+        "- Finding 1: accept — the gate marker is documented as intended.\n"
+    )
+    # Should not raise — the marker appears in Summary but Triage is dispositioned.
+    cp.check_triage_filled(review)
+
+
+def test_triage_gate_blocks_on_missing_triage_section(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Malformed file: no `## Triage` heading at all. cross_review.py's
+    enforce_sections should have written one; if it didn't, the closeout must
+    refuse rather than silently pass."""
+    review = tmp_path / "malformed-review.md"
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\n\nbody, but no Triage section follows.\n"
+    )
+    with pytest.raises(RuntimeError, match="no `## Triage` section"):
+        cp.check_triage_filled(review)
+
+
+def test_triage_gate_uses_last_triage_section(
+    tmp_path: pathlib.Path,
+) -> None:
+    """Hand-edited files may end up with two `## Triage` sections (e.g., the
+    operator pasted a fresh template below the original). The gate uses the
+    LAST one — that is the operator's most recent state. If the last one is
+    dispositioned, approval proceeds even if the first one still has the TODO
+    placeholder."""
+    review = tmp_path / "duplicated-triage.md"
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\nbody\n\n"
+        "## Triage\n\n"
+        "_TODO: human-filled. Disposition each finding above as accept / "
+        "defer / reject, with reason._\n\n"
+        "## Triage\n\n"
+        "- Finding 1: accept — superseded the earlier draft above.\n"
+    )
+    # Should not raise — the LAST Triage section is dispositioned.
+    cp.check_triage_filled(review)
+
+    # And the inverse: if the last Triage section still has the TODO, block,
+    # even though the first one is dispositioned.
+    review.write_text(
+        "# Cross-model review — fixture\n\n"
+        "## Summary\nbody\n\n"
+        "## Triage\n\n"
+        "- Finding 1: accept — operator filled this in, then pasted a fresh "
+        "template below by accident.\n\n"
+        "## Triage\n\n"
+        "_TODO: human-filled. Disposition each finding above as accept / "
+        "defer / reject, with reason._\n"
+    )
+    with pytest.raises(RuntimeError, match="placeholder"):
+        cp.check_triage_filled(review)
+
+
+# -- Prompt-3 carry-over #4: cross-review slug stability ----------------------
+
+
+def test_cross_review_slug_stability(monkeypatch: pytest.MonkeyPatch) -> None:
+    """collect_target("staged", slug_override=...) must return the same slug
+    for repeated calls with the same override, and different slugs for
+    different overrides. Without slug_override the output collapses to
+    `<date>-staged-diff.md` and same-day re-runs overwrite each other."""
+
+    def fake_run(cmd, **kwargs):
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="diff --git a/x b/x\n+changed\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(cr.subprocess, "run", fake_run)
+
+    _, slug_foo_first = cr.collect_target("staged", slug_override="foo")
+    _, slug_foo_second = cr.collect_target("staged", slug_override="foo")
+    _, slug_bar = cr.collect_target("staged", slug_override="bar")
+
+    assert slug_foo_first == slug_foo_second, (
+        "Same slug_override must produce a stable slug; got "
+        f"{slug_foo_first!r} then {slug_foo_second!r}."
+    )
+    assert slug_foo_first != slug_bar, (
+        "Different slug_overrides must produce different slugs; got "
+        f"{slug_foo_first!r} for 'foo' and {slug_bar!r} for 'bar'."
+    )
+
+    # And the default (no override) is still the legacy `staged-diff` slug.
+    _, slug_default = cr.collect_target("staged", slug_override=None)
+    assert slug_default == "staged-diff"

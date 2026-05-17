@@ -44,3 +44,7 @@ No material divergence. SBS adds explicit per-tool wiring (the Azure OpenAI four
 ## Flagged for cross-review
 
 None. This codifies prior decisions and standard practice; no contested design choice.
+
+## Amendment — 2026-05-16
+
+Verified post-uv migration: the policy holds without change. The harness scripts (`scripts/cross_review.py`, `scripts/close_prompt.py`) load `.env` via `python-dotenv` at startup with a script-internal `load_dotenv_if_present()` call, independent of how the script is invoked. The three invocation paths — `python scripts/foo.py`, `uv run python scripts/foo.py`, and direct execution via the shebang — all hit the same `load_dotenv_if_present()` and therefore the same `.env` discovery. `uv run` does not auto-load `.env`; the script's own loader is the only mechanism. No policy change required; this amendment exists to record that the post-migration check was performed.

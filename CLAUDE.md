@@ -45,6 +45,7 @@ Read these before acting. They are authoritative; this file is a pointer index.
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deployment guide (TOC scaffold until Part 9).
 - [SECURITY.md](SECURITY.md) — disclosure path, sensitive-data rules, supported branches.
 - [docs/setup/corporate-proxy-and-zscaler.md](docs/setup/corporate-proxy-and-zscaler.md) — WBG networking / CA bundle setup (DRAFT).
+- [docs/setup/uv-quickstart.md](docs/setup/uv-quickstart.md) — uv install paths, the four commands, workspace layout, Zscaler caveats.
 
 ---
 

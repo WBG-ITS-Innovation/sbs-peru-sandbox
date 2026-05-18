@@ -46,6 +46,7 @@ Read these before acting. They are authoritative; this file is a pointer index.
 - [SECURITY.md](SECURITY.md) — disclosure path, sensitive-data rules, supported branches.
 - [docs/setup/corporate-proxy-and-zscaler.md](docs/setup/corporate-proxy-and-zscaler.md) — WBG networking / CA bundle setup (DRAFT).
 - [docs/setup/uv-quickstart.md](docs/setup/uv-quickstart.md) — uv install paths, the four commands, workspace layout, Zscaler caveats.
+- [api/openapi/sbs-api-v1.yaml](api/openapi/sbs-api-v1.yaml) — canonical OpenAPI 3.1 contract (`bash scripts/serve-devportal.sh` renders it locally via Stoplight Elements). See [ADR 0027](docs/adr/0027-openapi-as-canonical-contract.md).
 
 ---
 

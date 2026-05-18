@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/version``.",
+  "properties": {
+    "api_version": {
+      "description": "OpenAPI info.version of the contract this service implements.",
+      "examples": [
+        "0.1.0"
+      ],
+      "title": "Api Version",
+      "type": "string"
+    },
+    "build_sha": {
+      "description": "Git commit SHA of the build.",
+      "maxLength": 40,
+      "minLength": 7,
+      "title": "Build Sha",
+      "type": "string"
+    },
+    "schema_version": {
+      "description": "Active Anexo 1-A schema version.",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "api_version",
+    "build_sha",
+    "schema_version"
+  ],
+  "title": "VersionInfo",
+  "type": "object"
+}

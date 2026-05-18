@@ -20,3 +20,8 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 # Make scripts/ importable so the tests can pull functions out of close_prompt.py
 # without running the script's argparse / sys.exit path.
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+# Make api/ importable so tests can `from sbs_api.models import ...`. The api/
+# workspace member is `package = false` in pyproject.toml (it is consumed in
+# place, not installed); see ADR 0023.
+sys.path.insert(0, str(REPO_ROOT / "api"))

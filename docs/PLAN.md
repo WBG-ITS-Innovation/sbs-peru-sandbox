@@ -81,19 +81,22 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 **Exit:** `docker compose up` clean, CI green
 
 ### Part 2 — Data Model & API Skeleton
-- [ ] config/taxonomies/sbs-peru-v1.yaml — full Annex 1-A
-- [ ] Pydantic v2 models from YAML loader
-- [ ] Alembic baseline migration (all tables defined)
-- [ ] FastAPI with /health, /health/ready, /health/live
-- [ ] Scalar docs site at /docs
-- [ ] structlog + OTel tracing on every endpoint
-- [ ] GET /v1/complaints returns empty list with proper headers
-- [ ] ADR 0002: Taxonomy as configuration
-- [ ] Second opinion: Template 6 (OpenAPI review) — GPT-5
+- [~] config/taxonomies/sbs-peru-v1.yaml — full Annex 1-A — Prompt 5 ships a 15-field subset in code; YAML taxonomy file deferred to Part 11 (full code-list distribution).
+- [x] Pydantic v2 models — Prompt 5 (api/sbs_api/models/) for the 15-field subset. See [ADR 0026](adr/0026-anexo-1a-curated-subset.md).
+- [x] OpenAPI 3.1 specification — Prompt 5 (api/openapi/sbs-api-v1.yaml). Hand-curated; canonical contract. See [ADR 0027](adr/0027-openapi-as-canonical-contract.md).
+- [x] JSON Schema export from Pydantic — Prompt 5 (api/openapi/schemas/). Regenerate via `bash scripts/regenerate-schemas.sh`.
+- [x] Developer portal — Prompt 5 (api/devportal/index.html via Stoplight Elements CDN). Run with `bash scripts/serve-devportal.sh`.
+- [x] RFC 9457 problem+json error model + error catalog — Prompt 5 (api/openapi/error-catalog.md, ProblemDetail model).
+- [ ] Alembic baseline migration (all tables defined) — Prompt 6.
+- [ ] FastAPI with /health, /health/ready, /health/live — Prompt 6.
+- [ ] structlog + OTel tracing on every endpoint — Prompt 6.
+- [ ] GET /v1/complaints returns empty list with proper headers — Prompt 6.
+- [ ] ADR 0002: Taxonomy as configuration — Part 11.
+- [ ] Second opinion: Template 6 (OpenAPI review) — GPT-5 — queued for post-Prompt 5 once TLS to Azure OpenAI is configured (see open-questions §1.1).
 
 **Exit:** Scalar docs render, trace visible in Grafana
 
-**May 25 scope.** Full. OpenAPI 3.1 spec, Pydantic v2 models from the Annex 1-A YAML loader, Alembic baseline, FastAPI scaffold with `/health` triad, Scalar docs site, structured logging and OTel tracing. `GET /v1/complaints` returns empty list with proper headers. No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+**May 25 scope.** Full. OpenAPI 3.1 spec, Pydantic v2 models (Prompt 5 ships the 15-field subset; full taxonomy is Part 11), Alembic baseline (Prompt 6), FastAPI scaffold with `/health` triad (Prompt 6), Scalar docs site (replaced by Stoplight Elements per [ADR 0027](adr/0027-openapi-as-canonical-contract.md) and the stack-validation note), structured logging and OTel tracing (Prompt 6). `GET /v1/complaints` returns empty list with proper headers (Prompt 6). No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 3 — Ingestion Tier 1
 - [ ] mTLS termination + dev CA scripted

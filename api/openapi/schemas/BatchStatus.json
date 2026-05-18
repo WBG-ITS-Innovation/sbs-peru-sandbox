@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/batches/{batch_id}``.",
+  "properties": {
+    "batch_id": {
+      "pattern": "^batch_[A-Za-z0-9]{16,32}$",
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "institution_id": {
+      "pattern": "^SBS-\\d{4,6}$",
+      "title": "Institution Id",
+      "type": "string"
+    },
+    "row_count_accepted": {
+      "minimum": 0,
+      "title": "Row Count Accepted",
+      "type": "integer"
+    },
+    "row_count_rejected": {
+      "minimum": 0,
+      "title": "Row Count Rejected",
+      "type": "integer"
+    },
+    "row_count_submitted": {
+      "minimum": 0,
+      "title": "Row Count Submitted",
+      "type": "integer"
+    },
+    "status": {
+      "description": "Lifecycle state of the batch.",
+      "enum": [
+        "pending_upload",
+        "received",
+        "processing",
+        "completed",
+        "completed_with_errors",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "submitted_at": {
+      "format": "date-time",
+      "title": "Submitted At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "batch_id",
+    "institution_id",
+    "status",
+    "submitted_at",
+    "row_count_submitted",
+    "row_count_accepted",
+    "row_count_rejected"
+  ],
+  "title": "BatchStatus",
+  "type": "object"
+}

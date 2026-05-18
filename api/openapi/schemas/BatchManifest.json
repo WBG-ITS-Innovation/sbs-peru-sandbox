@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Metadata-only submission for ``POST /v1/batches``.\n\nTier 2 batch upload is a two-step flow: the institution POSTs this\nmanifest to receive a presigned URL (or batch_id with upload instructions),\nthen uploads the file out-of-band. Manifest fields are inspired by the\nstandards-pack table in market-comparators.md §5.A (\"Batch manifest: file\nname, reporting period, institution ID, schema version, row count, hash\").",
+  "properties": {
+    "file_name": {
+      "description": "File name, ASCII safe characters only, with extension .csv, .jsonl, or .json.",
+      "examples": [
+        "BCO-2026-05.jsonl"
+      ],
+      "maxLength": 255,
+      "minLength": 4,
+      "pattern": "^[A-Za-z0-9._-]+\\.(csv|jsonl|json)$",
+      "title": "File Name",
+      "type": "string"
+    },
+    "institution_id": {
+      "description": "Submitting institution code.",
+      "pattern": "^SBS-\\d{4,6}$",
+      "title": "Institution Id",
+      "type": "string"
+    },
+    "reporting_period_end": {
+      "description": "Inclusive end of the reporting period covered by this batch.",
+      "format": "date",
+      "title": "Reporting Period End",
+      "type": "string"
+    },
+    "reporting_period_start": {
+      "description": "Inclusive start of the reporting period covered by this batch.",
+      "format": "date",
+      "title": "Reporting Period Start",
+      "type": "string"
+    },
+    "row_count": {
+      "description": "Number of complaint rows in the file.",
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Row Count",
+      "type": "integer"
+    },
+    "schema_version": {
+      "description": "Anexo 1-A schema version targeted by the batch. Matches the OpenAPI info.version on submission day. Example: v0.1.0.",
+      "examples": [
+        "v0.1.0"
+      ],
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "description": "Lowercase hex SHA-256 of the file contents the institution will upload. The server recomputes on receipt and rejects on mismatch.",
+      "examples": [
+        "cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "submitted_at": {
+      "description": "Institution-side timestamp of manifest preparation. Used only for audit log correlation; the authoritative receipt time is server-assigned.",
+      "format": "date-time",
+      "title": "Submitted At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "file_name",
+    "institution_id",
+    "reporting_period_start",
+    "reporting_period_end",
+    "schema_version",
+    "row_count",
+    "sha256",
+    "submitted_at"
+  ],
+  "title": "BatchManifest",
+  "type": "object"
+}

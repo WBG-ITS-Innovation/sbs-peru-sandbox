@@ -1,0 +1,23 @@
+# Spectral lint configuration for the SBS SupTech OpenAPI specification.
+#
+# Uses the built-in `spectral:oas` ruleset with project-local overrides:
+#   - `info.description` and `info.contact` are required at the API contract
+#     level (regulator-grade contracts must carry an owner and a description).
+#   - Operations must carry an `operationId` and a `summary`.
+#   - `info.contact.email` is *not* required (SBS may publish the address
+#     later; pre-publication we ship without an email).
+#
+# Run: ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml
+
+extends:
+  - spectral:oas
+
+rules:
+  contact-properties: off  # we do not publish a contact email yet
+  info-contact: warn
+  info-description: error
+  info-license: warn
+  operation-description: warn
+  operation-tag-defined: warn
+  operation-operationId: error
+  no-$ref-siblings: off  # OpenAPI 3.1 allows $ref siblings in some positions

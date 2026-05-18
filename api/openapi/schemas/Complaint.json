@@ -1,0 +1,293 @@
+{
+  "$defs": {
+    "Channel": {
+      "description": "Channel through which the complaint was registered — Resolución Anexo 1-A #7 (Anexo A).\n\nRepresentative subset of Anexo A channel codes.",
+      "enum": [
+        "AGENCIA",
+        "WEB",
+        "APP_MOVIL",
+        "TELEFONO",
+        "CORREO",
+        "PRESENCIAL_SBS",
+        "OTRO"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "ComplainantAgeRange": {
+      "description": "Age range bucket of the complainant.\n\nNo counterpart in Anexo 1-A. Used in lieu of the resolución's PII-bearing\nfields (DNI, full name) for the May 25 sandbox. See ADR 0026.",
+      "enum": [
+        "UNDER_25",
+        "25_34",
+        "35_44",
+        "45_54",
+        "55_64",
+        "OVER_64",
+        "UNKNOWN"
+      ],
+      "title": "ComplainantAgeRange",
+      "type": "string"
+    },
+    "ComplainantDocType": {
+      "description": "Document-type code identifying the complainant — Resolución Anexo 1-A #2.\n\nA representative subset of Anexo A document-type codes. The doc type acts\nas a proxy for natural-vs-juridic person classification (DNI/CE/PASS imply\nnatural persons; RUC implies a juridic person).",
+      "enum": [
+        "DNI",
+        "CE",
+        "PASAPORTE",
+        "RUC",
+        "OTRO"
+      ],
+      "title": "ComplainantDocType",
+      "type": "string"
+    },
+    "DescriptionLanguage": {
+      "description": "ISO 639-1 / ISO 639-3 language code for the complaint narrative.\n\nNo counterpart in Anexo 1-A. Included to handle Quechua / Aymara / English\nnarratives that may appear in the Peruvian context. See ADR 0026.",
+      "enum": [
+        "es",
+        "qu",
+        "ay",
+        "en"
+      ],
+      "title": "DescriptionLanguage",
+      "type": "string"
+    },
+    "MotivoCode": {
+      "description": "Motivo del reclamo — Resolución Anexo 1-A #15 (Anexo C).\n\nRepresentative subset of Anexo C motivos. The full code list is deferred\nto Part 11.",
+      "enum": [
+        "COBRO_INDEBIDO",
+        "OPERACION_NO_RECONOCIDA",
+        "DEMORA_ATENCION",
+        "INFORMACION_INCORRECTA",
+        "INCUMPLIMIENTO_CONTRATO",
+        "CALIDAD_SERVICIO",
+        "PUBLICIDAD_ENGANOSA",
+        "OTRO"
+      ],
+      "title": "MotivoCode",
+      "type": "string"
+    },
+    "ProductCategory": {
+      "description": "Product / service / operation category — Resolución Anexo 1-A #14 (Anexo B).\n\nRepresentative subset. The full Anexo B code list is deferred to Part 11.",
+      "enum": [
+        "DEPOSITOS",
+        "CREDITOS",
+        "TARJETA_CREDITO",
+        "TARJETA_DEBITO",
+        "SEGUROS",
+        "AFP_PENSIONES",
+        "COOPAC",
+        "OTRO"
+      ],
+      "title": "ProductCategory",
+      "type": "string"
+    },
+    "ResolutionStatus": {
+      "description": "Estado del reclamo — Resolución Anexo 1-A #22.\n\nResolución values: ``pendiente``, ``atendido``, ``anulado``. Mirrored here\nin lowercase to match the resolución wording.",
+      "enum": [
+        "pendiente",
+        "atendido",
+        "anulado"
+      ],
+      "title": "ResolutionStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "description": "Severity tag set by the institution at submission time.\n\nNo counterpart in Anexo 1-A; this is a prototype-level field used by the\nsupervisory agents (Part 5+) for triage. See ADR 0026 for the divergence\nrationale.",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SubmissionMethod": {
+      "description": "Channel through which the underlying operation occurred — Resolución Anexo 1-A #8.\n\nDistinct from :class:`Channel` (which records where the complaint was\n*registered*). Representative subset of Anexo A operation channels.",
+      "enum": [
+        "AGENCIA",
+        "CAJERO",
+        "APP_MOVIL",
+        "WEB",
+        "POS",
+        "AGENTE_CORRESPONSAL",
+        "OTRO"
+      ],
+      "title": "SubmissionMethod",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The 15-field complaint payload as submitted by a supervised institution.\n\nField reconciliation against Resolución SBS N° 04036-2022 Anexo 1-A is\ndocumented in ADR 0026 (Field-by-field reconciliation).",
+  "examples": [
+    {
+      "channel": "APP_MOVIL",
+      "complainant_age_range": "35_44",
+      "complainant_district": "1501",
+      "complainant_doc_type": "DNI",
+      "complaint_id": "BCO-2026-000017",
+      "description_language": "es",
+      "description_text": "Se realizó un cargo no autorizado por S/ 245.00 en la tarjeta de crédito el 10 de mayo. El cliente solicita reversa inmediata y revisión del estado de cuenta.",
+      "institution_id": "SBS-001234",
+      "motivo_code": "COBRO_INDEBIDO",
+      "original_reference_id": null,
+      "product_category": "TARJETA_CREDITO",
+      "received_date": "2026-05-12",
+      "resolution_status": "pendiente",
+      "severity": "HIGH",
+      "submission_method": "APP_MOVIL"
+    }
+  ],
+  "properties": {
+    "channel": {
+      "$ref": "#/$defs/Channel",
+      "description": "Anexo 1-A #7 — Canal de ingreso. The channel through which the user registered the complaint with the institution. Subset of Anexo A channel codes.",
+      "examples": [
+        "APP_MOVIL"
+      ]
+    },
+    "complainant_age_range": {
+      "$ref": "#/$defs/ComplainantAgeRange",
+      "description": "Bucketed age range of the complainant. No counterpart in Anexo 1-A; used in lieu of the resolución's PII-bearing identity fields for the May 25 sandbox. See ADR 0026.",
+      "examples": [
+        "35_44"
+      ]
+    },
+    "complainant_district": {
+      "description": "Anexo 1-A #13 — Ubicación geográfica. INEI ubigeo code at the department + province level of precision (4 digits). Example: 1501 = Lima-Lima. Use '9999' for complaints from abroad. May be empty for certain remote channels per the resolución; the empty case is not supported in v0.1.0 of this contract.",
+      "examples": [
+        "1501"
+      ],
+      "pattern": "^\\d{4}$",
+      "title": "Complainant District",
+      "type": "string"
+    },
+    "complainant_doc_type": {
+      "$ref": "#/$defs/ComplainantDocType",
+      "description": "Anexo 1-A #2 — Tipo de documento de identidad del reclamante. Subset of Anexo A document-type codes. Acts as a proxy for natural-vs-juridic person classification.",
+      "examples": [
+        "DNI"
+      ]
+    },
+    "complaint_id": {
+      "description": "Anexo 1-A #1 — Código del reclamo. Stable institution-assigned identifier. Pattern: institution-prefix, year, sequence.",
+      "examples": [
+        "BCO-2026-000017"
+      ],
+      "maxLength": 32,
+      "minLength": 6,
+      "pattern": "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$",
+      "title": "Complaint Id",
+      "type": "string"
+    },
+    "description_language": {
+      "$ref": "#/$defs/DescriptionLanguage",
+      "description": "ISO 639 language code for description_text. No counterpart in Anexo 1-A; included to handle non-Spanish narratives. See ADR 0026.",
+      "examples": [
+        "es"
+      ]
+    },
+    "description_text": {
+      "description": "Anexo 1-A #17 — Detalle completo de reclamo. The user's literal complaint statement as recorded by the institution. Free text, 10–8000 characters.",
+      "examples": [
+        "Se realizó un cargo no autorizado por S/ 245.00 en la tarjeta de crédito."
+      ],
+      "maxLength": 8000,
+      "minLength": 10,
+      "title": "Description Text",
+      "type": "string"
+    },
+    "institution_id": {
+      "description": "SBS-assigned institution code (the Empresa código referenced by the resolución's Reportes section). Format: SBS-NNNN.",
+      "examples": [
+        "SBS-001234"
+      ],
+      "maxLength": 10,
+      "minLength": 8,
+      "pattern": "^SBS-\\d{4,6}$",
+      "title": "Institution Id",
+      "type": "string"
+    },
+    "motivo_code": {
+      "$ref": "#/$defs/MotivoCode",
+      "description": "Anexo 1-A #15 — Motivo del reclamo SBS. Subset of Anexo C codes; full list deferred to Part 11.",
+      "examples": [
+        "COBRO_INDEBIDO"
+      ]
+    },
+    "original_reference_id": {
+      "anyOf": [
+        {
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Anexo 1-A #23 — Reclamo previo. Optional. When the user is re-filing a complaint that was previously resolved, this carries the complaint_id of the prior reclamo (which must also exist in the institution's database). Same pattern as complaint_id.",
+      "examples": [
+        "BCO-2025-000891"
+      ],
+      "title": "Original Reference Id"
+    },
+    "product_category": {
+      "$ref": "#/$defs/ProductCategory",
+      "description": "Anexo 1-A #14 — Operación / servicio / producto del reclamo. Subset of Anexo B codes; full list deferred to Part 11.",
+      "examples": [
+        "TARJETA_CREDITO"
+      ]
+    },
+    "received_date": {
+      "description": "Anexo 1-A #6 — Fecha de ingreso. The date on which the user submitted the complaint. ISO-8601 date (YYYY-MM-DD).",
+      "examples": [
+        "2026-05-12"
+      ],
+      "format": "date",
+      "title": "Received Date",
+      "type": "string"
+    },
+    "resolution_status": {
+      "$ref": "#/$defs/ResolutionStatus",
+      "description": "Anexo 1-A #22 — Estado. Initial state on submission is typically 'pendiente'; 'atendido' or 'anulado' are set via the status PATCH endpoint over the complaint lifecycle.",
+      "examples": [
+        "pendiente"
+      ]
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity",
+      "description": "Severity tag set by the institution. No counterpart in Anexo 1-A; this is a prototype divergence used by the supervisory agents (Part 5+) for triage. See ADR 0026.",
+      "examples": [
+        "HIGH"
+      ]
+    },
+    "submission_method": {
+      "$ref": "#/$defs/SubmissionMethod",
+      "description": "Anexo 1-A #8 — Canal de operación. The channel through which the underlying operation that triggered the complaint occurred. Distinct from `channel` (which records the complaint-registration channel). Subset of Anexo A operation channels.",
+      "examples": [
+        "APP_MOVIL"
+      ]
+    }
+  },
+  "required": [
+    "complaint_id",
+    "institution_id",
+    "received_date",
+    "complainant_doc_type",
+    "product_category",
+    "channel",
+    "motivo_code",
+    "severity",
+    "description_text",
+    "description_language",
+    "complainant_age_range",
+    "complainant_district",
+    "submission_method",
+    "resolution_status"
+  ],
+  "title": "Complaint",
+  "type": "object"
+}

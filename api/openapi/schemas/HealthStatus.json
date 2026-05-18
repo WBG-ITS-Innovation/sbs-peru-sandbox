@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/health``.",
+  "properties": {
+    "checked_at": {
+      "description": "Timestamp of the health probe.",
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "status": {
+      "description": "Aggregate liveness. 'ok' means all dependencies reachable; 'degraded' means some dependencies are unreachable but the API can still serve reads; 'down' means a critical dependency is unreachable.",
+      "enum": [
+        "ok",
+        "degraded",
+        "down"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "version": {
+      "description": "Build version of the running API service.",
+      "examples": [
+        "0.1.0"
+      ],
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "version",
+    "checked_at"
+  ],
+  "title": "HealthStatus",
+  "type": "object"
+}

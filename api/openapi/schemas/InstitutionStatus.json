@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/institutions/{institution_id}/status``.",
+  "properties": {
+    "complaints_received_today": {
+      "description": "Count of Tier 1 + Tier 2 complaints received in the current UTC day.",
+      "minimum": 0,
+      "title": "Complaints Received Today",
+      "type": "integer"
+    },
+    "institution_id": {
+      "pattern": "^SBS-\\d{4,6}$",
+      "title": "Institution Id",
+      "type": "string"
+    },
+    "last_submission_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Timestamp of the institution's most recent submission. Null if none.",
+      "title": "Last Submission At"
+    },
+    "onboarded": {
+      "description": "True if the institution is active in the sandbox.",
+      "title": "Onboarded",
+      "type": "boolean"
+    },
+    "rate_limit_per_minute": {
+      "description": "Per-minute Tier 1 ingestion rate limit allocated to this institution.",
+      "minimum": 0,
+      "title": "Rate Limit Per Minute",
+      "type": "integer"
+    },
+    "schema_version": {
+      "description": "Anexo 1-A schema version the institution is currently aligned to.",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "institution_id",
+    "onboarded",
+    "rate_limit_per_minute",
+    "complaints_received_today",
+    "schema_version"
+  ],
+  "title": "InstitutionStatus",
+  "type": "object"
+}

@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "ResolutionStatus": {
+      "description": "Estado del reclamo — Resolución Anexo 1-A #22.\n\nResolución values: ``pendiente``, ``atendido``, ``anulado``. Mirrored here\nin lowercase to match the resolución wording.",
+      "enum": [
+        "pendiente",
+        "atendido",
+        "anulado"
+      ],
+      "title": "ResolutionStatus",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of the 201 response from ``POST /v1/complaints``.",
+  "properties": {
+    "client_submission_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Echo of the optional client_submission_id from the request.",
+      "title": "Client Submission Id"
+    },
+    "complaint_id": {
+      "description": "The complaint_id from the submitted payload, echoed for confirmation.",
+      "title": "Complaint Id",
+      "type": "string"
+    },
+    "institution_id": {
+      "description": "The institution_id from the submitted payload.",
+      "title": "Institution Id",
+      "type": "string"
+    },
+    "received_at": {
+      "description": "Server-assigned receipt timestamp (UTC). Distinct from the Anexo 1-A 'received_date' which is the institution-recorded date the user submitted the complaint.",
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "resolution_status": {
+      "$ref": "#/$defs/ResolutionStatus",
+      "description": "The resolution_status as accepted by the server."
+    }
+  },
+  "required": [
+    "complaint_id",
+    "institution_id",
+    "received_at",
+    "resolution_status"
+  ],
+  "title": "ComplaintCreated",
+  "type": "object"
+}

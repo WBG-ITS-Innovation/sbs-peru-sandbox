@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Bring up the local-dev Postgres, wait for health, run migrations.
+# Bring up the local-dev Postgres, wait for health, run migrations, seed
+# demo institutions.
 #
 # Exit codes:
 #   0  ready (DSN printed to stdout on the last line)
@@ -7,6 +8,7 @@
 #   2  Docker not reachable
 #   3  Postgres failed to become healthy within the timeout
 #   4  Alembic migration failed
+#   5  Demo-institution seed failed
 
 set -euo pipefail
 
@@ -42,6 +44,15 @@ echo "==> alembic upgrade head"
   echo "ERROR: alembic upgrade head failed" >&2
   exit 4
 }
+
+echo "==> seeding demo institutions"
+docker exec -e PGPASSWORD=sbs -i sbs-postgres \
+  psql -U sbs -d sbs_dev -v ON_ERROR_STOP=1 \
+  < scripts/dev-seed.sql >/dev/null || {
+  echo "ERROR: demo-institution seed failed" >&2
+  exit 5
+}
+echo "    institutions: SBS-001234 (BANCO_DEMO_001), SBS-005678 (COOPAC_DEMO_002)"
 
 echo
 echo "==> ready"

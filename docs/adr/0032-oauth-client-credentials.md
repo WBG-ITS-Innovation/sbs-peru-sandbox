@@ -49,7 +49,11 @@ cert return 401 `TOKEN_CERT_REQUIRED`.
 **Token shape.** Sandbox: JWT signed with HS256 using a server-side key
 persisted at `dev-ca/oauth-signing-key.bin` (generated at first boot by
 `secrets.token_bytes(32)`). Production overlay: RS256 with a Key Vault
-key, deferred to Part 9. Claims:
+key, deferred to Part 9. The JWT header carries a `kid` (key id) field
+— sandbox value `kid=sandbox-v1`. The `kid` is set from issuance day
+one so the HS256→RS256 transition and any subsequent key rotation are
+non-breaking for SDK consumers; adding `kid` post-issuance would be a
+breaking change. Claims:
 
 | Claim | Value |
 | --- | --- |
@@ -58,8 +62,28 @@ key, deferred to Part 9. Claims:
 | `iat` | Token issuance time. |
 | `exp` | `iat + 900` seconds (15 minutes). |
 | `sub` | `institution_id` from the mTLS subject. |
-| `scope` | Space-separated list of granted scopes (subset of requested ∩ permitted). |
+| `scope` | Space-separated list of granted scopes (`granted = requested ∩ permitted`; see below). |
 | `cnf.x5t#S256` | SHA-256 thumbprint of the presenting cert, per RFC 8705 §3.1. |
+
+**Cert-thumbprint source.** In `direct` mTLS mode the thumbprint is
+computed from the ASGI-scope peer cert. In `proxy` mode the thumbprint
+is read from the `Hash=` field of the XFCC header per the ADR 0031
+amendment — the runtime does *not* have access to the cert bytes in
+proxy mode, so the proxy is the trusted source of the thumbprint. The
+mTLS dependency (`verified_mtls_subject`) returns the same
+`MtlsSubject` shape in both modes; OAuth token issuance and
+verification read the thumbprint from there.
+
+**Permitted scopes per institution.** A new `permitted_scopes`
+`text[]` column on the `institutions` table enumerates the scopes the
+institution is *allowed* to request. Token issuance computes
+`granted = requested ∩ permitted`; if `granted` is empty the endpoint
+returns OAuth `invalid_scope` per RFC 6749 §5.2. Otherwise the token
+is issued with `granted` in the `scope` claim. Sandbox seed data
+populates `permitted_scopes` with the full scope set
+(`{complaints:write, complaints:read, batch:upload, status:read}`) for
+both demo institutions; production onboarding (Part 8) is the place
+where per-institution restrictions are configured.
 
 **Four scopes.** The full enumeration:
 

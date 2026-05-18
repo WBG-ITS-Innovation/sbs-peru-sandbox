@@ -153,14 +153,26 @@ authors generate signing code from this section.
   prefix (`hmac-sha256-v1`) supports future rotation to a different
   algorithm or key-derivation scheme without breaking clients.
 
-**Canonical request string.** Five lines joined with `\n`:
+**Canonical request string.** Six lines joined with `\n`:
 
 ```
 <HTTP-method-uppercase>
 <request-target-as-on-the-wire>
+<lowercased-host-header>
 <X-SBS-Timestamp-value>
 <lowercase-hex(sha256(body))>
 <institution_id>
+```
+
+Worked example (POST /v1/complaints, sandbox host, empty-body placeholder):
+
+```
+POST
+/v1/complaints
+sbs-suptech-sandbox.local
+2026-05-19T14:23:45Z
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+BANCO_DEMO_001
 ```
 
 Where:
@@ -169,6 +181,11 @@ Where:
 - `request-target-as-on-the-wire` is the path-and-query as received,
   e.g., `/v1/complaints?cursor=abc&limit=20`. Query parameters are kept
   in the order the client sent them; the server does not canonicalise.
+- `lowercased-host-header` is the value of the inbound `Host` header
+  lowercased (no port unless the client included one). Binding the host
+  prevents cross-environment signature replay if a secret is ever shared
+  between sandbox and production. This follows AWS SigV4 §Task 1, which
+  signs `host` for the same reason.
 - `X-SBS-Timestamp-value` is the verbatim header value.
 - `lowercase-hex(sha256(body))` is the SHA-256 of the raw request body,
   lowercase hex. Empty body produces the constant
@@ -176,6 +193,20 @@ Where:
 - `institution_id` is the value the client expects the server to bind
   the request to (it is cross-checked against the mTLS subject; a
   mismatch returns 401 `SIGNATURE_INSTITUTION_MISMATCH`).
+
+**Body-hash specification.**
+
+- The hash is SHA-256 over the request body *bytes as the server reads
+  them* — after HTTP/1.1 dechunking, before any content-decoding such
+  as gzip. The client computes the hash over the same bytes it will
+  send on the wire.
+- For multipart batch upload (`POST /v1/batches`), the hash is over the
+  full multipart payload including boundary delimiters
+  (`--<boundary>` and the trailing `--<boundary>--`), computed by the
+  client before transmission. The SDK must finalise the multipart
+  encoding *before* hashing.
+- Empty body hashes to the SHA-256 of the empty octet stream:
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
 
 **Signature.**
 `base64(hmac_sha256(key=institution_secret, msg=canonical_request_string))`.
@@ -188,8 +219,18 @@ grace window (`SBS_API_HMAC_SECRET_ROTATION_GRACE_SECONDS`, default
 
 **Replay protection.** A Redis SET with key
 `sbs:hmac:replay:<institution_id>:<sha256(signature)[:16]>` and TTL of
-`24h × 1.05` (5% headroom). Replays inside the window return 401
-`SIGNATURE_REPLAYED`.
+**10 minutes** (`timestamp_skew × 2 + 5% headroom = 600s + 30s ≈ 600s`).
+Replays inside the window return 401 `SIGNATURE_REPLAYED`. The TTL is
+deliberately short: the timestamp check is the primary defence, and the
+replay cache is the defence-in-depth backstop bounded by the skew
+window. The original 24-hour figure was a memory-pressure error caught
+in the pre-workstream-A pressure test.
+
+**Constant-time comparison.** Signature comparison MUST use a
+constant-time primitive — `hmac.compare_digest` in Python,
+`crypto/subtle.ConstantTimeCompare` in Go,
+`CryptographicOperations.FixedTimeEquals` in .NET. A naive `==` over
+bytes leaks signature length and prefix to a timing attacker.
 
 **Stable error codes.** `SIGNATURE_MISSING_HEADER`,
 `SIGNATURE_ALGORITHM_UNSUPPORTED`, `SIGNATURE_INVALID`,
@@ -211,3 +252,14 @@ unchanged; only its prose description is expanded to point to this
 amendment. SDKs generated from the spec do not need regeneration unless
 they incorporate the signing logic itself (the canonical-request
 construction).
+
+**Deployment note for proxy-mode mTLS.** The HMAC signature is over the
+request-target *byte-identical* to what the client sent. Reverse
+proxies that re-write or normalise the URI break the signature. Envoy
+preserves `:path` byte-identical by default. Nginx must use
+`proxy_pass http://upstream$request_uri;` rather than relying on URI
+normalisation; the `merge_slashes off;` directive may also be required
+when the client legitimately sends `//` in a path. The smoke test
+exercises this path against the dev CA in `direct` mode; the production
+overlay must include a conformance test against the deployed proxy
+before the chain is considered intact.

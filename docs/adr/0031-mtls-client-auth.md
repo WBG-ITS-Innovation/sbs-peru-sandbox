@@ -59,17 +59,39 @@ selected by `SBS_API_MTLS_MODE`:
 - `direct` — uvicorn is configured with
   `ssl_certfile`, `ssl_keyfile`, `ssl_ca_certs`, and
   `ssl_cert_reqs=ssl.CERT_REQUIRED`. The verified peer cert is in the ASGI
-  scope; the runtime extracts the DN from there.
+  scope; the runtime extracts the DN and computes the SHA-256
+  thumbprint from there.
 - `proxy` — the reverse proxy terminates TLS, validates the cert against
-  the SBS CA root, and forwards the verified DN in a trusted header
-  (`X-Client-Cert-DN`). The runtime trusts the header *only because* the
-  network path from proxy to runtime is itself mTLS-protected (deferred to
-  the Helm chart in Part 9).
+  the SBS CA root, and forwards the verified cert metadata in the
+  `X-Forwarded-Client-Cert` (XFCC) header per the Envoy de-facto
+  standard. The runtime parses the XFCC header for both the CN and the
+  thumbprint; this satisfies RFC 8705 §3.2 (the resource server must
+  reconstruct `cnf.x5t#S256` for the cert-bound token check). The XFCC
+  format is:
+
+  ```
+  X-Forwarded-Client-Cert: Hash=<hex-sha256>;Subject="CN=<institution-cn>";URI=
+  ```
+
+  `Hash=` carries the lowercase hex of `SHA-256(DER(cert))` — the
+  thumbprint surfaced to ADR 0032's `cnf.x5t#S256` check.
+  `Subject="CN=..."` is the cert's subject DN; the CN is extracted for
+  the institution_id lookup. Multiple comma-separated XFCC elements
+  may be present (one per hop); the runtime reads only the
+  *outermost* (rightmost) element written by the trusted proxy.
+
+  The proxy-to-runtime trust assumption is that the network path
+  between the two is mTLS-protected (Helm chart, Part 9). Until that
+  lands, anyone with network access to the proxy-mode listener can
+  forge an XFCC header — see §Consequences.
 
 **Dependency surface.** A FastAPI dependency `verified_mtls_subject`
 returns a `MtlsSubject(institution_id: str, cert_thumbprint: bytes)`
-record. Every protected route declares it (or a downstream dependency
-that consumes it). The same dependency is the input to the OAuth
+record. Both modes return the same record type; only the source of the
+thumbprint differs (computed from the TLS context in `direct` mode;
+parsed from the XFCC `Hash=` field in `proxy` mode). Every protected
+route declares the dependency (or a downstream dependency that
+consumes it). The same dependency is the input to the OAuth
 cert-binding check in ADR 0032.
 
 **Storage.** A new table `institution_certificates` carries
@@ -148,3 +170,13 @@ validation is the SBS PKI's responsibility; pinning is not.
 - The `MtlsSubject.cert_thumbprint` field is the input to ADR 0032's
   cert-bound OAuth token check. Removing the thumbprint would break that
   binding; the field is load-bearing.
+- **Proxy-mode trust gap until Part 9.** The XFCC header is only as
+  trustworthy as the network path from the proxy to the runtime. Until
+  Part 9 lands mTLS on the proxy→backend channel, anyone with network
+  access to the `proxy`-mode port can forge an XFCC header and
+  impersonate any institution. The sandbox mitigates this by defaulting
+  to `direct` mode (the dev CA terminates at uvicorn) and exercising
+  smoke tests against `direct` only. Operators bringing up `proxy` mode
+  before Part 9 must isolate the proxy→backend hop at the network layer
+  (e.g., loopback-only listener, private subnet, or service mesh with
+  mTLS) — and document that mitigation in the deployment.

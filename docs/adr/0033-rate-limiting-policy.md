@@ -64,8 +64,20 @@ guarantees concurrent requests do not double-count.
 **Middleware placement.** The rate-limit middleware runs *inside* the
 OAuth token validation (the `institution_id` is already resolved at this
 point) and *outside* the route handler. It applies to every protected
-endpoint; unauthenticated endpoints (health probes, openapi, token
-endpoint) are bypassed by an explicit allowlist.
+endpoint; unauthenticated endpoints that *do not* resolve an
+institution (health probes, openapi) are bypassed by an explicit
+allowlist.
+
+**Token endpoint has its own bucket.** `POST /v1/oauth/token` is *not*
+on the allowlist — it has a separate, tighter token-endpoint bucket of
+**50 requests/minute per institution** (keyed on the mTLS subject's
+CN, since the OAuth token has not yet been issued). Rationale: RFC
+6749 §10.10 SHOULD on authorization-server throttling, and Stripe's
+token endpoint runs at this scale. The bucket protects against
+brute-force `client_secret` enumeration by an attacker who has somehow
+acquired a valid mTLS cert. On exhaustion the endpoint returns 429
+with stable code `TOKEN_ENDPOINT_RATE_LIMIT_EXCEEDED` and the same
+four headers as the business-bucket 429.
 
 **429 response shape.** RFC 9457 problem+json with stable code
 `RATE_LIMIT_EXCEEDED`:
@@ -151,3 +163,11 @@ or invite gaming.
   must bring it up. A test fixture that does not need rate limiting can
   disable the middleware via the same allowlist mechanism, but the
   default test app includes Redis via testcontainers.
+- **Batch upload bypasses the request-level limit semantically.** One
+  `POST /v1/batches` may carry N complaints, so the effective
+  complaint-ingestion rate from a single Tier 1 institution is
+  unbounded by the request-per-minute limit alone. Post-May-25
+  benchmark will inform whether a separate `batch_per_hour` limit, or
+  a compute-units approach per Stripe, is justified. This is recorded
+  as a future-amendment trigger, not a blocker for the May 25 sandbox
+  (synthetic data only, no production volume).

@@ -1,0 +1,24 @@
+"""HTTP route groupings.
+
+Each router file corresponds to a section of the canonical OpenAPI spec.
+``meta`` exposes ``/health``, ``/health/{live,ready,startup}``, and
+``/version``. ``openapi`` serves the canonical YAML at
+``/v1/openapi.yaml`` so the contract is reachable from the running app.
+"""
+
+from fastapi import APIRouter
+
+from sbs_api.routes.batches import router as batches_router
+from sbs_api.routes.complaints import router as complaints_router
+from sbs_api.routes.institutions import router as institutions_router
+from sbs_api.routes.meta import router as meta_router
+from sbs_api.routes.openapi import router as openapi_router
+
+v1_router = APIRouter(prefix="/v1")
+v1_router.include_router(complaints_router)
+v1_router.include_router(batches_router)
+v1_router.include_router(institutions_router)
+v1_router.include_router(meta_router)
+v1_router.include_router(openapi_router)
+
+__all__ = ["v1_router"]

@@ -1,0 +1,112 @@
+"""Python exception classes that map to RFC 9457 ProblemDetail responses.
+
+Each subclass carries the stable `code` (matching `api/openapi/error-catalog.md`),
+the HTTP status, the human-readable title, and an optional `detail`. The
+handler in :mod:`sbs_api.errors.handlers` converts the exception into the
+RFC 9457 envelope at response time.
+
+Why subclass-based, not factory-based: the FastAPI exception-handler
+registry is keyed on exception class, so subclassing is the idiomatic path.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class SBSAPIException(Exception):
+    """Base class for every domain exception that should produce a ProblemDetail.
+
+    Subclasses set the class-level attributes. The constructor accepts an
+    optional ``detail`` string and an optional ``errors`` list of field-level
+    failures (used by validation paths).
+    """
+
+    code: str = "SBS-500-001"
+    status: int = 500
+    title: str = "Internal server error"
+    type_suffix: str = "SBS-500-001"
+
+    def __init__(
+        self,
+        detail: str | None = None,
+        *,
+        errors: list[dict[str, Any]] | None = None,
+        instance: str | None = None,
+    ) -> None:
+        super().__init__(detail or self.title)
+        self.detail = detail
+        self.errors = errors
+        self.instance = instance
+
+
+class ResourceNotFound(SBSAPIException):
+    code = "SBS-404-001"
+    status = 404
+    title = "Resource not found"
+    type_suffix = "SBS-404-001"
+
+
+class TenantMismatch(SBSAPIException):
+    """Returned to clients as 404 (not 403) so existence is not leaked across tenants."""
+
+    code = "SBS-404-001"
+    status = 404
+    title = "Resource not found"
+    type_suffix = "SBS-404-001"
+
+
+class ResolutionStatusTransitionForbidden(SBSAPIException):
+    code = "SBS-422-004"
+    status = 422
+    title = "Resolution status transition forbidden"
+    type_suffix = "RESOLUTION_STATUS_TRANSITION_FORBIDDEN"
+
+
+class ETagMismatch(SBSAPIException):
+    code = "SBS-412-001"
+    status = 412
+    title = "ETag mismatch"
+    type_suffix = "ETAG_MISMATCH"
+
+
+class PreconditionRequired(SBSAPIException):
+    code = "SBS-428-001"
+    status = 428
+    title = "Precondition required"
+    type_suffix = "SBS-428-001"
+
+
+class IdempotencyKeyReuseWithDifferentBody(SBSAPIException):
+    code = "SBS-409-002"
+    status = 409
+    title = "Idempotency-Key reused with different body"
+    type_suffix = "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY"
+
+
+class CursorInvalid(SBSAPIException):
+    code = "SBS-400-005"
+    status = 400
+    title = "Cursor invalid"
+    type_suffix = "CURSOR_INVALID"
+
+
+class RequestBodyTooLarge(SBSAPIException):
+    code = "SBS-400-004"
+    status = 413
+    title = "Request body too large"
+    type_suffix = "REQUEST_BODY_TOO_LARGE"
+
+
+class AuthenticationNotConfigured(SBSAPIException):
+    code = "SBS-503-002"
+    status = 503
+    title = "Authentication not configured"
+    type_suffix = "AUTH_NOT_CONFIGURED"
+
+
+class ServiceUnavailable(SBSAPIException):
+    code = "SBS-503-001"
+    status = 503
+    title = "Service degraded or down"
+    type_suffix = "SBS-503-001"

@@ -27,6 +27,25 @@ info:
     subset against the resolución, and ADR 0027 for the rule that this
     specification — not the Pydantic implementation — is the canonical
     contract.
+
+    ## complaint_id uniqueness
+
+    The `complaint_id` is unique **globally within the SBS sandbox**, not
+    per-institution. Two institutions cannot submit complaints carrying
+    the same `complaint_id`. The May 25 sandbox enforces this by assigning
+    `complaint_id` server-side at submission time; the institution does
+    not propose an id on `POST /complaints`. See ADR 0028.
+
+    ## Cursor pagination format
+
+    Cursor-paginated endpoints (`GET /complaints`, `GET /batches/{id}/results`)
+    return `next_cursor` as an **opaque base64-encoded** value. Clients must
+    treat the cursor as opaque and pass it back to the server verbatim;
+    decoding, modifying, or constructing a cursor client-side is unsupported
+    and produces `SBS-400-005 CURSOR_INVALID`. Internally the cursor encodes
+    `{"received_at": "<RFC3339>", "complaint_id": "<uuid>"}` so the server can
+    resume the page deterministically; this internal format is **not** part
+    of the published contract and may change.
   contact:
     name: SBS SupTech engineering
     url: https://www.sbs.gob.pe
@@ -93,6 +112,9 @@ paths:
         "201":
           description: Complaint accepted.
           headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+            Idempotency-Replayed: { $ref: "#/components/headers/IdempotencyReplayedResponse" }
+            ETag: { $ref: "#/components/headers/ETagResponse" }
             Location:
               schema:
                 type: string
@@ -119,7 +141,11 @@ paths:
       description: |
         Retrieve a paginated list of complaints. Supervisor users may filter
         across institutions; institution users see only their own. Pagination
-        is cursor-based. Inherits the global `complaints.read` scope.
+        is cursor-based; treat `next_cursor` as **opaque** and pass it back
+        verbatim. Internally the cursor encodes
+        `{"received_at": "<RFC3339>", "complaint_id": "<uuid>"}` (base64),
+        but this is not part of the published contract — see the info-block
+        "Cursor pagination format". Inherits the global `complaints.read` scope.
       parameters:
         - in: query
           name: institution_id
@@ -152,6 +178,8 @@ paths:
       responses:
         "200":
           description: Page of complaints.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
@@ -178,6 +206,9 @@ paths:
       responses:
         "200":
           description: Complaint found.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+            ETag: { $ref: "#/components/headers/ETagResponse" }
           content:
             application/json:
               schema:
@@ -194,6 +225,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/ComplaintIdPath"
       - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      - $ref: "#/components/parameters/IfMatchHeader"
       - $ref: "#/components/parameters/TraceparentHeader"
     patch:
       tags: [Ingestion (Tier 1)]
@@ -209,6 +241,10 @@ paths:
         the prior and new state along with the reason. The response is the
         full updated `Complaint` resource so clients can observe the
         post-transition state without an extra round trip.
+
+        Concurrency control: clients send the `ETag` returned from a prior
+        `GET` or `PATCH` as the `If-Match` header. A stale tag returns 412
+        with `ETAG_MISMATCH`; a missing tag returns 428.
       requestBody:
         required: true
         content:
@@ -226,6 +262,9 @@ paths:
       responses:
         "200":
           description: Status updated.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+            ETag: { $ref: "#/components/headers/ETagResponse" }
           content:
             application/json:
               schema:
@@ -235,8 +274,11 @@ paths:
         "403": { $ref: "#/components/responses/Problem403" }
         "404": { $ref: "#/components/responses/Problem404" }
         "409": { $ref: "#/components/responses/Problem409" }
+        "412": { $ref: "#/components/responses/Problem412" }
         "422": { $ref: "#/components/responses/Problem422" }
+        "428": { $ref: "#/components/responses/Problem428" }
         "500": { $ref: "#/components/responses/Problem500" }
+        "503": { $ref: "#/components/responses/Problem503" }
 
   /batches:
     post:
@@ -269,6 +311,9 @@ paths:
       responses:
         "202":
           description: Manifest accepted; ready for upload.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+            Idempotency-Replayed: { $ref: "#/components/headers/IdempotencyReplayedResponse" }
           content:
             application/json:
               schema:
@@ -297,6 +342,8 @@ paths:
       responses:
         "200":
           description: Current batch state.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
@@ -331,6 +378,8 @@ paths:
       responses:
         "200":
           description: Page of result rows.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
@@ -340,6 +389,8 @@ paths:
         "404": { $ref: "#/components/responses/Problem404" }
         "409":
           description: Batch not yet completed.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/problem+json:
               schema: { $ref: "#/components/schemas/ProblemDetail" }
@@ -360,6 +411,8 @@ paths:
       responses:
         "200":
           description: Status snapshot.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
@@ -372,24 +425,101 @@ paths:
   /health:
     get:
       tags: [Meta]
-      summary: Health probe
+      summary: Health probe (aggregate)
       operationId: getHealth
       security: []
       description: |
-        Aggregate health. Returns `ok`, `degraded`, or `down`. Distinct from
-        the Kubernetes liveness/readiness probes that the FastAPI scaffold
-        will expose under `/health/live` and `/health/ready` (Prompt 6); this
-        endpoint is the institution-facing summary. Public — no authentication
-        required.
+        Aggregate health. Returns `ok`, `degraded`, or `down`. Public — no
+        authentication required. The Kubernetes-shaped probes live at
+        `/health/live`, `/health/ready`, and `/health/startup` and are
+        documented under ADR 0030.
       responses:
         "200":
           description: Health snapshot.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
         "503":
           description: Service down.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /health/live:
+    get:
+      tags: [Meta]
+      summary: Liveness probe
+      operationId: getHealthLive
+      security: []
+      description: |
+        Process liveness. No I/O. Returns 200 unless the process is dying.
+        Used by the orchestrator restart policy. See ADR 0030.
+      responses:
+        "200":
+          description: Process alive.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /health/ready:
+    get:
+      tags: [Meta]
+      summary: Readiness probe
+      operationId: getHealthReady
+      security: []
+      description: |
+        Traffic readiness. Pings the database with a 200ms timeout and a
+        1-second result cache so flaps do not produce pod-flap loops. Used by
+        the load balancer. See ADR 0030.
+      responses:
+        "200":
+          description: Ready to serve traffic.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Not ready (database unreachable).
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /health/startup:
+    get:
+      tags: [Meta]
+      summary: Startup probe
+      operationId: getHealthStartup
+      security: []
+      description: |
+        Startup completion. Confirms migrations applied
+        (`SELECT version_num FROM alembic_version` matches a known head).
+        Returns 200 once; 503 until then. Used by the orchestrator startup
+        probe (distinct timeout from liveness). See ADR 0030.
+      responses:
+        "200":
+          description: Startup complete.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Startup not complete.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/problem+json:
               schema: { $ref: "#/components/schemas/ProblemDetail" }
@@ -404,6 +534,8 @@ paths:
       responses:
         "200":
           description: Version snapshot.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
@@ -443,6 +575,33 @@ components:
         institutional identity at the edge, the HMAC binds a specific request
         body. Implementation details land in Prompt 7.
 
+  headers:
+    TraceparentResponse:
+      description: |
+        W3C traceparent identifier for the request. Echoed verbatim from the
+        request when present and well-formed; otherwise generated by the
+        server. Present on every response (success and error) so clients can
+        correlate logs and traces across the request path.
+      schema:
+        type: string
+        pattern: "^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
+    ETagResponse:
+      description: |
+        Strong entity tag for the complaint resource. Returned on successful
+        retrieval and on successful `PATCH /complaints/{id}/status` 200. Used
+        as the `If-Match` value on subsequent `PATCH` calls to detect
+        concurrent updates. See RFC 9110 §8.8.
+      schema:
+        type: string
+        pattern: "^\"[A-Za-z0-9+/=._-]+\"$"
+    IdempotencyReplayedResponse:
+      description: |
+        Set to `true` when the response is a cached replay of a prior
+        idempotent request (same `Idempotency-Key` within the 24-hour window).
+        Absent (or `false`) on first execution. See ADR 0029.
+      schema:
+        type: boolean
+
   parameters:
     IdempotencyKeyHeader:
       in: header
@@ -462,7 +621,21 @@ components:
         pattern: "^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$"
       description: |
         W3C traceparent identifier. If absent, the server generates one and
-        returns it in the response.
+        returns it in the response. Every operation echoes the resulting
+        traceparent in the response `traceparent` header.
+    IfMatchHeader:
+      in: header
+      name: If-Match
+      required: true
+      schema:
+        type: string
+        pattern: "^\"[A-Za-z0-9+/=._-]+\"$"
+      description: |
+        Strong entity tag of the resource version the client believes it is
+        modifying, obtained from a prior `GET` or `PATCH` response's `ETag`
+        header. Required on `PATCH /complaints/{id}/status`. A missing header
+        returns 428 (RFC 6585); a stale tag returns 412 with stable code
+        `ETAG_MISMATCH`.
     ComplaintIdPath:
       in: path
       name: complaint_id
@@ -483,37 +656,65 @@ components:
   responses:
     Problem400:
       description: Bad request (malformed envelope).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem401:
       description: Authentication failed (invalid certificate, token, or signature).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem403:
       description: Authorization failed (scope missing or institution not onboarded).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem404:
       description: Resource not found.
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem409:
       description: Conflict (duplicate complaint_id, idempotency replay mismatch, illegal status transition).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem412:
+      description: ETag mismatch — the resource was modified since the client last read it.
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+        ETag: { $ref: "#/components/headers/ETagResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem422:
       description: Validation failed (body shape correct, content invalid).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem428:
+      description: Precondition required — `If-Match` header missing on a conditional request (RFC 6585).
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem429:
       description: Per-institution rate limit exceeded.
       headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
         Retry-After:
           schema: { type: integer }
           description: Seconds to wait before retrying.
@@ -522,6 +723,15 @@ components:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
     Problem500:
       description: Internal server error.
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/ProblemDetail" }
+    Problem503:
+      description: Service unavailable.
+      headers:
+        traceparent: { $ref: "#/components/headers/TraceparentResponse" }
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/ProblemDetail" }

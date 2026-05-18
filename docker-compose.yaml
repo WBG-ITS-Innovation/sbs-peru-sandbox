@@ -1,0 +1,39 @@
+name: sbs-suptech-prototype
+
+# Local development stack for the SBS SupTech sandbox.
+#
+# This Compose file is deliberately minimal for the May 25 critical path:
+# postgres + pgvector only. The FastAPI scaffold runs from the host shell
+# via `bash scripts/run-api.sh`; running the API inside a container is the
+# Prompt 9 production-readiness scope, not a May 25 deliverable. Redis,
+# vLLM, the observability stack all land in later prompts.
+#
+# Usage:
+#   bash scripts/dev-up.sh    — bring postgres up, wait for health, run
+#                               alembic upgrade head, print the DSN
+#   bash scripts/dev-down.sh  — tear down (pass `-v` to wipe the data volume)
+#
+# Data survives `docker compose down`. Wipe with `docker compose down -v`.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sbs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sbs
+      POSTGRES_PASSWORD: sbs # pragma: allowlist secret
+      POSTGRES_DB: sbs_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - sbs_postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sbs -d sbs_dev"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  sbs_postgres_data: {}

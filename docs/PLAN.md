@@ -87,14 +87,14 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 - [x] JSON Schema export from Pydantic — Prompt 5 (api/openapi/schemas/). Regenerate via `bash scripts/regenerate-schemas.sh`.
 - [x] Developer portal — Prompt 5 (api/devportal/index.html via Stoplight Elements CDN). Run with `bash scripts/serve-devportal.sh`.
 - [x] RFC 9457 problem+json error model + error catalog — Prompt 5 (api/openapi/error-catalog.md, ProblemDetail model).
-- [ ] Alembic baseline migration (all tables defined) — Prompt 6.
-- [ ] FastAPI with /health, /health/ready, /health/live — Prompt 6.
-- [ ] structlog + OTel tracing on every endpoint — Prompt 6.
-- [ ] GET /v1/complaints returns empty list with proper headers — Prompt 6.
+- [x] Alembic baseline migration (all tables defined) — Prompt 6 (api/migrations/versions/20260518_0001_baseline.py).
+- [x] FastAPI with /health, /health/ready, /health/live — Prompt 6. Three probes with explicit semantics per [ADR 0030](adr/0030-health-probe-semantics.md); a fourth `/health/startup` was added.
+- [x] structlog + OTel tracing on every endpoint — Prompt 6. structlog binds `trace_id` / `span_id` / `correlation_id`; OTel owns trace context per [ADR 0028](adr/0028-fastapi-application-structure.md) §4-5.
+- [x] GET /v1/complaints returns empty list with proper headers — Prompt 6. The endpoint is live and authenticated via the auth-stub dependency (Prompt 7 replaces with real auth).
 - [ ] ADR 0002: Taxonomy as configuration — Part 11.
 - [ ] Second opinion: Template 6 (OpenAPI review) — GPT-5 — queued for post-Prompt 5 once TLS to Azure OpenAI is configured (see open-questions §1.1).
 
-**Exit:** Scalar docs render, trace visible in Grafana
+**Exit:** Scalar docs render, trace visible in Grafana. **Part 2 closed at Prompt 6 (2026-05-18).** Exit demonstration: `bash scripts/smoke-test.sh` runs against a locally-running API and exercises the behavioral contract (ETag round-trip, idempotency replay, tenant binding, state machine, ProblemDetail, body size limit). Grafana trace visibility lands with the observability stack in Part 9; the OTel SDK is wired and the `traceparent` header is on every response so the stack swap-in is mechanical.
 
 **May 25 scope.** Full. OpenAPI 3.1 spec, Pydantic v2 models (Prompt 5 ships the 15-field subset; full taxonomy is Part 11), Alembic baseline (Prompt 6), FastAPI scaffold with `/health` triad (Prompt 6), Scalar docs site (replaced by Stoplight Elements per [ADR 0027](adr/0027-openapi-as-canonical-contract.md) and the stack-validation note), structured logging and OTel tracing (Prompt 6). `GET /v1/complaints` returns empty list with proper headers (Prompt 6). No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 

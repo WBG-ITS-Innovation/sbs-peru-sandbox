@@ -115,3 +115,75 @@ Prompt 5 produces the foundation that every subsequent product prompt depends on
 - **Developer portal render check.** `bash scripts/serve-devportal.sh`, then visit `http://localhost:8080/devportal/`. `curl` against the local server returned 200 with the rendered HTML and the OpenAPI YAML served from the same origin. Stoplight Elements 8.4.10 from unpkg.
 - **Comparator file extension.** `docs/research/market-comparators.md` §5.A gained two short addenda — one on RFC 9457 adoption among regulator APIs (FCA/OBIE, European Commission, GOV.UK, HMRC), one on documentation portal rendering (Stoplight Elements vs Redoc vs Scalar). Both were promised by the Workstream 0 note and are referenced by ADR 0026 and ADR 0027.
 - **What did not land.** No FastAPI scaffold. No database schema. No security primitives. No Tier 2 batch processing pipeline. No synthetic data generator. No getting-started guide. No Postman collection. No agents. No ML. No UI wiring. No CDN vendoring. No carry-over harness bug fixes. All per the scope-out section of the Prompt 5 spec.
+
+
+---
+
+## Post-closeout addendum (2026-05-18)
+
+This addendum is appended after PR #25 was squash-merged to main as `6affcaa`. The sections above are the record of the unattended Prompt 5 run; this addendum records the follow-up cross-review work that landed on PR #26 (squash-merged as `5c95ec8`).
+
+### Why an addendum and not an in-place edit
+
+The journal above was written when the cross-reviews were skipped (TLS unresolved). Editing the original sections to retroactively claim the cross-reviews ran cleanly would lose the historical accuracy of the May 18 run. The addendum preserves the original record and tells future readers where to look for the final state.
+
+### What changed
+
+- **TLS configured.** WBG decrypt root certs added to the trust bundle at `~/certs/wbg-ca-bundle-full.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
+- **Both cross-reviews re-run and triaged.** `docs/reviews/2026-05-17-docs-research-2026-05-18-prompt-05-stack-validation.md` and `docs/reviews/2026-05-17-api-openapi-sbs-api-v1.md` both carry filled Triage sections.
+- **Three contract bugs fixed.** OAuth scope mismatch (global default was `complaints.write`); `complainant_district` ubigeo length (`^\d{4}$` → `^\d{6}$` to match canonical INEI DDPPDD); PATCH `/status` response shape (`ComplaintCreated` → `Complaint`). All three are on PR #26.
+- **Dev portal fixed.** Original `@stoplight/elements@8.4.10` was a non-existent version; both assets were unpkg error strings with identical bogus SRI hashes. Now pinned to `9.0.19` with two real distinct SRI hashes. Visually verified.
+- **Polish.** `Location: format: uri` on 201; duplicate `security:` blocks on `/health` and `/version` consolidated.
+- **18 secondary findings dispositioned** with explicit Prompt-N targets in the open-questions addendum §5.5.
+- **5 standing risks** elevated for SBS review at May 25 (open-questions addendum §5.6).
+- **RFC 9457 namespace** promoted from maintenance caveat to release gate (open-questions addendum §5.7).
+
+### Test count update
+
+148 → 151 passing. The three new tests cover the corrected ubigeo: canonical 6-digit acceptance, abroad sentinel `999999`, and 5-digit rejection. Spectral lint remains clean.
+
+### Subagent verdicts on PR #26
+
+Not re-run via the closeout pipeline (PR #26 was a focused remediation, not a closeout). The triage decisions in the two cross-review files plus the manual fix verification (151 tests + spectral clean + visual portal check) are the audit trail.
+
+### Final state
+
+- PR #25 → `6affcaa` (Prompt 5 original).
+- PR #26 → `5c95ec8` (cross-review remediation).
+- Two open-questions sections: §1–4 from the unattended run, §5 post-closeout addendum.
+- Next prompt: Prompt 6 — FastAPI scaffold, `/health` triad, Postgres + pgvector, structlog + OTel, RFC 9457 middleware, Alembic baseline, against this canonical OpenAPI contract.
+---
+
+## Post-closeout addendum (2026-05-18)
+
+This addendum is appended after PR #25 was squash-merged to main as `6affcaa`. The sections above are the record of the unattended Prompt 5 run; this addendum records the follow-up cross-review work that landed on PR #26 (squash-merged as `5c95ec8`).
+
+### Why an addendum and not an in-place edit
+
+The journal above was written when the cross-reviews were skipped (TLS unresolved). Editing the original sections to retroactively claim the cross-reviews ran cleanly would lose the historical accuracy of the May 18 run. The addendum preserves the original record and tells future readers where to look for the final state.
+
+### What changed
+
+- **TLS configured.** WBG decrypt root certs added to the trust bundle at `~/certs/wbg-ca-bundle-full.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
+- **Both cross-reviews re-run and triaged.** `docs/reviews/2026-05-17-docs-research-2026-05-18-prompt-05-stack-validation.md` and `docs/reviews/2026-05-17-api-openapi-sbs-api-v1.md` both carry filled Triage sections.
+- **Three contract bugs fixed.** OAuth scope mismatch (global default was `complaints.write`); `complainant_district` ubigeo length (`^\d{4}$` → `^\d{6}$` to match canonical INEI DDPPDD); PATCH `/status` response shape (`ComplaintCreated` → `Complaint`). All three are on PR #26.
+- **Dev portal fixed.** Original `@stoplight/elements@8.4.10` was a non-existent version; both assets were unpkg error strings with identical bogus SRI hashes. Now pinned to `9.0.19` with two real distinct SRI hashes. Visually verified.
+- **Polish.** `Location: format: uri` on 201; duplicate `security:` blocks on `/health` and `/version` consolidated.
+- **18 secondary findings dispositioned** with explicit Prompt-N targets in the open-questions addendum §5.5.
+- **5 standing risks** elevated for SBS review at May 25 (open-questions addendum §5.6).
+- **RFC 9457 namespace** promoted from maintenance caveat to release gate (open-questions addendum §5.7).
+
+### Test count update
+
+148 → 151 passing. The three new tests cover the corrected ubigeo: canonical 6-digit acceptance, abroad sentinel `999999`, and 5-digit rejection. Spectral lint remains clean.
+
+### Subagent verdicts on PR #26
+
+Not re-run via the closeout pipeline (PR #26 was a focused remediation, not a closeout). The triage decisions in the two cross-review files plus the manual fix verification (151 tests + spectral clean + visual portal check) are the audit trail.
+
+### Final state
+
+- PR #25 → `6affcaa` (Prompt 5 original).
+- PR #26 → `5c95ec8` (cross-review remediation).
+- Two open-questions sections: §1–4 from the unattended run, §5 post-closeout addendum.
+- Next prompt: Prompt 6 — FastAPI scaffold, `/health` triad, Postgres + pgvector, structlog + OTel, RFC 9457 middleware, Alembic baseline, against this canonical OpenAPI contract.

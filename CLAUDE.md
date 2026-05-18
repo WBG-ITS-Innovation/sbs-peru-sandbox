@@ -47,6 +47,7 @@ Read these before acting. They are authoritative; this file is a pointer index.
 - [docs/setup/corporate-proxy-and-zscaler.md](docs/setup/corporate-proxy-and-zscaler.md) — WBG networking / CA bundle setup (DRAFT).
 - [docs/setup/uv-quickstart.md](docs/setup/uv-quickstart.md) — uv install paths, the four commands, workspace layout, Zscaler caveats.
 - [api/openapi/sbs-api-v1.yaml](api/openapi/sbs-api-v1.yaml) — canonical OpenAPI 3.1 contract (`bash scripts/serve-devportal.sh` renders it locally via Stoplight Elements). See [ADR 0027](docs/adr/0027-openapi-as-canonical-contract.md).
+- [scripts/run-api.sh](scripts/run-api.sh) — run the FastAPI service locally. Three-command loop: `bash scripts/dev-up.sh` (Postgres + migrations), `bash scripts/run-api.sh` (API on :8000), `bash scripts/smoke-test.sh` (behavioral assertions). See [ADR 0028](docs/adr/0028-fastapi-application-structure.md).
 
 ---
 

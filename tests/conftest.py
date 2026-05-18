@@ -212,6 +212,8 @@ async def db_schema(test_database_url):
                 ),
             ]
         )
+        # Flush institutions before complaints so the FK constraint sees them.
+        await session.flush()
         session.add_all(
             [
                 ComplaintRecord(

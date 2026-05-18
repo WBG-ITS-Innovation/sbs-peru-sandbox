@@ -10,11 +10,38 @@ from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
 
 from sbs_api.config import get_settings
 from sbs_api.errors.exceptions import RequestBodyTooLarge
+
+PROBLEM_CONTENT_TYPE = "application/problem+json"
+
+
+def _too_large_response(detail: str) -> JSONResponse:
+    """Build the 413 ProblemDetail directly.
+
+    ``BaseHTTPMiddleware`` does not route exceptions through FastAPI's
+    registered handlers — the dispatch coroutine runs outside the handler
+    chain. So the middleware materialises the ProblemDetail itself, using
+    the same shape the handler would.
+    """
+
+    settings = get_settings()
+    exc = RequestBodyTooLarge(detail=detail)
+    body = {
+        "type": f"{settings.problem_type_namespace}/{exc.type_suffix}",
+        "title": exc.title,
+        "status": exc.status,
+        "code": exc.code,
+        "detail": exc.detail,
+    }
+    return JSONResponse(
+        status_code=exc.status,
+        content=body,
+        media_type=PROBLEM_CONTENT_TYPE,
+    )
 
 
 class BodySizeLimitMiddleware(BaseHTTPMiddleware):
@@ -33,11 +60,9 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
             except ValueError:
                 declared = None
             if declared is not None and declared > self._max_bytes:
-                raise RequestBodyTooLarge(
-                    detail=(
-                        f"Request body declared {declared} bytes; "
-                        f"server maximum is {self._max_bytes} bytes."
-                    )
+                return _too_large_response(
+                    f"Request body declared {declared} bytes; "
+                    f"server maximum is {self._max_bytes} bytes."
                 )
 
         # Slow path: read the body so we can guard against a missing or lying
@@ -45,11 +70,9 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
         # handler still parse JSON without an extra round trip.
         body = await request.body()
         if len(body) > self._max_bytes:
-            raise RequestBodyTooLarge(
-                detail=(
-                    f"Request body was {len(body)} bytes; "
-                    f"server maximum is {self._max_bytes} bytes."
-                )
+            return _too_large_response(
+                f"Request body was {len(body)} bytes; "
+                f"server maximum is {self._max_bytes} bytes."
             )
 
         async def receive():

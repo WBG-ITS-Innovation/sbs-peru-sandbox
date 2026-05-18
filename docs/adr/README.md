@@ -36,6 +36,9 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0025 | may-25-sprint-critical-path           | Proposed | Prompt 4 / Part 1    | May 25 sprint kickoff scope: Parts 2/3/4 full, Parts 5/6/7/8/11 reduced, Parts 9/10 deferred entirely; PLAN.md restructure. Proposed until a sprint-phasing comparator lands in docs/research/. |
 | 0026 | anexo-1a-curated-subset               | Accepted | Prompt 5 / Part 2    | 15-field subset of Anexo 1-A for the May 25 sandbox, reconciled against Resolución SBS N° 04036-2022; PII fields and Anexos B/C/D code-list distribution deferred to Part 11. |
 | 0027 | openapi-as-canonical-contract         | Accepted | Prompt 5 / Part 2    | The OpenAPI 3.1 specification (`api/openapi/sbs-api-v1.yaml`) is the canonical contract; Pydantic v2 models implement it; JSON Schemas exported from Pydantic; match-test enforces alignment. |
+| 0028 | fastapi-application-structure         | Accepted | Prompt 6 / Part 2    | Application factory, ProblemDetail via FastAPI exception handlers (not middleware), middleware ordering body_size_limit → traceparent → correlation_id, OTel owns trace context, auto-generated openapi disabled, cursor format, explicit state machine, UUID v7 via `uuid-utils`. |
+| 0029 | idempotency-policy                    | Accepted | Prompt 6 / Part 2    | `Idempotency-Key` supported on POST and PATCH; 24-hour TTL; body-hash on store; 409 on key reuse with different body; `Idempotency-Replayed: true` on cache hit; sweep job deferred to Prompt 7. |
+| 0030 | health-probe-semantics                | Accepted | Prompt 6 / Part 2    | Three probes: `/live` (no I/O), `/ready` (DB ping with 1-second result cache), `/startup` (alembic_version present); `SELECT 1` not write-capability; flaps alerted, not auto-remediated. |
 
 ## How to add an ADR
 

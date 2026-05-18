@@ -68,6 +68,33 @@ To lint the OpenAPI specification with Spectral (project-local install — `npm 
 ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml
 ```
 
+### Running the API locally
+
+The FastAPI service ships in Prompt 6 (Part 2 close). The local dev loop is three commands:
+
+```bash
+# 1. Bring up Postgres (pgvector) and apply Alembic migrations.
+bash scripts/dev-up.sh
+# Prints the DSN on success. Exits 2 if Docker is not reachable, 3 if
+# postgres did not become healthy, 4 if alembic migration failed.
+
+# 2. Run the API (binds 127.0.0.1:8000 by default).
+bash scripts/run-api.sh
+
+# 3. In a second terminal, exercise the running app end-to-end.
+bash scripts/smoke-test.sh
+# Asserts ETag round-trip, idempotency replay (match + mismatch),
+# Location is fetchable, state machine forbidden transition, tenant
+# binding, body size limit, canonical YAML reachable, traceparent
+# header echo. Exits non-zero on the first failed assertion.
+```
+
+The API does not auto-serve `/openapi.json` or `/docs` — the canonical YAML is reached at `/v1/openapi.yaml` per [ADR 0028](adr/0028-fastapi-application-structure.md) §6. To browse the human-rendered docs, run `bash scripts/serve-devportal.sh` (separate process, no DB dependency).
+
+Stop the stack with `bash scripts/dev-down.sh`. Add `-v` (`docker compose down -v`) to wipe the Postgres volume.
+
+The `AUTH_STUB_ENABLED` setting is the foot-gun mitigation from [ADR 0028](adr/0028-fastapi-application-structure.md). `scripts/run-api.sh` defaults it to `true` so local dev "just works"; `docker-compose.yaml` and production overlays leave it at `false`, so any tenant-binding endpoint returns 503 `AUTH_NOT_CONFIGURED` until Prompt 7 lands real authentication.
+
 ### First-time repo bootstrap (maintainer only)
 
 After the repository is first created on GitHub, the maintainer runs this once to create the labels the workflow and CODEOWNERS rules depend on:

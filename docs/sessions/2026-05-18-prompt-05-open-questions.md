@@ -121,3 +121,93 @@ Both cross-reviews ran successfully once the WBG decrypt root was added to the t
 - PII envelope decision — already in §1.3; reiterated here as a release-gate item.
 - Localisation policy for `title` and `detail` on ProblemDetail (Spanish / English / bilingual).
 - Severity, description_language, complainant_age_range divergences from Anexo 1-A — already in §1.3.
+
+---
+
+## Section 5 — Post-closeout addendum (2026-05-18)
+
+This section is appended after PR #25 merged. The original sections 1–4 above are the record of the unattended Prompt 5 run; this section records what happened after the maintainer set TLS up and re-ran the cross-reviews that had been skipped during the original run. The work lives on PR #26 (squash-merged into main as `5c95ec8`).
+
+### 5.1 TLS now configured
+
+The `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` env vars are now set in `~/.zshrc` to a bundle at `~/certs/wbg-ca-bundle-full.pem`. The bundle is the Mozilla base set plus the WBG Root CA G2, WBG Cloud Root CA, WBG Cloud Issuing CAs, and the `pa-wbg-decrypt.worldbank.org` cert, extracted from the macOS System keychain. The WBG network does TLS interception on Azure-hosted endpoints via `pa-wbg-decrypt.worldbank.org`; the bundle was incomplete until those roots were added.
+
+Verified by `openssl s_client -connect compliance-ai-kg.openai.azure.com:443 -CAfile ~/certs/wbg-ca-bundle-full.pem` returning `Verify return code: 0 (ok)`.
+
+### 5.2 Cross-reviews completed
+
+Both cross-reviews that had been skipped during the original run were re-run successfully:
+
+- `docs/reviews/2026-05-17-docs-research-2026-05-18-prompt-05-stack-validation.md` — Workstream 0 stack-validation note. Verdict: substantive. Eleven findings dispositioned in the Triage section.
+- `docs/reviews/2026-05-17-api-openapi-sbs-api-v1.md` — closeout cross-review on the OpenAPI spec. Verdict: three contract bugs plus eighteen secondary findings. All dispositioned in the Triage section.
+
+### 5.3 Contract bugs surfaced and fixed in PR #26
+
+The OpenAPI spec cross-review surfaced three contract bugs that would have caused implementation drift in Prompt 6. All three are fixed on PR #26 and now live on main.
+
+1. **OAuth scope mismatch.** The global `security` block declared `complaints.write` as the required scope, which read endpoints inherited. Now: global default is least-privileged `complaints.read`; write operations override per-op with `complaints.write` (for `POST /complaints` and `PATCH /complaints/{id}/status`) or `batches.write` (for `POST /batches`). `GET /batches/{id}` and `GET /batches/{id}/results` use `batches.read`. `/health` and `/version` use `security: []` (public probes).
+2. **`complainant_district` ubigeo length.** The original pattern was `^\d{4}$`, which is not the canonical INEI ubigeo. The canonical encoding is six digits (DDPPDD = department + province + district). The resolución's "department + province precision" requirement is satisfied by `XXXX00` in the canonical six-digit form. Now: `^\d{6}$`; examples `150100` (Lima/Lima, district unspecified) and `999999` (abroad).
+3. **PATCH `/status` response shape.** The endpoint returned `ComplaintCreated`, which implies a creation receipt. Now: returns the full `Complaint` resource so clients observe the post-transition state in a single round trip.
+
+### 5.4 Polish landed in PR #26
+
+- `Location` header on `POST /complaints 201` now typed as `format: uri`.
+- Duplicate `security:` blocks on `/health` and `/version` consolidated to one `security: []` per operation. The duplicates were a YAML semantic bug that worked by accident.
+- Dev portal pinned to `@stoplight/elements@9.0.19` (the original `8.4.10` pin was a non-existent version; unpkg returned identical "Package version not found" error strings for both assets, producing matching bogus SRI hashes — see the PR description for the full diagnostic). Real SRI hashes now in place; portal visually verified to render the OpenAPI spec correctly with full endpoint left-nav.
+
+### 5.5 Findings deferred to downstream prompts
+
+Eighteen findings from the two cross-reviews that are not blocking for May 25 but should not be lost. Each has an explicit target prompt.
+
+**Prompt 6 (FastAPI scaffold):**
+- Tenant-binding rule — server-side enforcement that body `institution_id` matches authenticated institution. Route-handler rule, not schema rule.
+- `traceparent` as a response header on all operations.
+- `ETag` / `If-Match` for concurrent status updates.
+- Pydantic → JSON Schema canonicalisation policy.
+- CI validation of OpenAPI examples.
+- `complaint_id` uniqueness scope clarification in the spec description text (per-institution vs global).
+- ADR 0027 amendment with full HMAC contract (canonical request format, timestamp header `X-SBS-Timestamp`, allowed clock skew, replay window).
+
+**Prompt 7 (security primitives):**
+- mTLS, OAuth, HMAC operational implementation.
+- Anti-replay statement for signed GET requests.
+
+**Prompt 8 (Tier 2 batch pipeline):**
+- Batch upload workflow contract details (HTTP method on the presigned URL, content type, max file size, checksum at object storage, upload completion marker).
+- `BatchStatus` count reconciliation rule (`row_count_accepted + row_count_rejected <= row_count_submitted`).
+- `reporting_period_end >= reporting_period_start` cross-field validation on `BatchManifest`.
+
+**Prompt 9 (developer portal completion):**
+- Vendoring Stoplight Elements (or Redoc) into the repo.
+- Compatibility policy matrix (enum expansion, required-field changes, format tightening, error-code stability rules).
+- ProblemDetail extension member policy documentation in `error-catalog.md`.
+- Examples for 422, 409, 429, and batch-row-rejection responses.
+- Pagination sort-order documentation per cursor-paginated endpoint.
+- Date-time UTC language standardisation across all date-time fields.
+- Deprecation / versioning policy at operation and schema level.
+- Renderer fallback switch criteria (Stoplight → Redoc).
+
+### 5.6 Standing risks elevated for SBS review at May 25
+
+Five items that are not technical decisions and need SBS sign-off. Reading order for Sergio / Mariela / Veronica:
+
+- Cross-tenant read exposure on list and status endpoints. Implementation in Prompt 6 must scope by authenticated tenant before existence check.
+- Immutability rules for complaint fields post-creation. Needs explicit policy decision: which fields can change after submission? Can `resolution_status` move backward?
+- PII envelope decision. See §1.3 above.
+- Localisation policy for `title` and `detail` on `ProblemDetail` (Spanish / English / bilingual).
+- The three Anexo 1-A divergences (`severity`, `description_language`, `complainant_age_range`) — see §1.3.
+
+### 5.7 RFC 9457 namespace promoted from caveat to release gate
+
+Section 2 above noted the placeholder `https://sbs.gob.pe/errors/{code}` namespace. Treating this as a maintenance caveat is too soft: institutions will wire retry and alert logic against `type` URIs, so changing the namespace after external publication is a breaking change in operational terms even if payload shapes are unchanged. The namespace must be confirmed by SBS *before any external sandbox publication*, not after. Recorded here as a release gate.
+
+### 5.8 Final state
+
+- PR #25 merged as `6affcaa`.
+- PR #26 merged as `5c95ec8` (post-closeout remediation).
+- Test count: 151 passing (148 from PR #25 plus three from PR #26's ubigeo work; the PR #25 figure included the seven `ComplaintStatusPatch` tests from the adversarial fix).
+- Spectral lint clean against the spec.
+- Dev portal renders correctly at `http://localhost:8080/devportal/`.
+- Both cross-review files carry completed Triage sections.
+
+Prompt 5 is closed. Next prompt: Prompt 6 — FastAPI scaffold + `/health` triad + Postgres + RFC 9457 middleware + structlog/OTel, against this canonical OpenAPI contract.

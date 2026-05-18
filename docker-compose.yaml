@@ -3,10 +3,11 @@ name: sbs-suptech-prototype
 # Local development stack for the SBS SupTech sandbox.
 #
 # This Compose file is deliberately minimal for the May 25 critical path:
-# postgres + pgvector only. The FastAPI scaffold runs from the host shell
+# postgres + pgvector + redis. The FastAPI scaffold runs from the host shell
 # via `bash scripts/run-api.sh`; running the API inside a container is the
-# Prompt 9 production-readiness scope, not a May 25 deliverable. Redis,
-# vLLM, the observability stack all land in later prompts.
+# Prompt 9 production-readiness scope, not a May 25 deliverable. Redis lands
+# in Prompt 7 (HMAC replay cache, rate-limit token buckets); vLLM and the
+# observability stack land in later prompts.
 #
 # Usage:
 #   bash scripts/dev-up.sh    — bring postgres up, wait for health, run
@@ -35,5 +36,21 @@ services:
       timeout: 5s
       retries: 30
 
+  redis:
+    image: redis:7-alpine
+    container_name: sbs-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - sbs_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
 volumes:
   sbs_postgres_data: {}
+  sbs_redis_data: {}

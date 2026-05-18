@@ -176,6 +176,15 @@ class Settings(BaseSettings):
             "a pressure-test finding."
         ),
     )
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description=(
+            "Redis DSN for HMAC replay cache and (workstream E) per-"
+            "institution rate limit buckets. Compose stack brings Redis "
+            "up alongside Postgres; production overlay points at a "
+            "managed Redis."
+        ),
+    )
 
 
 @lru_cache(maxsize=1)

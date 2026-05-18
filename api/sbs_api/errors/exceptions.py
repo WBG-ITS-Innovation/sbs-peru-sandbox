@@ -178,3 +178,57 @@ class CertRevoked(SBSAPIException):
     status = 403
     title = "Client certificate revoked"
     type_suffix = "CERT_REVOKED"
+
+
+# --- HMAC request signing (ADR 0027 amendment) ----------------------------
+
+
+class SignatureMissingHeader(SBSAPIException):
+    code = "SBS-401-010"
+    status = 401
+    title = "HMAC signature header missing"
+    type_suffix = "SIGNATURE_MISSING_HEADER"
+
+
+class SignatureAlgorithmUnsupported(SBSAPIException):
+    code = "SBS-401-011"
+    status = 401
+    title = "HMAC signature algorithm unsupported"
+    type_suffix = "SIGNATURE_ALGORITHM_UNSUPPORTED"
+
+
+class SignatureInvalid(SBSAPIException):
+    code = "SBS-401-012"
+    status = 401
+    title = "HMAC signature invalid"
+    type_suffix = "SIGNATURE_INVALID"
+
+
+class SignatureExpired(SBSAPIException):
+    code = "SBS-401-013"
+    status = 401
+    title = "HMAC signature timestamp out of window"
+    type_suffix = "SIGNATURE_EXPIRED"
+
+
+class SignatureReplayed(SBSAPIException):
+    code = "SBS-401-014"
+    status = 401
+    title = "HMAC signature already seen within replay window"
+    type_suffix = "SIGNATURE_REPLAYED"
+
+
+class SignatureInstitutionMismatch(SBSAPIException):
+    code = "SBS-401-015"
+    status = 401
+    title = "HMAC institution_id does not match mTLS subject"
+    type_suffix = "SIGNATURE_INSTITUTION_MISMATCH"
+
+
+class HmacSecretNotConfigured(SBSAPIException):
+    """Server-side: institution has no row in institution_secrets."""
+
+    code = "SBS-503-003"
+    status = 503
+    title = "HMAC secret not configured for institution"
+    type_suffix = "HMAC_SECRET_NOT_CONFIGURED"

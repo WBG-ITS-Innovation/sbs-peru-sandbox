@@ -126,12 +126,15 @@ def test_resolution_status_exact_resolucion_wording():
     assert {m.value for m in ResolutionStatus} == {"pendiente", "atendido", "anulado"}
 
 
-def test_complainant_district_is_inei_ubigeo_dept_prov():
+def test_complainant_district_is_inei_ubigeo_six_digits():
     """Resolución Anexo 1-A #13 — Ubicación geográfica. INEI ubigeo at
-    department + province precision is a 4-digit code (e.g., 1501 = Lima/Lima).
-    The resolución also documents '9999' for complaints submitted from abroad."""
-    Complaint(**_kwargs(complainant_district="1501"))
-    Complaint(**_kwargs(complainant_district="9999"))
+    department + province + district precision is a 6-digit code (DDPPDD).
+    The resolución requires department + province as the minimum precision;
+    a district code of '00' is acceptable when the district is unspecified.
+    Example: 150100 = Lima/Lima with district unspecified.
+    '999999' is the documented value for complaints submitted from abroad."""
+    Complaint(**_kwargs(complainant_district="150100"))
+    Complaint(**_kwargs(complainant_district="999999"))
 
 
 def test_complainant_age_range_no_resolucion_counterpart():
@@ -216,7 +219,7 @@ def _kwargs(**overrides) -> dict:
         ),
         description_language="es",
         complainant_age_range="35_44",
-        complainant_district="1501",
+        complainant_district="150100",
         submission_method="APP_MOVIL",
         original_reference_id=None,
         resolution_status="pendiente",

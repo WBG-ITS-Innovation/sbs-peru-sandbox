@@ -23,7 +23,7 @@ Aggregate verdict: **Proceed with caveats.** The caveats are tracked in `docs/se
 | Python validation library | Pydantic v2 (`>=2.13`) | `api/sbs_api/models/` |
 | Standalone schema export | JSON Schema 2020-12 via `model_json_schema()` | `api/openapi/schemas/*.json` |
 | Error model | RFC 9457 problem+json | `api/openapi/error-catalog.md` and the `ProblemDetail` Pydantic model |
-| Developer portal rendering | Stoplight Elements 8.x via unpkg CDN | `api/devportal/index.html` |
+| Developer portal rendering | Stoplight Elements 9.0.19x via unpkg CDN | `api/devportal/index.html` |
 
 # Per-choice verdict
 
@@ -77,7 +77,7 @@ Aggregate verdict: **Proceed with caveats.** The caveats are tracked in `docs/se
 
 ## E. Stoplight Elements for the developer portal rendering
 
-- **Decision.** Stoplight Elements 8.x loaded via the unpkg CDN, rendering `api/openapi/sbs-api-v1.yaml`. Self-contained HTML; no Node build step in the repo. Redoc 2.x is the documented fallback if a 3.1 keyword causes a rendering glitch.
+- **Decision.** Stoplight Elements 9.0.19x loaded via the unpkg CDN, rendering `api/openapi/sbs-api-v1.yaml`. Self-contained HTML; no Node build step in the repo. Redoc 2.x is the documented fallback if a 3.1 keyword causes a rendering glitch.
 - **Production-readiness verdict.** Yes with caveats.
 - **Precedent.** PLAN.md Part 7 lists "Documentation portal (rendered from `docs/`; Scalar or equivalent for the OpenAPI surface)" — Stoplight Elements is the most widely-used "Scalar-or-equivalent." Direct comparator: FCA's developer portal renders an OpenAPI-derived view (proprietary skin over an OpenAPI document); CFPB's Developer portal renders an OAS document. *Citation gap on Stoplight specifically* — the comparator file does not name Stoplight by vendor. The note treats this as a tool choice rather than a regulator-domain decision; the regulator-domain decision is "render an OpenAPI document as a navigable docs portal", which is documented in [market-comparators.md §5.A](market-comparators.md#5a-api-and-schema-layer) and [§7](market-comparators.md#7-public-complaint-taxonomies-or-apis-sbs-can-borrow-from).
 - **Alternatives considered and rejection reason.**

@@ -57,5 +57,67 @@ The Workstream 0 research note is [docs/research/2026-05-18-prompt-05-stack-vali
 
 - The closeout cross-review skip means the staged diff has not had a second-model adversarial pass. The internal `second-opinion` subagent run substitutes for it as far as Conventions allow, but if the closeout cross-review is important to the maintainer for this PR, the typed approval gate is the place to hold and re-run it once TLS is fixed.
 - The `error-catalog.md` lists 23 stable error codes. Two are flagged inside the file as "needs SBS naming confirmation" (`SBS-401-005 mtls-cert-not-trusted` and `SBS-403-002 institution-not-onboarded`). Read the catalog before approval.
-- The developer portal renders via Stoplight Elements 8.x (CDN). The CDN dependency is documented as a Prompt 9 vendoring concern; no action needed for this PR.
+- The developer portal renders via Stoplight Elements 9.x (CDN). The CDN dependency is documented as a Prompt 9 vendoring concern; no action needed for this PR.
 - The `second-opinion` adversarial subagent flagged that the `ComplaintStatusPatch` model documented a "reason required on terminal status transition" rule that was not actually enforced (the docstring promised a `model_validator` that did not exist; the error catalog row SBS-422-002 cited the rule as its example). **Fixed in this PR** by adding the `model_validator` to `ComplaintStatusPatch`, adding a JSON Schema 2020-12 `allOf` / `if-then` conditional to the OpenAPI spec so codegen tools surface the rule, and adding seven tests covering the rule (one for each terminal state, one for whitespace-only reason, one for happy path, plus the original optional-reason-on-pendiente case). The error catalog row for SBS-422-002 is amended to be specific about which two rules trigger it in v0.1.0.
+
+---
+
+## Section 5 — Cross-review findings dispositioned post-TLS-fix (2026-05-18)
+
+Both cross-reviews ran successfully once the WBG decrypt root was added to the trust bundle. Three contract bugs surfaced by the OpenAPI spec review were fixed in this PR; eighteen further findings were dispositioned to Prompts 6, 7, 8, 9, or Part 11, or to SBS review at the May 25 sprint kickoff.
+
+### Fixed in this PR (contract bugs)
+
+- **OAuth scope mismatch.** Global security default was `complaints.write`, which read endpoints inherited. Now: global default is least-privileged `complaints.read`; write operations override per-op (`complaints.write` for `createComplaint` and `patchComplaintStatus`; `batches.write` for `createBatchManifest`; `batches.read` for `getBatchStatus` and `getBatchResults`). `/health` and `/version` are public (`security: []`).
+- **ubigeo non-standard length.** `complainant_district` used `^\d{4}$`. INEI canonical ubigeo is 6 digits (DDPPDD). Now: `^\d{6}$`; examples updated to `150100` (Lima/Lima, district unspecified) and `999999` (abroad). Pattern, description, example values updated in OpenAPI spec, Pydantic model, both test files, and ADR 0026.
+- **PATCH /status response shape.** Returned `ComplaintCreated` which implied a creation receipt. Now: returns the full `Complaint` resource so clients observe the post-transition state in one round trip.
+
+### Polish in this PR
+
+- `Location` header on `POST /complaints 201` now typed as `format: uri`.
+- Duplicate `security:` blocks on `/health` and `/version` consolidated to one clean `security: []`.
+- SRI hashes pinned to `@stoplight/elements@9.0.19` on `api/devportal/index.html`; dev-only header comment added.
+
+### Deferred to Prompt 6 (FastAPI scaffold)
+
+- Tenant-binding rule: server-side enforcement that body `institution_id` matches authenticated institution. Route-handler rule, not schema rule.
+- `traceparent` as a response header on all operations.
+- `ETag` / `If-Match` for concurrent status updates.
+- Pydantic→JSON Schema canonicalisation policy.
+- CI validation of OpenAPI examples.
+- `complaint_id` uniqueness scope clarification (per-institution vs global) in description text.
+- ADR 0027 amendment with full HMAC contract (canonical request format, timestamp header, clock skew, replay window).
+
+### Deferred to Prompt 7 (security primitives)
+
+- mTLS, OAuth, HMAC operational implementation.
+- Anti-replay statement for signed GET requests.
+
+### Deferred to Prompt 8 (Tier 2 batch pipeline)
+
+- Batch upload workflow contract details (HTTP method, content type, max file size, checksum, completion marker).
+- `BatchStatus` count reconciliation rule (`row_count_accepted + row_count_rejected <= row_count_submitted`).
+- `reporting_period_end >= reporting_period_start` cross-field validation on `BatchManifest`.
+
+### Deferred to Prompt 9 (developer portal completion)
+
+- Vendoring Stoplight Elements (or Redoc) into the repo.
+- Compatibility policy matrix (enum expansion, required-field changes, format tightening).
+- ProblemDetail extension member policy documentation in `error-catalog.md`.
+- Examples for 422 / 409 / 429 / batch-row-rejection responses.
+- Pagination sort-order documentation.
+- Date-time UTC language standardisation across all date-time fields.
+- Deprecation / versioning policy at operation and schema level.
+- Renderer fallback switch criteria (Stoplight → Redoc).
+
+### Promoted to release gate
+
+- **RFC 9457 `type` URI namespace must be confirmed by SBS before any external sandbox publication.** Not a maintenance caveat; a release gate. Institutions will wire retry/alert logic on `type` URIs; changing the namespace post-publication is a breaking change in operational terms even if payload shape is unchanged.
+
+### Standing risks for SBS review at May 25
+
+- Cross-tenant read exposure on list and status endpoints — implementation must scope by authenticated tenant before existence check; lands in Prompt 6 route handlers.
+- Immutability rules for complaint fields post-creation — needs explicit policy decision (which fields can change? can `resolution_status` move backward?).
+- PII envelope decision — already in §1.3; reiterated here as a release-gate item.
+- Localisation policy for `title` and `detail` on ProblemDetail (Spanish / English / bilingual).
+- Severity, description_language, complainant_age_range divergences from Anexo 1-A — already in §1.3.

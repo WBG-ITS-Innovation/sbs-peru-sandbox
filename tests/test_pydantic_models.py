@@ -1,7 +1,8 @@
 """Tests for the Pydantic v2 models in sbs_api.models.
 
 Covers: happy-path construction, per-field validator failures, and the one
-cross-field rule (original_reference_id != complaint_id).
+cross-field rule (original_reference_id != complaint_id), plus the
+ComplaintStatusPatch terminal-state reason-required rule.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from pydantic import ValidationError
 from sbs_api.models import (
     BatchManifest,
     Complaint,
+    ComplaintStatusPatch,
     ComplaintSubmission,
     ProblemDetail,
     ResolutionStatus,
@@ -35,7 +37,7 @@ VALID_COMPLAINT_KWARGS = dict(
     ),
     description_language="es",
     complainant_age_range="35_44",
-    complainant_district="1501",
+    complainant_district="150100",
     submission_method="APP_MOVIL",
     original_reference_id=None,
     resolution_status="pendiente",
@@ -109,22 +111,40 @@ def test_institution_id_pattern_rejects_invalid(institution_id: str):
 
 
 def test_district_zero_rejected():
-    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="0000")
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="000000")
     with pytest.raises(ValidationError) as exc_info:
         Complaint(**kwargs)
-    assert "0000" in str(exc_info.value)
+    assert "000000" in str(exc_info.value)
 
 
 def test_district_pattern_rejects_non_digits():
-    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="XYZ")
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="XYZABC")
     with pytest.raises(ValidationError):
         Complaint(**kwargs)
 
 
 def test_district_pattern_rejects_wrong_length():
-    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="150")
+    # 4 digits used to be valid; now the canonical INEI ubigeo is 6 digits.
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="1501")
     with pytest.raises(ValidationError):
         Complaint(**kwargs)
+
+
+def test_district_pattern_rejects_five_digits():
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="15010")
+    with pytest.raises(ValidationError):
+        Complaint(**kwargs)
+
+
+def test_district_pattern_accepts_canonical_six_digit_ubigeo():
+    # Lima/Lima with district unspecified per dept+prov precision rule.
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="150100")
+    Complaint(**kwargs)
+
+
+def test_district_pattern_accepts_abroad_sentinel():
+    kwargs = dict(VALID_COMPLAINT_KWARGS, complainant_district="999999")
+    Complaint(**kwargs)
 
 
 def test_description_too_short_is_rejected():
@@ -188,6 +208,61 @@ def test_original_reference_id_can_be_a_different_complaint_id():
 def test_original_reference_id_optional():
     c = Complaint(**VALID_COMPLAINT_KWARGS)
     assert c.original_reference_id is None
+
+
+# ---------------------------------------------------------------------------
+# ComplaintStatusPatch terminal-state reason-required rule (cross-field)
+# ---------------------------------------------------------------------------
+
+
+def test_status_patch_pendiente_without_reason_is_valid():
+    p = ComplaintStatusPatch(resolution_status="pendiente")
+    assert p.reason is None
+
+
+def test_status_patch_pendiente_with_reason_is_valid():
+    p = ComplaintStatusPatch(
+        resolution_status="pendiente",
+        reason="Reabriendo el caso por información adicional del cliente.",
+    )
+    assert p.reason is not None
+
+
+def test_status_patch_atendido_without_reason_is_rejected():
+    with pytest.raises(ValidationError) as exc_info:
+        ComplaintStatusPatch(resolution_status="atendido")
+    assert "reason" in str(exc_info.value).lower()
+
+
+def test_status_patch_anulado_without_reason_is_rejected():
+    with pytest.raises(ValidationError) as exc_info:
+        ComplaintStatusPatch(resolution_status="anulado")
+    assert "reason" in str(exc_info.value).lower()
+
+
+def test_status_patch_atendido_with_reason_is_valid():
+    p = ComplaintStatusPatch(
+        resolution_status="atendido",
+        reason="Cargo revertido el 2026-05-14. Cliente notificado por correo.",
+    )
+    assert p.resolution_status == "atendido"
+    assert p.reason is not None
+
+
+def test_status_patch_anulado_with_reason_is_valid():
+    p = ComplaintStatusPatch(
+        resolution_status="anulado",
+        reason="Reclamo duplicado del BCO-2026-000016; anulado por consolidación.",
+    )
+    assert p.resolution_status == "anulado"
+
+
+def test_status_patch_atendido_with_whitespace_only_reason_is_rejected():
+    with pytest.raises(ValidationError):
+        ComplaintStatusPatch(
+            resolution_status="atendido",
+            reason="          ",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -285,44 +360,3 @@ def test_resolution_status_values_match_resolucion():
     assert ResolutionStatus.PENDIENTE.value == "pendiente"
     assert ResolutionStatus.ATENDIDO.value == "atendido"
     assert ResolutionStatus.ANULADO.value == "anulado"
-
-
-# ---------------------------------------------------------------------------
-# ComplaintStatusPatch cross-field rule (reason required on terminal states)
-# ---------------------------------------------------------------------------
-
-
-def test_status_patch_reason_optional_on_pendiente():
-    from sbs_api.models import ComplaintStatusPatch
-
-    # 'pendiente' is non-terminal — reason may be omitted.
-    p = ComplaintStatusPatch(resolution_status="pendiente")
-    assert p.reason is None
-
-
-@pytest.mark.parametrize("terminal", ["atendido", "anulado"])
-def test_status_patch_reason_required_on_terminal(terminal: str):
-    from sbs_api.models import ComplaintStatusPatch
-
-    with pytest.raises(ValidationError) as exc_info:
-        ComplaintStatusPatch(resolution_status=terminal)
-    assert "reason" in str(exc_info.value).lower()
-
-
-@pytest.mark.parametrize("terminal", ["atendido", "anulado"])
-def test_status_patch_whitespace_only_reason_rejected_on_terminal(terminal: str):
-    from sbs_api.models import ComplaintStatusPatch
-
-    with pytest.raises(ValidationError):
-        ComplaintStatusPatch(resolution_status=terminal, reason="          ")
-
-
-@pytest.mark.parametrize("terminal", ["atendido", "anulado"])
-def test_status_patch_valid_reason_accepted_on_terminal(terminal: str):
-    from sbs_api.models import ComplaintStatusPatch
-
-    p = ComplaintStatusPatch(
-        resolution_status=terminal,
-        reason="Cargo revertido y cliente notificado por correo el 2026-05-14.",
-    )
-    assert p.reason is not None

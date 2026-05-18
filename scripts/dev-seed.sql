@@ -50,3 +50,10 @@ INSERT INTO institution_secrets (
         decode('1f2e3d4c5b6a79880f1e2d3c4b5a69877f8e9d0c1b2a39481f2e3d4c5b6a7988', 'hex'),  -- pragma: allowlist secret
         now(), now())
 ON CONFLICT (institution_id) DO NOTHING;
+
+-- OAuth client seeding cannot live in static SQL: argon2id hashes are
+-- salted and non-deterministic, so the hash for a known plain-text
+-- secret differs every time. Demo OAuth clients are produced by
+-- `bash scripts/seed-oauth-clients.sh` (run after dev-up.sh) which
+-- invokes the API's argon2 helper to compute fresh hashes and INSERT
+-- them with ON CONFLICT DO NOTHING.

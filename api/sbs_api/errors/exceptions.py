@@ -232,3 +232,77 @@ class HmacSecretNotConfigured(SBSAPIException):
     status = 503
     title = "HMAC secret not configured for institution"
     type_suffix = "HMAC_SECRET_NOT_CONFIGURED"
+
+
+# --- OAuth 2.0 client_credentials (ADR 0032) -----------------------------
+
+
+class TokenRequired(SBSAPIException):
+    code = "SBS-401-020"
+    status = 401
+    title = "OAuth access token required"
+    type_suffix = "TOKEN_REQUIRED"
+
+
+class TokenInvalid(SBSAPIException):
+    code = "SBS-401-021"
+    status = 401
+    title = "OAuth access token invalid"
+    type_suffix = "TOKEN_INVALID"
+
+
+class TokenExpired(SBSAPIException):
+    code = "SBS-401-022"
+    status = 401
+    title = "OAuth access token expired"
+    type_suffix = "TOKEN_EXPIRED"
+
+
+class TokenCertThumbprintMismatch(SBSAPIException):
+    code = "SBS-401-023"
+    status = 401
+    title = "OAuth token cert thumbprint mismatch"
+    type_suffix = "TOKEN_CERT_THUMBPRINT_MISMATCH"
+
+
+class TokenScopeInsufficient(SBSAPIException):
+    code = "SBS-403-010"
+    status = 403
+    title = "OAuth token scope insufficient"
+    type_suffix = "TOKEN_SCOPE_INSUFFICIENT"
+
+
+class TokenCertRequired(SBSAPIException):
+    """Token endpoint hit without a valid mTLS connection."""
+
+    code = "SBS-401-024"
+    status = 401
+    title = "OAuth token request requires mTLS"
+    type_suffix = "TOKEN_CERT_REQUIRED"
+
+
+class OAuthInvalidScope(SBSAPIException):
+    """Per RFC 6749 §5.2 — requested ∩ permitted is empty."""
+
+    code = "SBS-400-010"
+    status = 400
+    title = "OAuth invalid_scope"
+    type_suffix = "INVALID_SCOPE"
+
+
+class OAuthInvalidGrant(SBSAPIException):
+    """Per RFC 6749 §5.2 — client credentials invalid."""
+
+    code = "SBS-401-025"
+    status = 401
+    title = "OAuth invalid_grant"
+    type_suffix = "INVALID_GRANT"
+
+
+class OAuthInvalidRequest(SBSAPIException):
+    """Per RFC 6749 §5.2 — request shape malformed."""
+
+    code = "SBS-400-011"
+    status = 400
+    title = "OAuth invalid_request"
+    type_suffix = "INVALID_REQUEST"

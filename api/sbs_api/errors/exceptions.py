@@ -140,3 +140,41 @@ class ServiceUnavailable(SBSAPIException):
     status = 503
     title = "Service degraded or down"
     type_suffix = "SBS-503-001"
+
+
+# --- mTLS (ADR 0031) ------------------------------------------------------
+
+
+class CertRequired(SBSAPIException):
+    code = "SBS-401-001"
+    status = 401
+    title = "Client certificate required"
+    type_suffix = "CERT_REQUIRED"
+
+
+class CertInvalid(SBSAPIException):
+    code = "SBS-401-002"
+    status = 401
+    title = "Client certificate invalid"
+    type_suffix = "CERT_INVALID"
+
+
+class CertExpired(SBSAPIException):
+    code = "SBS-401-003"
+    status = 401
+    title = "Client certificate expired"
+    type_suffix = "CERT_EXPIRED"
+
+
+class CertCnUnknown(SBSAPIException):
+    code = "SBS-403-001"
+    status = 403
+    title = "Client certificate CN not registered"
+    type_suffix = "CERT_CN_UNKNOWN"
+
+
+class CertRevoked(SBSAPIException):
+    code = "SBS-403-002"
+    status = 403
+    title = "Client certificate revoked"
+    type_suffix = "CERT_REVOKED"

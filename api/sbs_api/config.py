@@ -116,6 +116,67 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- mTLS (ADR 0031) -------------------------------------------------
+    mtls_mode: Literal["direct", "proxy", "disabled"] = Field(
+        default="disabled",
+        description=(
+            "How mTLS is presented to the runtime. `direct` reads the peer "
+            "cert from the ASGI scope (uvicorn-terminated TLS). `proxy` "
+            "reads the verified cert metadata from the trusted "
+            "X-Forwarded-Client-Cert header (Envoy de-facto standard). "
+            "`disabled` accepts requests without an mTLS subject — only "
+            "valid when AUTH_STUB_ENABLED=true or for tests that override "
+            "the dependency."
+        ),
+    )
+    disable_mtls_for_tests: bool = Field(
+        default=False,
+        description=(
+            "Test-only escape hatch: when True the mTLS dependency returns "
+            "an empty subject and downstream auth runs against the stub. "
+            "Production overlays never set this."
+        ),
+    )
+    proxy_trusted_xfcc_header: str = Field(
+        default="x-forwarded-client-cert",
+        description=(
+            "Header name the proxy uses to forward the verified cert. "
+            "Lowercase per Starlette's header-folding. Defaults to the "
+            "Envoy convention."
+        ),
+    )
+
+    # --- HMAC request signing (ADR 0027 amendment) -----------------------
+    hmac_secret_rotation_grace_seconds: int = Field(
+        default=3600,
+        ge=0,
+        description=(
+            "How long after an institution rotates its HMAC secret the "
+            "`previous_secret` is still accepted. 1 hour by default; "
+            "operators may extend per institution during a phased rollout."
+        ),
+    )
+    hmac_timestamp_skew_seconds: int = Field(
+        default=300,
+        ge=30,
+        le=3600,
+        description=(
+            "Clock-skew tolerance for X-SBS-Timestamp. 5 minutes by default "
+            "per the ADR 0027 amendment; future-dated signatures are "
+            "additionally rejected if more than 60 seconds ahead."
+        ),
+    )
+    hmac_replay_cache_ttl_seconds: int = Field(
+        default=600,
+        ge=60,
+        description=(
+            "Redis replay-cache TTL. timestamp_skew × 2 + headroom; the "
+            "primary defence is the timestamp check, the replay cache is "
+            "the bounded backstop. The 24h figure in the original ADR was "
+            "a pressure-test finding."
+        ),
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

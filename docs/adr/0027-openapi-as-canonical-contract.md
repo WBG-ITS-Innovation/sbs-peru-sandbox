@@ -132,3 +132,82 @@ match-test enforces it.
   library (a re-platforming decision discussed in the
   [stack-validation note §B](../research/2026-05-18-prompt-05-stack-validation.md#b-pydantic-v2-for-request-and-response-validation)),
   the contract does not change. Only the implementation does.
+
+## Amendments
+
+### 2026-05-19 — full HMAC canonical request contract (Prompt 7)
+
+The OpenAPI spec landed the `hmac_signature` security scheme declaration
+in Prompt 5 with the canonical request format marked TBD. This
+amendment fills in that TBD. The wire shape itself is documented here
+because it is part of the *contract*, not the implementation; SDK
+authors generate signing code from this section.
+
+**Headers.** Two request headers carry the signature:
+
+- `X-SBS-Timestamp: <RFC 3339 UTC>` — e.g., `2026-05-19T14:23:45Z`. The
+  timestamp is the request creation time at the client. Clock skew
+  tolerance is **5 minutes** (±300 seconds) against the server's UTC
+  clock.
+- `X-SBS-Signature: hmac-sha256-v1=<base64>` — the algorithm version
+  prefix (`hmac-sha256-v1`) supports future rotation to a different
+  algorithm or key-derivation scheme without breaking clients.
+
+**Canonical request string.** Five lines joined with `\n`:
+
+```
+<HTTP-method-uppercase>
+<request-target-as-on-the-wire>
+<X-SBS-Timestamp-value>
+<lowercase-hex(sha256(body))>
+<institution_id>
+```
+
+Where:
+
+- `HTTP-method-uppercase` is `GET`, `POST`, `PATCH`, etc.
+- `request-target-as-on-the-wire` is the path-and-query as received,
+  e.g., `/v1/complaints?cursor=abc&limit=20`. Query parameters are kept
+  in the order the client sent them; the server does not canonicalise.
+- `X-SBS-Timestamp-value` is the verbatim header value.
+- `lowercase-hex(sha256(body))` is the SHA-256 of the raw request body,
+  lowercase hex. Empty body produces the constant
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- `institution_id` is the value the client expects the server to bind
+  the request to (it is cross-checked against the mTLS subject; a
+  mismatch returns 401 `SIGNATURE_INSTITUTION_MISMATCH`).
+
+**Signature.**
+`base64(hmac_sha256(key=institution_secret, msg=canonical_request_string))`.
+The secret is per-institution and stored encrypted at rest (see
+`institution_secrets`). Rotation is supported with an
+`active_secret` and a `previous_secret` window; a request signed with
+the previous secret is accepted for the duration of the configured
+grace window (`SBS_API_HMAC_SECRET_ROTATION_GRACE_SECONDS`, default
+3600).
+
+**Replay protection.** A Redis SET with key
+`sbs:hmac:replay:<institution_id>:<sha256(signature)[:16]>` and TTL of
+`24h × 1.05` (5% headroom). Replays inside the window return 401
+`SIGNATURE_REPLAYED`.
+
+**Stable error codes.** `SIGNATURE_MISSING_HEADER`,
+`SIGNATURE_ALGORITHM_UNSUPPORTED`, `SIGNATURE_INVALID`,
+`SIGNATURE_EXPIRED`, `SIGNATURE_REPLAYED`,
+`SIGNATURE_INSTITUTION_MISMATCH`. All return 401 with ProblemDetail.
+
+**Precedent for the canonical-request shape.**
+[docs/research/market-comparators.md §5.A.M](../research/market-comparators.md#5am-authentication-signing-and-rate-limiting-for-regulator-facing-apis)
+cites
+[**AWS SigV4 §Task 1 (CreateCanonicalRequest)**](https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html)
+as the single solid precedent. The SBS shape is a minimal subset: SigV4
+canonicalises headers and signed-headers list, which the SBS contract
+does not need because the regulator API has a fixed header surface. The
+shape is otherwise the same — method, target, timestamp, body hash,
+identity.
+
+**Backward compatibility.** The OpenAPI security scheme declaration is
+unchanged; only its prose description is expanded to point to this
+amendment. SDKs generated from the spec do not need regeneration unless
+they incorporate the signing logic itself (the canonical-request
+construction).

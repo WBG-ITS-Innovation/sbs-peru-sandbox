@@ -162,3 +162,92 @@ OTel-SDK pattern for Python services.
 - UUID v7 + `uuid-utils` is a small dependency surface (~50 KiB wheel,
   pure Rust) and is acceptable. If stdlib `uuid` adds v7 (Python 3.14
   draft), this ADR is superseded by a removal of the dependency.
+
+## Amendments
+
+### 2026-05-19 — middleware ordering on the 413 path (Prompt 7)
+
+The original §3 declared the order *outermost-to-innermost*
+`body_size_limit → traceparent → correlation_id`. Prompt 6 carry-forward
+observed that the 413 response is materialised by
+`BodySizeLimitMiddleware` *before* `traceparent` and `correlation_id`
+bind their context, so the 413 ProblemDetail goes out without a
+`traceparent` or `X-Correlation-Id` header. Support handoff on a 413 is
+then blind.
+
+**Amendment.** The order is reversed for the 413 path. Outermost-to-
+innermost is now `traceparent → correlation_id → body_size_limit`. The
+body-size middleware reads `request.state.correlation_id` (set by the
+surrounding `CorrelationIdMiddleware`) and includes it in the 413
+ProblemDetail. The `traceparent` header is echoed onto the 413 response
+by the surrounding `TraceparentMiddleware` on the response path.
+
+The trade-off: a 300 KiB attack now incurs the cost of `traceparent`
+parsing and a correlation_id allocation before being rejected. The
+mitigation is that a reverse proxy in production caps body size at a
+lower threshold than the application, so the application path is only
+reached by reasonably-shaped requests.
+
+### 2026-05-19 — bounded chunked-read on the slow path (Prompt 7)
+
+The original §3 noted the slow path reads
+`body = await request.body()` and then checks the length. This buffers
+the full body before any size check, which means a client that lies
+about `Content-Length` can still force a `max_body_size`-bytes
+allocation.
+
+**Amendment.** Replace `await request.body()` with a bounded streaming
+read: iterate `request.stream()`, accumulate into a `bytearray`, and
+abort with `RequestBodyTooLarge` as soon as the running total exceeds
+`max_body_size`. The accumulator is then installed on
+`request._receive` so the downstream handler reads the same body
+without a second network round-trip. Full-body buffering remains
+acceptable on endpoints without body-size concerns (auth, health,
+openapi).
+
+Production posture: a reverse proxy still applies the primary cap; the
+application cap is defense-in-depth.
+
+### 2026-05-19 — narrowed §Consequences wording on middleware constraint (Prompt 7)
+
+The original §Consequences said *"a middleware that needs to raise an
+SBSAPIException cannot — FastAPI's exception handlers do not run for
+exceptions raised inside `BaseHTTPMiddleware.dispatch`."* The sentence
+was too broad: only the `BaseHTTPMiddleware` ABC has this constraint;
+pure-ASGI middleware does not.
+
+**Amendment.** The sentence is rewritten as:
+
+> Middleware implemented as FastAPI `BaseHTTPMiddleware.dispatch` cannot
+> raise `SBSAPIException` and rely on FastAPI exception handlers to
+> materialise the ProblemDetail response, because `BaseHTTPMiddleware`
+> sits outside the exception-handler middleware in the dispatch chain.
+> Such middleware must materialise the ProblemDetail `JSONResponse`
+> directly using the `SBSAPIException` class's `code`, `status`,
+> `title`, `type_suffix` fields (see
+> `api/sbs_api/middleware/body_size_limit.py` for the pattern).
+>
+> Pure-ASGI middleware (e.g., starlette's `Middleware` class with a
+> `__call__(scope, receive, send)` signature) is *not* subject to this
+> constraint and may raise `SBSAPIException` directly. Convert
+> middleware to ASGI when exception-handler integration is required.
+
+### 2026-05-19 — cursor signing (Prompt 7, open issue #L)
+
+The original §7 declared cursor format as opaque
+base64-encoded JSON. Adversarial review on Prompt 6 surfaced that the
+encoding is unsigned: a client that decodes the cursor can mutate the
+embedded `received_at` or `complaint_id` and submit it. The server
+re-validates the cursor contents against the query, which catches
+*most* tampering, but the design contract (cursor is server-controlled,
+client passes verbatim) is undermined.
+
+**Amendment.** The cursor is HMAC-signed with a server-side master key.
+Encoded as
+`base64(payload || hmac_sha256(key=master_key, msg=payload))` where
+`payload` is the JSON object from §7. On decode the server splits the
+trailing 32 bytes as the signature, recomputes against the payload, and
+returns 400 `CURSOR_INVALID` on mismatch. The master key is generated at
+first boot via `secrets.token_bytes(32)` and persisted at
+`dev-ca/cursor-signing-key.bin` for the sandbox; production loads from
+the secret manager.

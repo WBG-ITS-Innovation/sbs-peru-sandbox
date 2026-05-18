@@ -12,7 +12,7 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | ---- | ------------------------------------- | -------- | -------------------- | -------------------- |
 | 0001 | three-layer-mcp-a2a-langgraph         | Proposed | Prompt 9 / Part 1    | MCP + A2A + LangGraph three-layer agent architecture |
 | 0002 | taxonomy-as-configuration             | Proposed | Part 2               | Anexo 1-A taxonomy as YAML, loaded into Pydantic models, single source of truth |
-| 0003 | api-authentication                    | Proposed | Part 3               | mTLS + OAuth 2.0 client_credentials + HMAC request signing |
+| 0003 | api-authentication                    | Superseded | Part 3             | Superseded 2026-05-19 by ADRs 0031 (mTLS), 0032 (OAuth scopes), 0033 (rate limiting), and the ADR 0027 HMAC amendment — the three concerns split into separate ADRs in Prompt 7. |
 | 0004 | error-model-rfc-9457                  | Proposed | Part 3               | RFC 9457 problem+json with stable error codes and type URIs |
 | 0005 | synthetic-data-strategy               | Proposed | Part 4               | Synthetic complaint generator: 10k complaints, 3 scenarios, deterministic seeds |
 | 0006 | ml-serving-and-mcp-exposure           | Proposed | Part 5               | BETO + XGBoost + pgvector served via MCP tool servers; MLflow registry |
@@ -39,6 +39,9 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0028 | fastapi-application-structure         | Accepted | Prompt 6 / Part 2    | Application factory, ProblemDetail via FastAPI exception handlers (not middleware), middleware ordering body_size_limit → traceparent → correlation_id, OTel owns trace context, auto-generated openapi disabled, cursor format, explicit state machine, UUID v7 via `uuid-utils`. |
 | 0029 | idempotency-policy                    | Accepted | Prompt 6 / Part 2    | `Idempotency-Key` supported on POST and PATCH; 24-hour TTL; body-hash on store; 409 on key reuse with different body; `Idempotency-Replayed: true` on cache hit; sweep job deferred to Prompt 7. |
 | 0030 | health-probe-semantics                | Accepted | Prompt 6 / Part 2    | Three probes: `/live` (no I/O), `/ready` (DB ping with 1-second result cache), `/startup` (alembic_version present); `SELECT 1` not write-capability; flaps alerted, not auto-remediated. |
+| 0031 | mtls-client-auth                      | Accepted | Prompt 7 / Part 3    | mTLS client authentication: CN is the institution identifier; chain + expiry + revocation validation; `direct` (sandbox) and `proxy` (production) operating modes; `MtlsSubject` carries the cert thumbprint into the OAuth check. |
+| 0032 | oauth-client-credentials              | Accepted | Prompt 7 / Part 3    | OAuth 2.0 client_credentials with cert-bound JWTs per RFC 8705; four scopes (`complaints:write/read`, `batch:upload`, `status:read`); 15-minute TTL; HS256 sandbox / RS256 production; no refresh tokens, no introspection in the sandbox. |
+| 0033 | rate-limiting-policy                  | Accepted | Prompt 7 / Part 3    | Per-institution token-bucket rate limiting on Redis; two tiers (`large` 1000/min, `small` 100/min) with per-institution override; four `X-RateLimit-*` headers on every authenticated response; 429 ProblemDetail with `RATE_LIMIT_EXCEEDED`. |
 
 ## How to add an ADR
 

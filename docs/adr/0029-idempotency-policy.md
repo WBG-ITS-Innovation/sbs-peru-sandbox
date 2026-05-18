@@ -120,3 +120,66 @@ the wrong response.
 - The 24-hour TTL is a configuration knob (`SBS_API_IDEMPOTENCY_TTL_SECONDS`)
   so a regulator-domain reason to extend retention (an audit trail
   requirement, for example) can be applied without a code change.
+
+## Amendments
+
+### 2026-05-19 — concurrent-duplicate-POST policy (Prompt 7)
+
+The original §Decision did not specify behaviour when two requests with
+the same `Idempotency-Key` and same body arrive concurrently (e.g., a
+delivery library that retries before the first request has finished).
+The Prompt 6 closeout flagged this as a carry-forward.
+
+**Amendment.** The `idempotency_records` row gains a `state` column
+(`processing | complete`). The handler flow is:
+
+1. The handler attempts an INSERT of a placeholder row with
+   `state=processing` and the unique constraint
+   `(institution_id, idempotency_key)`. If the INSERT succeeds, this
+   request is the *first* in flight; the handler proceeds and updates
+   the row to `state=complete` with the response payload once the work
+   is done.
+2. If the INSERT fails on the unique-constraint, this request is the
+   *second* in flight. The handler reads the existing row and:
+   - If `state=complete` → return the cached response with
+     `Idempotency-Replayed: true` (the existing behaviour).
+   - If `state=processing` → wait `50ms × 3` retries, re-reading the
+     row each time. If the row reaches `state=complete` within 150ms,
+     return the cached response. If it does not, return 409
+     `IDEMPOTENCY_KEY_IN_FLIGHT` with `Retry-After: 1`.
+
+The 50ms/3-retry shape is intentionally short. A request that is *still*
+in flight after 150ms is more likely stuck than nearly-finished, and the
+client's retry will land within a second.
+
+### 2026-05-19 — replay-header safelist (Prompt 7)
+
+The original §Decision said replay returns "the cached
+`response_status`, `response_payload`, and `response_headers`." Prompt 6
+closeout flagged that some headers must be *recomputed per request*
+(the date, the trace context) rather than replayed verbatim; the
+distinction needs to be explicit so reviewers can tell which headers
+the implementation must filter.
+
+**Amendment.** The safelist is enumerated explicitly. On replay:
+
+- **Replayed verbatim from `response_headers`:** `Content-Type`,
+  `Location`, `ETag`, `Idempotency-Replayed`, `X-RateLimit-Limit`.
+- **Recomputed for the current request:** `Date`, `Server`,
+  `traceparent`, `X-Correlation-Id`, `X-RateLimit-Remaining`,
+  `X-RateLimit-Reset`, `Retry-After`.
+
+The implementation lives at `api/sbs_api/idempotency.py` as a constant
+named `REPLAY_HEADER_SAFELIST` with a code comment naming each header's
+category. New response headers added to a route default to *recomputed*
+(safe) unless explicitly added to the safelist; the test
+`test_replay_header_safelist.py` enforces this.
+
+The rationale: `Date` and `Server` are HTTP-protocol-level headers that
+clients use for cache-staleness reasoning; replaying them would mislead.
+`traceparent` and `X-Correlation-Id` are observability handoff keys for
+the *current* request, not the original. `X-RateLimit-Remaining` and
+`X-RateLimit-Reset` reflect the *current* bucket state; replaying them
+would mislead the client's pacing logic. `X-RateLimit-Limit` is replayed
+because the limit value does not change between the original and the
+replay (unless the operator changed the tier, which is rare).

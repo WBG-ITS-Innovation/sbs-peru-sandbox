@@ -1,4 +1,12 @@
 <!doctype html>
+<!--
+  Development-only developer portal for local browsing of the OpenAPI spec.
+  Not part of any deployment artifact. CDN dependency on unpkg is acceptable
+  here because the portal is for the developer workstation only. SRI hashes
+  pin asset integrity at @stoplight/elements@9.0.19. Vendoring the
+  assets in-repo is a Prompt 9 (developer portal completion) concern; until
+  then, this page must not be treated as a production artifact.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -9,10 +17,12 @@
       content="Developer portal for the SBS SupTech Complaints API. Renders the OpenAPI 3.1 specification as a navigable reference for supervised institutions."
     />
 
-    <!-- Stoplight Elements styles. CDN dependency; vendoring is a Prompt 9 concern. -->
+    <!-- Stoplight Elements styles. SRI-pinned to 9.0.19. -->
     <link
       rel="stylesheet"
-      href="https://unpkg.com/@stoplight/elements@8.4.10/styles.min.css"
+      href="https://unpkg.com/@stoplight/elements@9.0.19/styles.min.css"
+      integrity="sha384-iVQBHadsD+eV0M5+ubRCEVXrXEBj+BqcuwjUwPoVJc0Pb1fmrhYSAhL+BFProHdV" data-allowlist-reason="sri-hash"
+      crossorigin="anonymous"
     />
 
     <style>
@@ -99,7 +109,9 @@
     </main>
 
     <script
-      src="https://unpkg.com/@stoplight/elements@8.4.10/web-components.min.js"
+      src="https://unpkg.com/@stoplight/elements@9.0.19/web-components.min.js"
+      integrity="sha384-L0FYPm8XLe2HHJT/qfQUJGqRqqq1rHxC8O1YooLjs+6CJ3O2TjlQEhbal3KJ8DBX" data-allowlist-reason="sri-hash"
+      crossorigin="anonymous"
     ></script>
   </body>
 </html>

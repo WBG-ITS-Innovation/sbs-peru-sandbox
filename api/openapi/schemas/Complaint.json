@@ -124,7 +124,7 @@
     {
       "channel": "APP_MOVIL",
       "complainant_age_range": "35_44",
-      "complainant_district": "1501",
+      "complainant_district": "150100",
       "complainant_doc_type": "DNI",
       "complaint_id": "BCO-2026-000017",
       "description_language": "es",
@@ -155,11 +155,11 @@
       ]
     },
     "complainant_district": {
-      "description": "Anexo 1-A #13 — Ubicación geográfica. INEI ubigeo code at the department + province level of precision (4 digits). Example: 1501 = Lima-Lima. Use '9999' for complaints from abroad. May be empty for certain remote channels per the resolución; the empty case is not supported in v0.1.0 of this contract.",
+      "description": "Anexo 1-A #13 — Ubicación geográfica. Six-digit INEI ubigeo (DDPPDD: department + province + district). The May 25 sandbox accepts the canonical 6-digit form; district digits may be '00' when only department + province is known per the resolución's department+province precision requirement. Example: 150100 = Lima/Lima with district unspecified. Use '999999' for complaints submitted from abroad.",
       "examples": [
-        "1501"
+        "150100"
       ],
-      "pattern": "^\\d{4}$",
+      "pattern": "^\\d{6}$",
       "title": "Complainant District",
       "type": "string"
     },

@@ -169,7 +169,11 @@ class ResolutionStatus(str, Enum):
 
 COMPLAINT_ID_PATTERN = r"^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$"
 INSTITUTION_ID_PATTERN = r"^SBS-\d{4,6}$"
-UBIGEO_PATTERN = r"^\d{4}$"
+# INEI ubigeo: 6 digits, DDPPDD = department + province + district.
+# District digits may be '00' when only department + province is known per the
+# resolución's department+province precision requirement. '999999' is the
+# documented value for complaints submitted from abroad.
+UBIGEO_PATTERN = r"^\d{6}$"
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +211,7 @@ class Complaint(BaseModel):
                     ),
                     "description_language": "es",
                     "complainant_age_range": "35_44",
-                    "complainant_district": "1501",
+                    "complainant_district": "150100",
                     "submission_method": "APP_MOVIL",
                     "original_reference_id": None,
                     "resolution_status": "pendiente",
@@ -323,13 +327,15 @@ class Complaint(BaseModel):
         ...,
         pattern=UBIGEO_PATTERN,
         description=(
-            "Anexo 1-A #13 — Ubicación geográfica. INEI ubigeo code at the "
-            "department + province level of precision (4 digits). Example: "
-            "1501 = Lima-Lima. Use '9999' for complaints from abroad. May be "
-            "empty for certain remote channels per the resolución; the empty "
-            "case is not supported in v0.1.0 of this contract."
+            "Anexo 1-A #13 — Ubicación geográfica. Six-digit INEI ubigeo "
+            "(DDPPDD: department + province + district). The May 25 sandbox "
+            "accepts the canonical 6-digit form; district digits may be '00' "
+            "when only department + province is known per the resolución's "
+            "department+province precision requirement. Example: 150100 = "
+            "Lima/Lima with district unspecified. Use '999999' for complaints "
+            "submitted from abroad."
         ),
-        examples=["1501"],
+        examples=["150100"],
     )
     submission_method: SubmissionMethod = Field(
         ...,
@@ -366,10 +372,10 @@ class Complaint(BaseModel):
     @field_validator("complainant_district")
     @classmethod
     def _district_not_zero(cls, value: str) -> str:
-        if value == "0000":
+        if value == "000000":
             raise ValueError(
-                "complainant_district '0000' is not a valid INEI ubigeo; use a real "
-                "department+province code or '9999' for complaints from abroad"
+                "complainant_district '000000' is not a valid INEI ubigeo; use a real "
+                "department+province+district code or '999999' for complaints from abroad"
             )
         return value
 

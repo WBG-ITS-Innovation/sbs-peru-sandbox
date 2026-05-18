@@ -56,6 +56,36 @@ class TenantMismatch(SBSAPIException):
     type_suffix = "SBS-404-001"
 
 
+class InstitutionNotFound(SBSAPIException):
+    """The institution_id referenced by the request is not registered.
+
+    Distinct from :class:`ResourceNotFound` because the error-catalog
+    entry SBS-404-003 carries a different remediation path: the integrator
+    needs to verify the institution_id against SBS's published list, not
+    check whether the resource exists for their tenant.
+    """
+
+    code = "SBS-404-003"
+    status = 404
+    title = "Institution not found"
+    type_suffix = "SBS-404-003"
+
+
+class DuplicateComplaintId(SBSAPIException):
+    """A complaint with the same complaint_id already exists for this institution.
+
+    Mapped from the database PK collision (``complaints_pkey``) at the
+    INSERT path. The error-catalog remediation steers the integrator to
+    either pick a fresh complaint_id or, if the re-submission was
+    intentional, use idempotency replay (same Idempotency-Key).
+    """
+
+    code = "SBS-409-001"
+    status = 409
+    title = "Duplicate complaint_id"
+    type_suffix = "SBS-409-001"
+
+
 class ResolutionStatusTransitionForbidden(SBSAPIException):
     code = "SBS-422-004"
     status = 422

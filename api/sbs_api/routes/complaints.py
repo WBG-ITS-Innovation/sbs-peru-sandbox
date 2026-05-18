@@ -36,11 +36,12 @@ from sbs_api.dependencies.idempotency import (
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.errors.exceptions import (
     CursorInvalid,
+    DuplicateComplaintId,
     ETagMismatch,
+    InstitutionNotFound,
     PreconditionRequired,
     ResolutionStatusTransitionForbidden,
     ResourceNotFound,
-    SBSAPIException,
 )
 from sbs_api.models.anexo_1a import (
     Channel,
@@ -54,9 +55,12 @@ from sbs_api.models.responses import (
     ComplaintListItem,
     ComplaintListResponse,
 )
+from sbs_api.observability.logging import get_logger
 from sbs_api.state_machine.resolution_status import is_allowed
 
 router = APIRouter(tags=["Ingestion (Tier 1)"])
+
+_logger = get_logger(__name__)
 
 
 # --- helpers ---------------------------------------------------------------
@@ -177,10 +181,43 @@ async def create_complaint(
     try:
         await session.flush()
     except IntegrityError as exc:
-        # Most likely a duplicate complaint_id PK.
-        raise SBSAPIException(
-            detail="A complaint with this complaint_id already exists for this institution.",
-        ) from exc
+        # Translate database-level constraint violations into the documented
+        # error codes from api/openapi/error-catalog.md. Inspecting the
+        # underlying asyncpg error message (carried on ``exc.orig``) for
+        # the constraint name is the standard SQLAlchemy 2.0 idiom; the
+        # alternative of catching distinct asyncpg exception classes is
+        # noisier and would couple route code to the driver.
+        error_message = str(getattr(exc, "orig", "") or exc)
+
+        if "complaints_pkey" in error_message:
+            raise DuplicateComplaintId(
+                detail=(
+                    "A complaint with this complaint_id already exists for this "
+                    "institution. Use a fresh complaint_id, or replay the original "
+                    "request with the same Idempotency-Key."
+                )
+            ) from exc
+
+        if "complaints_institution_id_fkey" in error_message:
+            raise InstitutionNotFound(
+                detail=(
+                    f"institution_id {submission.complaint.institution_id!r} is not "
+                    "registered with SBS. Verify the institution_id against SBS's "
+                    "published list."
+                )
+            ) from exc
+
+        # Unknown constraint violation — log it so a future unmapped case
+        # is visible in the trace, then re-raise so the catch-all 500
+        # handler runs. Re-raising is the right choice: silently mapping
+        # to a 500 here would discard the stack trace.
+        _logger.error(
+            "unmapped_integrity_error",
+            error_message=error_message,
+            complaint_id=submission.complaint.complaint_id,
+            institution_id=submission.complaint.institution_id,
+        )
+        raise
 
     received_at = record.received_at or datetime.now(timezone.utc)
     body = ComplaintCreated(

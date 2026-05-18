@@ -9,8 +9,10 @@ attaches the OpenTelemetry trace_id.
 from sbs_api.errors.exceptions import (
     AuthenticationNotConfigured,
     CursorInvalid,
+    DuplicateComplaintId,
     ETagMismatch,
     IdempotencyKeyReuseWithDifferentBody,
+    InstitutionNotFound,
     PreconditionRequired,
     RequestBodyTooLarge,
     ResolutionStatusTransitionForbidden,
@@ -23,8 +25,10 @@ from sbs_api.errors.exceptions import (
 __all__ = [
     "AuthenticationNotConfigured",
     "CursorInvalid",
+    "DuplicateComplaintId",
     "ETagMismatch",
     "IdempotencyKeyReuseWithDifferentBody",
+    "InstitutionNotFound",
     "PreconditionRequired",
     "RequestBodyTooLarge",
     "ResolutionStatusTransitionForbidden",

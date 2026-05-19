@@ -140,3 +140,169 @@ class ServiceUnavailable(SBSAPIException):
     status = 503
     title = "Service degraded or down"
     type_suffix = "SBS-503-001"
+
+
+# --- mTLS (ADR 0031) ------------------------------------------------------
+
+
+class CertRequired(SBSAPIException):
+    code = "SBS-401-001"
+    status = 401
+    title = "Client certificate required"
+    type_suffix = "CERT_REQUIRED"
+
+
+class CertInvalid(SBSAPIException):
+    code = "SBS-401-002"
+    status = 401
+    title = "Client certificate invalid"
+    type_suffix = "CERT_INVALID"
+
+
+class CertExpired(SBSAPIException):
+    code = "SBS-401-003"
+    status = 401
+    title = "Client certificate expired"
+    type_suffix = "CERT_EXPIRED"
+
+
+class CertCnUnknown(SBSAPIException):
+    code = "SBS-403-001"
+    status = 403
+    title = "Client certificate CN not registered"
+    type_suffix = "CERT_CN_UNKNOWN"
+
+
+class CertRevoked(SBSAPIException):
+    code = "SBS-403-002"
+    status = 403
+    title = "Client certificate revoked"
+    type_suffix = "CERT_REVOKED"
+
+
+# --- HMAC request signing (ADR 0027 amendment) ----------------------------
+
+
+class SignatureMissingHeader(SBSAPIException):
+    code = "SBS-401-010"
+    status = 401
+    title = "HMAC signature header missing"
+    type_suffix = "SIGNATURE_MISSING_HEADER"
+
+
+class SignatureAlgorithmUnsupported(SBSAPIException):
+    code = "SBS-401-011"
+    status = 401
+    title = "HMAC signature algorithm unsupported"
+    type_suffix = "SIGNATURE_ALGORITHM_UNSUPPORTED"
+
+
+class SignatureInvalid(SBSAPIException):
+    code = "SBS-401-012"
+    status = 401
+    title = "HMAC signature invalid"
+    type_suffix = "SIGNATURE_INVALID"
+
+
+class SignatureExpired(SBSAPIException):
+    code = "SBS-401-013"
+    status = 401
+    title = "HMAC signature timestamp out of window"
+    type_suffix = "SIGNATURE_EXPIRED"
+
+
+class SignatureReplayed(SBSAPIException):
+    code = "SBS-401-014"
+    status = 401
+    title = "HMAC signature already seen within replay window"
+    type_suffix = "SIGNATURE_REPLAYED"
+
+
+class SignatureInstitutionMismatch(SBSAPIException):
+    code = "SBS-401-015"
+    status = 401
+    title = "HMAC institution_id does not match mTLS subject"
+    type_suffix = "SIGNATURE_INSTITUTION_MISMATCH"
+
+
+class HmacSecretNotConfigured(SBSAPIException):
+    """Server-side: institution has no row in institution_secrets."""
+
+    code = "SBS-503-003"
+    status = 503
+    title = "HMAC secret not configured for institution"
+    type_suffix = "HMAC_SECRET_NOT_CONFIGURED"
+
+
+# --- OAuth 2.0 client_credentials (ADR 0032) -----------------------------
+
+
+class TokenRequired(SBSAPIException):
+    code = "SBS-401-020"
+    status = 401
+    title = "OAuth access token required"
+    type_suffix = "TOKEN_REQUIRED"
+
+
+class TokenInvalid(SBSAPIException):
+    code = "SBS-401-021"
+    status = 401
+    title = "OAuth access token invalid"
+    type_suffix = "TOKEN_INVALID"
+
+
+class TokenExpired(SBSAPIException):
+    code = "SBS-401-022"
+    status = 401
+    title = "OAuth access token expired"
+    type_suffix = "TOKEN_EXPIRED"
+
+
+class TokenCertThumbprintMismatch(SBSAPIException):
+    code = "SBS-401-023"
+    status = 401
+    title = "OAuth token cert thumbprint mismatch"
+    type_suffix = "TOKEN_CERT_THUMBPRINT_MISMATCH"
+
+
+class TokenScopeInsufficient(SBSAPIException):
+    code = "SBS-403-010"
+    status = 403
+    title = "OAuth token scope insufficient"
+    type_suffix = "TOKEN_SCOPE_INSUFFICIENT"
+
+
+class TokenCertRequired(SBSAPIException):
+    """Token endpoint hit without a valid mTLS connection."""
+
+    code = "SBS-401-024"
+    status = 401
+    title = "OAuth token request requires mTLS"
+    type_suffix = "TOKEN_CERT_REQUIRED"
+
+
+class OAuthInvalidScope(SBSAPIException):
+    """Per RFC 6749 §5.2 — requested ∩ permitted is empty."""
+
+    code = "SBS-400-010"
+    status = 400
+    title = "OAuth invalid_scope"
+    type_suffix = "INVALID_SCOPE"
+
+
+class OAuthInvalidGrant(SBSAPIException):
+    """Per RFC 6749 §5.2 — client credentials invalid."""
+
+    code = "SBS-401-025"
+    status = 401
+    title = "OAuth invalid_grant"
+    type_suffix = "INVALID_GRANT"
+
+
+class OAuthInvalidRequest(SBSAPIException):
+    """Per RFC 6749 §5.2 — request shape malformed."""
+
+    code = "SBS-400-011"
+    status = 400
+    title = "OAuth invalid_request"
+    type_suffix = "INVALID_REQUEST"

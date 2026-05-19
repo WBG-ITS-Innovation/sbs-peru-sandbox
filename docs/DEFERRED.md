@@ -135,6 +135,20 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Target:** Before May 25 (so the scope-lock decision is fully grounded by sprint kickoff). Must land off the critical path (i.e., interleaved between or after Prompts 5-8, not inside them) — Prompts 5-8 are the signed-ingestion stack and displacing one of them directly increases the schedule risk that ADR 0025 Consequences names as "real."
 - **Trail:** ADR 0025 Promotion criteria, Prompt 4 session journal, [docs/reviews/2026-05-17-may-25-critical-path-restructure.md](reviews/2026-05-17-may-25-critical-path-restructure.md) (benchmark-checker finding).
 
+### Pressure-test findings deferred to Day 2 amendment pass
+
+- **Status:** Surfaced during the Prompt 7 pre-workstream-A pressure-test review. Five findings are real but out of scope for tonight's auth-chain landing.
+- **What's deferred:**
+  - **Audit logging of auth events.** Failed mTLS handshakes, expired tokens, replayed signatures, and scope-insufficient rejections should land in the audit log. Deferred because the audit-log subsystem itself is a Part 6 deliverable; auth events feed it when it lands.
+  - **GET request body rejection.** A GET with a body is RFC 9110 §9.3.1 undefined-behavior; the API should explicitly 400 such requests. This is a code-level guard, not an ADR-level decision, and lands in a Day-2 hardening pass.
+  - **HMAC secret rotation operational endpoints.** ADR 0027's amendment names the `active_secret`/`previous_secret` rotation grace but the admin endpoints that actually rotate (POST a new secret, retire an old one) are a Part 8 admin-API concern.
+  - **OpenAPI route authentication decision.** `GET /v1/openapi.yaml` currently is unauthenticated (the published contract). Whether to gate it behind mTLS-only (no OAuth) is a separate decision; defer until SBS confirms public-vs-partner visibility for the contract document.
+  - **Response signing.** Outbound webhook callbacks (Prompt 12) will need outbound HMAC. The contract is unchanged from the inbound shape; landing the outbound primitive is a Prompt 12 concern, not Prompt 7.
+- **Why deferred:** Each finding either has a named future home (Part 6 audit log, Part 8 admin work, Prompt 12 webhooks) or is a code-level guard that does not belong in an ADR.
+- **Action when triggered:** Each item lands in its named home; no shared trigger.
+- **Target:** Day 2 of Prompt 7 (GET-body guard), Part 6 (audit), Part 8 (rotation endpoints), Prompt 12 (response signing), separate decision needed (OpenAPI auth).
+- **Trail:** Prompt 7 pressure-test, [/tmp/prompt-07-pressure-test-fixes.md](file:///tmp/prompt-07-pressure-test-fixes.md) (operator-local).
+
 ## How to revisit
 
 At the start of Part 9, the planner reads this document top-to-bottom and produces a Part 9 work plan. Items resolved in earlier Parts should be moved to the "Resolved" section below with a one-line note pointing at the resolving PR/commit.

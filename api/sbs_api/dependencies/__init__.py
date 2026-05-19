@@ -12,12 +12,17 @@ from sbs_api.dependencies.idempotency import (
     IdempotencyContext,
     get_idempotency_context,
 )
+from sbs_api.dependencies.hmac_verify import verified_hmac_signature
+from sbs_api.dependencies.mtls import MtlsSubject, verified_mtls_subject
 
 __all__ = [
     "AuthContext",
     "IdempotencyContext",
+    "MtlsSubject",
     "compute_etag",
     "get_auth_context",
     "get_idempotency_context",
     "get_session",
+    "verified_hmac_signature",
+    "verified_mtls_subject",
 ]

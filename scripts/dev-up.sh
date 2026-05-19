@@ -54,6 +54,19 @@ docker exec -e PGPASSWORD=sbs -i sbs-postgres \
 }
 echo "    institutions: SBS-001234 (BANCO_DEMO_001), SBS-005678 (COOPAC_DEMO_002)"
 
+if [[ -f dev-ca/seed-certificates.sql ]]; then
+  echo "==> seeding institution_certificates from dev-ca/seed-certificates.sql"
+  docker exec -e PGPASSWORD=sbs -i sbs-postgres \
+    psql -U sbs -d sbs_dev -v ON_ERROR_STOP=1 \
+    < dev-ca/seed-certificates.sql >/dev/null || {
+    echo "ERROR: institution_certificates seed failed" >&2
+    exit 5
+  }
+  echo "    certificate thumbprints loaded (see dev-ca/thumbprints.txt)"
+else
+  echo "    (dev-ca/seed-certificates.sql absent — run scripts/dev-ca.sh to enable mTLS)"
+fi
+
 echo
 echo "==> ready"
 echo "DSN: $DSN"

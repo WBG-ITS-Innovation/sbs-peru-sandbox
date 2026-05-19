@@ -29,4 +29,19 @@ export SBS_API_DATABASE_URL="${SBS_API_DATABASE_URL:-postgresql+asyncpg://sbs:sb
 export SBS_API_RELOAD="${SBS_API_RELOAD:-true}"
 export PYTHONPATH="$REPO_ROOT/api${PYTHONPATH:+:$PYTHONPATH}"
 
+# mTLS — opt in by exporting SBS_API_MTLS_MODE=direct and having dev-ca/ present.
+# When dev-ca/ is missing the runtime starts without TLS (auth-stub friendly).
+if [[ -f dev-ca/ca.pem && -f dev-ca/sbs-suptech-sandbox.local.pem && "${SBS_API_MTLS_MODE:-disabled}" == "direct" ]]; then
+  echo "==> mTLS direct mode: uvicorn will require client certs signed by dev-ca/ca.pem"
+  export SBS_API_MTLS_MODE="direct"
+  export SBS_API_UVICORN_SSL_CA_CERTS="${SBS_API_UVICORN_SSL_CA_CERTS:-$REPO_ROOT/dev-ca/ca.pem}"
+  # Server cert: the dev CA issues a dedicated server cert with serverAuth EKU
+  # and SAN covering sbs-suptech-sandbox.local, localhost, and 127.0.0.1.
+  # Production overlay uses an SBS-PKI server cert.
+  export SBS_API_UVICORN_SSL_CERTFILE="${SBS_API_UVICORN_SSL_CERTFILE:-$REPO_ROOT/dev-ca/sbs-suptech-sandbox.local.pem}"
+  export SBS_API_UVICORN_SSL_KEYFILE="${SBS_API_UVICORN_SSL_KEYFILE:-$REPO_ROOT/dev-ca/sbs-suptech-sandbox.local-key.pem}"
+else
+  export SBS_API_MTLS_MODE="${SBS_API_MTLS_MODE:-disabled}"
+fi
+
 exec uv run python -m sbs_api

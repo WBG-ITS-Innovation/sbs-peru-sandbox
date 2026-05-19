@@ -15,7 +15,6 @@ so existence does not leak across tenants. See open-questions §5.6.
 
 from __future__ import annotations
 
-import base64
 import json
 from datetime import date, datetime, timezone
 
@@ -25,6 +24,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sbs_api.auth.cursor import (
+    decode_cursor,
+    encode_cursor,
+    load_or_create_cursor_signing_key,
+)
 from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.auth import AuthContext, get_auth_context
 from sbs_api.dependencies.db import get_session
@@ -102,19 +106,49 @@ def _orm_to_list_item(record: ComplaintRecord) -> ComplaintListItem:
     )
 
 
+# Cursor signing key — lazily loaded so test fixtures and the dev CA
+# regeneration can override it via override_cursor_signing_key_for_test().
+
+_cursor_signing_key: bytes | None = None
+
+
+def _get_cursor_signing_key() -> bytes:
+    global _cursor_signing_key
+    if _cursor_signing_key is None:
+        _cursor_signing_key = load_or_create_cursor_signing_key()
+    return _cursor_signing_key
+
+
+def override_cursor_signing_key_for_test(key: bytes) -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = key
+
+
+def reset_cursor_signing_key_for_test() -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = None
+
+
 def _encode_cursor(received_at: datetime, complaint_id: str) -> str:
+    """Sign + encode a cursor per ADR 0028 amendment §cursor-signing (F.5)."""
+
     payload = {"received_at": received_at.isoformat(), "complaint_id": complaint_id}
-    return base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+    return encode_cursor(payload, key=_get_cursor_signing_key())
 
 
 def _decode_cursor(cursor: str) -> tuple[datetime, str]:
+    """Verify signature and decode. Tampered cursors raise CURSOR_INVALID."""
+
     try:
-        raw = base64.urlsafe_b64decode(cursor.encode("ascii"))
-        payload = json.loads(raw.decode("utf-8"))
+        payload = decode_cursor(cursor, key=_get_cursor_signing_key())
         return datetime.fromisoformat(payload["received_at"]), payload["complaint_id"]
-    except Exception as exc:  # noqa: BLE001 — any parse error is CURSOR_INVALID
+    except (ValueError, KeyError) as exc:
         raise CursorInvalid(
-            detail="Cursor value could not be decoded. Pass back the value the server returned verbatim."
+            detail=(
+                "Cursor value could not be decoded or its signature is "
+                "invalid. Pass back the value the server returned verbatim; "
+                "do not modify it."
+            )
         ) from exc
 
 

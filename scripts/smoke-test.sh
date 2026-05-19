@@ -25,6 +25,39 @@ BASE="${BASE:-http://localhost:8000}"
 PROB_CT="application/problem+json"
 
 # ---------------------------------------------------------------------------
+# F.6 — safe re-runs by default; SMOKE_RESET=1 for an explicit wipe.
+#
+# Each invocation derives a unique suffix from epoch+pid so complaint_ids
+# and Idempotency-Keys do not collide across runs. SMOKE_RESET=1
+# additionally wipes prior smoke-test rows from Postgres before starting,
+# which is the explicit-recovery path when a previous run died mid-way
+# and left rows in 'processing' state.
+# ---------------------------------------------------------------------------
+
+SMOKE_RESET="${SMOKE_RESET:-0}"
+SUFFIX="$(date +%s)$$"
+RUN_ID="smk-${SUFFIX}"
+
+# Six-digit numeric suffix derived from the run ID (complaint_id pattern
+# requires 6–10 digits, so we hash the suffix down).
+SMOKE_NUM_SUFFIX="$(printf '%06d' "$(( ${SUFFIX} % 1000000 ))")"
+
+if [[ "$SMOKE_RESET" == "1" ]]; then
+  echo "==> SMOKE_RESET=1 — wiping prior smoke-test artifacts"
+  if docker ps --format '{{.Names}}' | grep -q '^sbs-postgres$'; then
+    docker exec -e PGPASSWORD=sbs -i sbs-postgres \
+      psql -U sbs -d sbs_dev -v ON_ERROR_STOP=1 <<'SQL' >/dev/null || true
+DELETE FROM idempotency_records WHERE idempotency_key LIKE 'smk-%';
+DELETE FROM idempotency_records WHERE idempotency_key LIKE 'smoke-%';
+DELETE FROM complaints WHERE complaint_id LIKE 'BCO-2026-009%';
+SQL
+    echo "    prior smk-* / smoke-* rows cleared"
+  else
+    echo "    (sbs-postgres container not running — skipping wipe)"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -73,7 +106,7 @@ note "live OK"
 
 step "1. validation error returns problem+json"
 resp="$(http POST /v1/complaints \
-  -H "Idempotency-Key: smoke-bad-001" \
+  -H "Idempotency-Key: ${RUN_ID}-bad" \
   -H "Content-Type: application/json" \
   --data '{"complaint": {"complaint_id": "X"}}')"
 body="$(printf '%s' "$resp" | sed '$d')"
@@ -90,9 +123,10 @@ note "problem+json shape OK"
 # ---------------------------------------------------------------------------
 
 step "2. idempotency"
+SMOKE_COMPLAINT_ID="BCO-2026-${SMOKE_NUM_SUFFIX}"
 PAYLOAD='{
   "complaint": {
-    "complaint_id": "BCO-2026-009001",
+    "complaint_id": "'"$SMOKE_COMPLAINT_ID"'",
     "institution_id": "SBS-001234",
     "received_date": "2026-05-12",
     "complainant_doc_type": "DNI",
@@ -111,7 +145,7 @@ PAYLOAD='{
 }'
 
 r1="$(curl -sS -i "${BASE}/v1/complaints" \
-  -H "Idempotency-Key: smoke-001" \
+  -H "Idempotency-Key: ${RUN_ID}-001" \
   -H "Content-Type: application/json" \
   --data "$PAYLOAD")"
 [[ "$(printf '%s' "$r1" | head -n1)" == *" 201 "* ]] || {
@@ -122,7 +156,7 @@ LOCATION="$(printf '%s' "$r1" | hdr Location)"
 [[ -n "$LOCATION" ]] || fail "Location header missing on 201"
 
 r2="$(curl -sS -i "${BASE}/v1/complaints" \
-  -H "Idempotency-Key: smoke-001" \
+  -H "Idempotency-Key: ${RUN_ID}-001" \
   -H "Content-Type: application/json" \
   --data "$PAYLOAD")"
 [[ "$(printf '%s' "$r2" | head -n1)" == *" 201 "* ]] || fail "replay did not return 201"
@@ -130,9 +164,10 @@ REPLAYED="$(printf '%s' "$r2" | hdr Idempotency-Replayed)"
 [[ "$REPLAYED" == "true" ]] || fail "Idempotency-Replayed not 'true' on replay (got '$REPLAYED')"
 note "replay OK"
 
-DIFFERENT_PAYLOAD="${PAYLOAD//009001/009002}"
+# Mutate the description to get a different body hash under the same key.
+DIFFERENT_PAYLOAD="${PAYLOAD//Cargo no autorizado/CARGO ALTERADO}"
 r3="$(curl -sS -i "${BASE}/v1/complaints" \
-  -H "Idempotency-Key: smoke-001" \
+  -H "Idempotency-Key: ${RUN_ID}-001" \
   -H "Content-Type: application/json" \
   --data "$DIFFERENT_PAYLOAD")"
 [[ "$(printf '%s' "$r3" | head -n1)" == *" 409 "* ]] || fail "different-body replay did not return 409"
@@ -161,7 +196,7 @@ ETAG="$(printf '%s' "$GET_OUT" | hdr ETag)"
 PATCH_BODY='{"resolution_status": "atendido", "reason": "Caso resuelto satisfactoriamente al cliente."}'
 r5="$(curl -sS -i "${BASE}${LOCATION}/status" \
   -X PATCH \
-  -H "Idempotency-Key: smoke-patch-001" \
+  -H "Idempotency-Key: ${RUN_ID}-patch-001" \
   -H "If-Match: $ETAG" \
   -H "Content-Type: application/json" \
   --data "$PATCH_BODY")"
@@ -173,7 +208,7 @@ r5="$(curl -sS -i "${BASE}${LOCATION}/status" \
 # Replay with the now-stale ETag.
 r6="$(curl -sS -i "${BASE}${LOCATION}/status" \
   -X PATCH \
-  -H "Idempotency-Key: smoke-patch-002" \
+  -H "Idempotency-Key: ${RUN_ID}-patch-002" \
   -H "If-Match: $ETAG" \
   -H "Content-Type: application/json" \
   --data "$PATCH_BODY")"
@@ -192,7 +227,7 @@ FRESH_GET="$(curl -sS -i "${BASE}${LOCATION}")"
 FRESH_ETAG="$(printf '%s' "$FRESH_GET" | hdr ETag)"
 r7="$(curl -sS -i "${BASE}${LOCATION}/status" \
   -X PATCH \
-  -H "Idempotency-Key: smoke-walkback-001" \
+  -H "Idempotency-Key: ${RUN_ID}-walkback" \
   -H "If-Match: $FRESH_ETAG" \
   -H "Content-Type: application/json" \
   --data '{"resolution_status": "pendiente"}')"
@@ -207,7 +242,7 @@ note "state machine OK"
 step "6. tenant binding"
 OTHER_TENANT_PAYLOAD="${PAYLOAD/SBS-001234/SBS-005678}"
 r8="$(http POST /v1/complaints \
-  -H "Idempotency-Key: smoke-tenant-001" \
+  -H "Idempotency-Key: ${RUN_ID}-tenant" \
   -H "Content-Type: application/json" \
   --data "$OTHER_TENANT_PAYLOAD")"
 status="$(printf '%s' "$r8" | tail -n1)"
@@ -220,9 +255,9 @@ note "tenant binding OK"
 
 step "7. body size limit"
 # 256 KiB is the default; generate 300 KiB to overshoot.
-big_payload="$(python3 -c 'import json,sys; payload={"complaint":{"complaint_id":"BCO-2026-099999","description_text":"x"*300000}}; print(json.dumps(payload))')"
+big_payload="$(python3 -c "import json; print(json.dumps({'complaint': {'complaint_id': 'BCO-2026-${SMOKE_NUM_SUFFIX}', 'description_text': 'x' * 300000}}))")"
 r9="$(curl -sS -i "${BASE}/v1/complaints" \
-  -H "Idempotency-Key: smoke-big-001" \
+  -H "Idempotency-Key: ${RUN_ID}-big" \
   -H "Content-Type: application/json" \
   --data "$big_payload")"
 [[ "$(printf '%s' "$r9" | head -n1)" == *" 413 "* ]] || fail "oversized POST did not return 413"

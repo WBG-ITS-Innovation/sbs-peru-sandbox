@@ -150,6 +150,30 @@ async def test_unhandled_500_is_body_less_problem_json(client):
     assert "RuntimeError" not in r.text
 
 
+async def test_unhandled_500_logs_exc_info(client):
+    """F.4 — catch-all 500 handler logs the underlying exception with
+    exc_info=True so ops sees the stack trace in the structured log.
+    """
+
+    from structlog.testing import capture_logs
+
+    with capture_logs() as captured:
+        r = await client.get("/boom")
+    assert r.status_code == 500
+
+    unhandled_events = [
+        e for e in captured if e.get("event") == "unhandled_exception"
+    ]
+    assert unhandled_events, f"no unhandled_exception event in: {captured}"
+    event = unhandled_events[-1]
+    # structlog's capture_logs records the exc_info=True flag as a key
+    # on the captured event; the presence of the key (truthy) confirms
+    # the handler asked for the stack trace.
+    assert event.get("exc_info") is True or event.get("exception") is not None
+    assert event.get("path") == "/boom"
+    assert event.get("method") == "GET"
+
+
 # --- trace_id propagation --------------------------------------------------
 
 

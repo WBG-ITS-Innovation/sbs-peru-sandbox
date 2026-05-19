@@ -19,6 +19,9 @@ from opentelemetry import trace
 
 from sbs_api.config import get_settings
 from sbs_api.errors.exceptions import SBSAPIException
+from sbs_api.observability.logging import get_logger
+
+_logger = get_logger(__name__)
 
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 
@@ -142,6 +145,18 @@ async def unhandled_exception_handler(
     # Body-less detail by design: no internal information leaks. The trace_id
     # is the support handoff identifier.
     traceparent = _current_traceparent()
+    # F.4 — log the underlying exception with exc_info=True so the stack
+    # trace lands in the structured log. Without this the catch-all
+    # handler renders a clean 500 but the cause is invisible to ops.
+    correlation_id = getattr(request.state, "correlation_id", None)
+    _logger.error(
+        "unhandled_exception",
+        exc_info=True,
+        path=str(request.url.path),
+        method=request.method,
+        correlation_id=correlation_id,
+        traceparent=traceparent,
+    )
     payload = _problem_payload(
         code="SBS-500-001",
         status=500,

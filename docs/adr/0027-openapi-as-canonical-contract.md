@@ -266,3 +266,117 @@ when the client legitimately sends `//` in a path. The smoke test
 exercises this path against the dev CA in `direct` mode; the production
 overlay must include a conformance test against the deployed proxy
 before the chain is considered intact.
+
+### 2026-05-20 — multipart body-hash redefinition + outbound response signing + X-SBS-Key-Id (Prompt 8)
+
+This amendment supersedes the multipart body-hash specification from
+the 2026-05-19 amendment, adds an outbound (server-to-institution)
+signing mirror of the inbound contract, and introduces a third
+signing header `X-SBS-Key-Id` used in both directions.
+
+**Multipart body-hash (inbound) — supersedes the prior definition.**
+The 2026-05-19 amendment said the hash was over "the full multipart
+payload including boundary delimiters". That definition is wrong in
+practice: boundary encoding is implementation-detail-dependent, so two
+HTTP clients producing identical CSV uploads would compute different
+canonical-request hashes purely from boundary choice. The replacement
+definition:
+
+For `POST /v1/batches` (and any future multipart endpoint), the
+`body-hash` line of the canonical request is the **SHA-256 of the
+CSV file bytes only** — not the SHA-256 of the multipart envelope,
+not the SHA-256 of the manifest JSON, not the SHA-256 of the
+concatenation.
+
+Rationale. The manifest declares the CSV's `checksum_sha256` as an
+independently-verifiable field; the server compares it against the
+actually-received CSV bytes. So the manifest hash is redundant as a
+signing input. Signing the CSV bytes directly means the institution's
+signing client computes one hash (over the file they're uploading) and
+the server's verifier computes the same hash on receipt. The multipart
+boundary encoding does not affect the signature. The `Content-Length`
+of the multipart envelope is *not* part of the canonical request
+because boundary length is implementation-detail-dependent.
+
+The non-multipart canonical request (for JSON-body endpoints) is
+unchanged: `lowercase-hex(sha256(request-body-bytes))`.
+
+**Outbound response signing.** The same canonical request shape
+applies in both directions. Five lines:
+
+```
+<HTTP-method-uppercase>
+<callback-path>
+<X-SBS-Timestamp-value>
+<lowercase-hex(sha256(body))>
+<institution_id>
+```
+
+Direction differs only in which secret is used and which side
+verifies:
+
+- **Inbound (institution → SBS)** uses the institution's *inbound*
+  secret from `institution_secrets.active_secret`. SBS verifies.
+- **Outbound (SBS → institution)** uses the institution's
+  *outbound* secret from `outbound_webhook_secrets.active_secret`.
+  The institution verifies (per the SDK recipe).
+
+The two secrets are stored in separate tables to support independent
+rotation. Both tables carry a `kid` column to enable rolling-secret
+rotation in the future (active + previous secrets keyed by `kid`);
+currently `kid=sandbox-v1` everywhere. Both share the 5-minute clock
+skew tolerance. Replay protection is server-side enforced for inbound
+only — the outbound side does not enforce on the receiving
+institution's behalf, because that is the institution's
+responsibility per their verification recipe.
+
+**`X-SBS-Key-Id` header — new third signing header.** Both inbound
+and outbound requests include `X-SBS-Key-Id` alongside
+`X-SBS-Timestamp` and `X-SBS-Signature`. Value is `sandbox-v1` from
+day one, mirroring the OAuth `kid=sandbox-v1` pattern from ADR 0032.
+The server (inbound) or the institution (outbound) selects the
+secret to verify against by `kid` lookup, not by trial-decryption
+through the active and previous slots. Future rotation rolls in a
+new `kid` (e.g., `sandbox-v2`); the previous secret stays valid in
+the `active` slot until cutover, then is moved to `previous` for the
+grace window, then retired.
+
+The `X-SBS-Key-Id` value is not itself part of the canonical request
+string — it is metadata that tells the verifier which secret to
+load. The signed contents (method, target, timestamp, body-hash,
+institution_id) are unchanged.
+
+**Backward compatibility for inbound.** Existing inbound clients
+that do not send `X-SBS-Key-Id` continue to work in Prompt 8: the
+server falls back to the `active_secret` for the institution when
+the header is absent. The header becomes required in Prompt 9
+alongside the SDK rollout. The smoke test sends the header from this
+prompt forward so the canonical demo path exercises it.
+
+**Headers on every outbound callback (new):**
+
+```
+X-SBS-Timestamp: 2026-05-20T14:23:45Z
+X-SBS-Signature: hmac-sha256-v1=<base64>
+X-SBS-Key-Id: sandbox-v1
+```
+
+**Retry policy (outbound).** Exponential backoff: 30 seconds,
+2 minutes, 10 minutes, 1 hour, 6 hours — 5 attempts total, ~7.7-hour
+window. Persistent failures recorded in `webhook_deliveries` with
+status `delivery_failed`. See ADR 0035 for the full outbound webhook
+contract.
+
+**Stable error codes (additions).** `WEBHOOK_URL_REJECTED` (the
+configured webhook URL failed the SSRF prevention checks; no retry
+attempted). All other inbound codes from the prior amendment are
+unchanged.
+
+**Precedent.** [docs/research/market-comparators.md §5.A.M](../research/market-comparators.md#5am-authentication-signing-and-rate-limiting-for-regulator-facing-apis)
+is extended in Prompt 8 to cover the outbound mirror of the inbound
+signing contract. **Stripe webhooks** is the canonical outbound
+reference: same HMAC primitive, same timestamp+signature header
+pair, exponential-backoff retry, persistent failure recording. The
+`X-SBS-Key-Id` header follows the JWT `kid` pattern adopted in
+ADR 0032 for the same reason — explicit key selection beats trial-
+decryption when a rotation is in flight.

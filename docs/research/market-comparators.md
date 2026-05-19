@@ -41,6 +41,22 @@ The CFPB is the strongest public reference for complaint data publication and AP
 
 **Where it falls short for SBS:** The CFPB's public API is primarily a data access API, not a published supervised-institution ingestion API. The system is consumer-to-regulator-to-company, while SBS's Part 1 is supervised-institution-to-regulator reporting. Its taxonomy is US-specific and public narrative handling is shaped by US disclosure rules.
 
+#### 2.1.S Synthetic-corpus generation (added Prompt 8 for ADR 0036)
+
+Where CFPB publishes anonymised real complaints, SBS cannot — none have been collected yet under the new regime. The data-fidelity targets that make CFPB's corpus credible to researchers and regulators are the right targets for SBS's synthetic corpus: narrative realism, distribution shape, format-valid identifiers, anonymised PII. SBS generates synthetic data that follows those same fidelity targets.
+
+**Three fidelity tiers** map cleanly onto progressive use cases.
+
+- **Tier 1 — structurally valid only.** Every row passes the schema validator. Narratives are placeholder text. Sufficient for ingestion-pipeline smoke testing.
+- **Tier 2 — Tier 1 plus domain authenticity.** Realistic narratives (template-based, parameterised per row), realistic monetary amounts (log-normal over the actual market range), format-valid synthetic identifiers (DNI Modulo-11 checksum, RUC Modulo-11 checksum, Peru mobile pattern). Sufficient for demo credibility and for ingestion smoke testing under load.
+- **Tier 3 — Tier 2 plus statistically-realistic distributions.** Four distinct pattern families: (a) heavy-tail per-institution frequency (Pareto-shaped, 80/20 concentration); (b) weekly seasonality with Friday peak (matched against consumer-banking complaint patterns); (c) correlated clusters following synthetic operational incidents (e.g., 200 complaints about one mortgage product over 10 days, simulating an institution-level conduct failure); (d) prudential-versus-conduct pattern distinction — prudential patterns concentrate by counterparty / exposure (sparse but high-impact), conduct patterns spread across many consumers (dense but lower per-incident impact). Sufficient for pattern-detection ML, agent reasoning evaluation, and demo flows that need findings to surface.
+
+**Template-based, not LLM-generated.** Template-with-parameter-substitution gives bit-identical regeneration from `(seed + templates + generator code)`. LLM generation is non-deterministic across model versions, sampling parameters, and prompt drift, and the output is opaque to PR review. Auditability is a regulator-grade concern: a contributor adding inappropriate content to a templates file shows up in diff; the same content in an LLM-prompt change does not.
+
+**Deterministic seeding.** Reproducibility of demo data is part of the regulator-grade promise. A WBG or SBS reviewer should be able to regenerate the exact corpus used in any prior demo given the seed. This follows the OpenSSF reproducible-builds principle applied to data.
+
+This subsection is the load-bearing precedent reference for [ADR 0036](../adr/0036-synthetic-corpus-fidelity-tiers.md).
+
 ### 2.2 Banco Central do Brasil complaint ranking
 
 Brazil's Central Bank has a strong LatAm comparator in its Ranking de Instituições por Índice de Reclamações. The dataset consolidates citizen complaints against financial institutions that were received, analyzed, and closed by the Central Bank; it publishes institution-level complaint indexes, counts by complaint type, and customer denominators. The index is calculated using procedent regulated complaints per million customers. The BCB also exposes ranking resources in JSON and CSV and lists complaint rankings dating from July 2014.
@@ -138,11 +154,60 @@ Three protocol layers together form the institutional-API auth chain that this p
 
 This section is the load-bearing precedent reference for ADRs 0031 (mTLS), 0032 (OAuth scopes), 0033 (rate limiting), and the ADR 0027 amendment landing the full HMAC canonical request contract.
 
+#### 5.A.M.O Outbound webhook signing (added Prompt 8 for ADR 0035)
+
+Where §5.A.M covers institution-to-regulator signing (inbound), the outbound mirror — regulator-to-institution callbacks — has its own canonical reference family. **Stripe webhooks** is the longest-running production reference: per-account secret, HMAC SHA-256 over a canonical request, timestamp + signature headers, replay-resistance through the timestamp window, exponential-backoff retry, persistent failure recording, optional auto-disable after extended failure. **GitHub webhooks** uses the same primitive with a slightly different header shape. **Twilio request validation** is the same shape applied to incoming SMS/voice events. **Slack event subscriptions** uses an identical HMAC pattern with a different replay-resistance scheme.
+
+The same canonical-request shape should be used in both directions so SDK authors implement one verification routine, not two. The differences are only:
+
+- Which secret is used (inbound vs outbound — stored in separate tables to support independent rotation).
+- Which side enforces replay protection (server-side for inbound; institution-side for outbound, since the server is the sender).
+- Whether a polling fallback exists (Stripe has none; SBS has `GET /v1/batches/{batch_id}`, which means SBS's outbound retry window can be shorter than Stripe's 3-day default).
+
+**`kid` for key rotation.** Following the JWT `kid` (RFC 7515 §4.1.4) and JOSE patterns, an explicit key identifier on every outbound (and inbound, per the ADR 0027 amendment in Prompt 8) signed request lets the verifier select the right secret from the active/previous slots without trial-decryption. The convention is `kid=<environment>-<version-counter>` (`sandbox-v1`, `prod-v1`, etc.) so an operator reading log lines can tell which secret a request was signed under at a glance.
+
+**SSRF prevention.** The callback URL is an SSRF risk surface: an attacker who can write to the per-institution webhook-config row could direct deliveries at internal services. The standard mitigation set (OWASP SSRF prevention cheat sheet) is:
+
+- Scheme allowlist (HTTPS only).
+- Host allowlist or hostname constraint (FQDN required, no IP literals).
+- Resolved-IP allowlist (no RFC 1918 private ranges, no loopback, no link-local — including specifically the AWS Instance Metadata Service IP `169.254.169.254` whose 2019 exfiltration patterns are the load-bearing case for the explicit call-out).
+
+Validation runs *before each delivery attempt*, not just at registration — a DNS rebinding attack could make a previously-public host resolve to a private IP at delivery time. Per-delivery resolution is the defence.
+
+This subsection is the load-bearing precedent reference for [ADR 0035](../adr/0035-outbound-webhook-signing-contract.md).
+
 ### 5.B Event-driven ingestion layer
 
 The vendor-generic event-broker framing in the SBS brief is sound. Kafka, NATS, and RabbitMQ are the three strongest open-source reference families, each with a different profile. Kafka is an open-source distributed event-streaming platform used for data pipelines, streaming analytics, integration, and mission-critical applications. NATS is a lightweight open-source messaging system with pub/sub, request/reply, and persistent streaming through JetStream. RabbitMQ is an open-source messaging and streaming broker supporting open protocols such as AMQP and MQTT and deployment on-premises or in cloud environments.
 
 For SBS, the spec should stay vendor-neutral and say: "event broker / queue / pub-sub layer" rather than naming Kafka or NATS as the target. The architecture should define the behavior: idempotency, audit log, retry policy, validation status, dead-letter queue, duplicate detection, and schema-version enforcement.
+
+#### 5.B.W Async-worker patterns for batch ingestion (added Prompt 8 for ADR 0034)
+
+The §5.B framing above covers the streaming-broker variant of an ingestion layer. The complementary variant for batch / file-upload ingestion is an HTTP-endpoint-plus-async-worker pattern: the institution-facing endpoint accepts the upload, persists the bytes, enqueues a job, and returns 202 with a status endpoint URL; an async worker drains the queue, processes the file, and signals completion via a webhook.
+
+This shape is the regulator-domain default for institutional batch submissions:
+
+- **UK Open Banking** — the batch-submission flow for Confirmation of Payee data accepts the upload, returns a tracking ID, and exposes a status endpoint; the institution polls or receives a webhook.
+- **SEC EDGAR** — corporate filings are accepted by EDGAR's `submissions` API, validated asynchronously, and surfaced via the filer's status dashboard. The synchronous validate-on-upload alternative would never scale to 10-K filings with thousands of exhibits.
+- **CFPB bulk complaint upload** — institutional bulk submissions follow the same enqueue-and-poll pattern.
+- **HMRC Making Tax Digital** — VAT submissions accept the payload synchronously, return a receipt, then process asynchronously with a separate query endpoint for the result.
+
+**Worker-runtime choice.** Async-worker runtimes for asyncio Python cluster into three families:
+
+1. **Celery / RQ** — mature, broker-agnostic, heavier operational footprint. Right for teams that already operate Celery elsewhere.
+2. **arq** — purpose-built for asyncio Python, Redis as the broker, lightweight, durable across worker restarts. Right when the stack is already asyncio + Redis and the queue surface is single-purpose.
+3. **FastAPI BackgroundTasks** — same event loop as the request handler, not durable. Right only for fire-and-forget work where loss on restart is acceptable. **Not acceptable for regulator-grade ingestion** because a uvicorn restart loses the in-flight batch.
+
+For a stack that already runs Redis (HMAC replay, rate limiting), arq adds the smallest new operational surface. The Celery family is the right answer if the project later needs cross-language workers or if the queue surface grows enough to justify Celery's broker abstraction. APScheduler is *not* in this family — it is cron-shaped (trigger-on-schedule), not queue-shaped (trigger-on-event), and using it for batch dispatch would mean abusing its trigger system.
+
+**Storage durability.** The pattern requires the uploaded file to outlive any single process. Local filesystem is acceptable for sandbox; production object storage (Azure Blob, S3) with lifecycle policies is the production-grade endpoint. The transition from local filesystem to object storage is a configuration change (storage backend abstraction), not a workflow change.
+
+**Concurrency model.** FIFO single-queue is the simplest model; per-institution queue partitioning is the next step up; per-institution worker pools is the production-grade endpoint. The progression matches institutional load growth and is the right ladder for a regulator deployment.
+
+**Validation pipeline reuse.** The async worker should share the per-row validation pipeline with the synchronous per-request endpoint. Two parallel validation paths create a drift surface where Tier 1 and Tier 2 can diverge silently. A test that asserts class identity (the *same Python object*) between the two paths is the standard defence.
+
+This subsection is the load-bearing precedent reference for [ADR 0034](../adr/0034-batch-ingestion-architecture.md).
 
 ### 5.C NLP for Spanish complaint narratives
 

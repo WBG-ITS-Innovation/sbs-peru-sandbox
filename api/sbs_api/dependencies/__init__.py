@@ -14,15 +14,21 @@ from sbs_api.dependencies.idempotency import (
 )
 from sbs_api.dependencies.hmac_verify import verified_hmac_signature
 from sbs_api.dependencies.mtls import MtlsSubject, verified_mtls_subject
+from sbs_api.dependencies.rate_limit import (
+    business_bucket,
+    oauth_token_bucket,
+)
 
 __all__ = [
     "AuthContext",
     "IdempotencyContext",
     "MtlsSubject",
+    "business_bucket",
     "compute_etag",
     "get_auth_context",
     "get_idempotency_context",
     "get_session",
+    "oauth_token_bucket",
     "verified_hmac_signature",
     "verified_mtls_subject",
 ]

@@ -72,11 +72,11 @@ tags:
     description: Health and version metadata.
 
 # Global default: least-privileged read scope. Write operations override
-# per-operation with `complaints.write` or `batches.write`. Public probes
+# per-operation with `complaints:write` or `batch:upload`. Public probes
 # (`/health`, `/version`) override with `security: []`.
 security:
   - mtls: []
-    oauth2_client_credentials: [complaints.read]
+    oauth2_client_credentials: [complaints:read]
     hmac_signature: []
 
 paths:
@@ -88,7 +88,7 @@ paths:
       operationId: createComplaint
       security:
         - mtls: []
-          oauth2_client_credentials: [complaints.write]
+          oauth2_client_credentials: [complaints:write]
           hmac_signature: []
       description: |
         Submit one complaint to SBS. The body carries the Anexo 1-A 15-field
@@ -145,7 +145,7 @@ paths:
         verbatim. Internally the cursor encodes
         `{"received_at": "<RFC3339>", "complaint_id": "<uuid>"}` (base64),
         but this is not part of the published contract — see the info-block
-        "Cursor pagination format". Inherits the global `complaints.read` scope.
+        "Cursor pagination format". Inherits the global `complaints:read` scope.
       parameters:
         - in: query
           name: institution_id
@@ -202,7 +202,7 @@ paths:
       tags: [Ingestion (Tier 1)]
       summary: Retrieve a complaint by id
       operationId: getComplaintById
-      description: Return the full Anexo 1-A complaint payload for a given complaint_id. Inherits the global `complaints.read` scope.
+      description: Return the full Anexo 1-A complaint payload for a given complaint_id. Inherits the global `complaints:read` scope.
       responses:
         "200":
           description: Complaint found.
@@ -233,7 +233,7 @@ paths:
       operationId: patchComplaintStatus
       security:
         - mtls: []
-          oauth2_client_credentials: [complaints.write]
+          oauth2_client_credentials: [complaints:write]
           hmac_signature: []
       description: |
         Transition a complaint's resolution status. A reason is required when
@@ -287,7 +287,7 @@ paths:
       operationId: createBatchManifest
       security:
         - mtls: []
-          oauth2_client_credentials: [batches.write]
+          oauth2_client_credentials: [batch:upload]
           hmac_signature: []
       description: |
         Submit a manifest describing a batch file the institution intends to
@@ -336,7 +336,7 @@ paths:
       operationId: getBatchStatus
       security:
         - mtls: []
-          oauth2_client_credentials: [batches.read]
+          oauth2_client_credentials: [batch:upload]
           hmac_signature: []
       description: Return the lifecycle state and per-row counts for a previously submitted batch.
       responses:
@@ -369,7 +369,7 @@ paths:
       operationId: getBatchResults
       security:
         - mtls: []
-          oauth2_client_credentials: [batches.read]
+          oauth2_client_credentials: [batch:upload]
           hmac_signature: []
       description: |
         Each row of the source file is reported here with its acceptance
@@ -407,7 +407,7 @@ paths:
       tags: [Institutions]
       summary: Retrieve operational status for an institution
       operationId: getInstitutionStatus
-      description: Return the onboarding state, rate-limit allocation, and recent-activity summary for one institution. Inherits the global `complaints.read` scope.
+      description: Return the onboarding state, rate-limit allocation, and recent-activity summary for one institution. Inherits the global `complaints:read` scope.
       responses:
         "200":
           description: Status snapshot.
@@ -553,17 +553,19 @@ components:
     oauth2_client_credentials:
       type: oauth2
       description: |
-        OAuth 2.0 client_credentials flow scoped per institution. The token
-        endpoint and scope catalog are published in the developer portal.
-        Implementation details land in Prompt 7.
+        OAuth 2.0 client_credentials flow scoped per institution per
+        ADR 0032. Tokens are cert-bound via the RFC 8705
+        `cnf.x5t#S256` confirmation claim — the token is unusable from
+        a different mTLS connection. See [api/openapi/error-catalog.md]
+        for the stable error codes returned on token/scope failures.
       flows:
         clientCredentials:
-          tokenUrl: https://auth-sandbox.sbs.gob.pe/oauth2/token
+          tokenUrl: /v1/oauth/token
           scopes:
-            complaints.write: Submit and update complaints
-            complaints.read: Read complaints
-            batches.write: Submit batches
-            batches.read: Read batch status and results
+            complaints:write: Submit complaints and patch their resolution status
+            complaints:read: List and retrieve complaints
+            batch:upload: Submit batch manifests and read batch status / results
+            status:read: Read institution operational status (status endpoints)
     hmac_signature:
       type: apiKey
       name: X-SBS-Signature

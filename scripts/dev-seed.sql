@@ -19,15 +19,16 @@ INSERT INTO institutions (
     institution_id,
     display_name,
     onboarded,
+    tier_classification,
     rate_limit_per_minute,
     schema_version,
     permitted_scopes,
     created_at
 ) VALUES
-    ('SBS-001234', 'BANCO_DEMO_001',  true, 60, 'v0.1.0',
+    ('SBS-001234', 'BANCO_DEMO_001',  true, 'large', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now()),
-    ('SBS-005678', 'COOPAC_DEMO_002', true, 60, 'v0.1.0',
+    ('SBS-005678', 'COOPAC_DEMO_002', true, 'small', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now())
 ON CONFLICT (institution_id) DO NOTHING;

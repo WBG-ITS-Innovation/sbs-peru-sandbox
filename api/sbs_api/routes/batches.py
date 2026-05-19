@@ -18,15 +18,23 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sbs_api.dependencies.auth import AuthContext, get_auth_context
+from sbs_api.auth.scopes import BATCH_UPLOAD
+from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.hmac_verify import verified_hmac_signature
 from sbs_api.dependencies.idempotency import (
+    claim_idempotency_slot,
     get_idempotency_context,
-    lookup_cached,
-    store as store_idempotency,
+    mark_complete,
 )
+from sbs_api.dependencies.mtls import MtlsSubject
+from sbs_api.dependencies.oauth import (
+    VerifiedToken,
+    verified_oauth_token_with_scope,
+)
+from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.db.models.batch import BatchRecord
-from sbs_api.errors.exceptions import ResourceNotFound
+from sbs_api.errors.exceptions import IdempotencyKeyInFlight, ResourceNotFound
 from sbs_api.models.requests import BatchManifest
 from sbs_api.models.responses import (
     BatchResultsResponse,
@@ -50,29 +58,40 @@ async def create_batch_manifest(
     request: Request,
     manifest: BatchManifest,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> JSONResponse:
-    if manifest.institution_id != auth.institution_id:
+    if manifest.institution_id != token.institution_id:
         raise ResourceNotFound(
             detail="institution_id in manifest does not match the authenticated caller."
         )
     body_bytes = await request.body()
     ctx = get_idempotency_context(
-        institution_id=auth.institution_id,
+        institution_id=token.institution_id,
         key=idempotency_key,
         body=body_bytes,
         method=request.method,
         path=request.url.path,
     )
-    cached = await lookup_cached(session, ctx)
-    if cached is not None:
+    claim = await claim_idempotency_slot(get_sessionmaker(), ctx)
+    if claim.state == "in_flight":
+        raise IdempotencyKeyInFlight(
+            detail=(
+                "Another batch upload with this Idempotency-Key is "
+                "still processing. Retry in a moment."
+            ),
+            extra_headers={"Retry-After": "1"},
+        )
+    if claim.state == "replay":
         import json as _json
-        cached_body = _json.loads(cached.response_payload)
-        cached_headers = _json.loads(cached.response_headers)
+        assert claim.record is not None
+        cached_body = _json.loads(claim.record.response_payload)
+        cached_headers = _json.loads(claim.record.response_headers)
         cached_headers["Idempotency-Replayed"] = "true"
         return JSONResponse(
-            status_code=cached.response_status,
+            status_code=claim.record.response_status,
             content=cached_body,
             headers=cached_headers,
         )
@@ -100,9 +119,7 @@ async def create_batch_manifest(
     )
     body = submission.model_dump(mode="json")
     headers: dict[str, str] = {}
-    await store_idempotency(
-        session, ctx, status=202, body=body, headers=headers
-    )
+    await mark_complete(session, ctx, status=202, body=body, headers=headers)
     await session.commit()
     return JSONResponse(status_code=202, content=body, headers=headers)
 
@@ -110,13 +127,14 @@ async def create_batch_manifest(
 @router.get("/batches/{batch_id}", response_model=BatchStatus)
 async def get_batch_status(
     batch_id: str = Path(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> BatchStatus:
     stmt = select(BatchRecord).where(BatchRecord.batch_id == batch_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"batch_id {batch_id!r} not found.")
     return BatchStatus(
         batch_id=record.batch_id,
@@ -135,13 +153,14 @@ async def get_batch_results(
     batch_id: str = Path(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$"),
     page_size: int = Query(200, ge=1, le=1000),
     next_cursor: str | None = Query(None),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> BatchResultsResponse:
     stmt = select(BatchRecord).where(BatchRecord.batch_id == batch_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"batch_id {batch_id!r} not found.")
     # Per-row results land in Prompt 8 alongside the upload pipeline. Today
     # the endpoint returns an empty page rather than 501 so smoke and

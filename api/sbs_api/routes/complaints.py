@@ -9,13 +9,13 @@ Five endpoints from the canonical OpenAPI spec land here:
 
 The route handler is the enforcement point for tenant binding (the body's
 ``institution_id`` must match the caller's identity from
-:func:`get_auth_context`). Tenant mismatch on a read returns 404, not 403,
-so existence does not leak across tenants. See open-questions §5.6.
+:func:`verified_oauth_token_with_scope`, ultimately tied to the mTLS
+cert subject). Tenant mismatch on a read returns 404, not 403, so
+existence does not leak across tenants. See open-questions §5.6.
 """
 
 from __future__ import annotations
 
-import base64
 import json
 from datetime import date, datetime, timezone
 
@@ -25,19 +25,33 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sbs_api.dependencies.auth import AuthContext, get_auth_context
+from sbs_api.auth.cursor import (
+    decode_cursor,
+    encode_cursor,
+    load_or_create_cursor_signing_key,
+)
+from sbs_api.auth.scopes import COMPLAINTS_READ, COMPLAINTS_WRITE
+from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.hmac_verify import verified_hmac_signature
+from sbs_api.dependencies.mtls import MtlsSubject
+from sbs_api.dependencies.oauth import (
+    VerifiedToken,
+    verified_oauth_token_with_scope,
+)
+from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.dependencies.etag import compute_etag
 from sbs_api.dependencies.idempotency import (
+    claim_idempotency_slot,
     get_idempotency_context,
-    lookup_cached,
-    store as store_idempotency,
+    mark_complete,
 )
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.errors.exceptions import (
     CursorInvalid,
     DuplicateComplaintId,
     ETagMismatch,
+    IdempotencyKeyInFlight,
     InstitutionNotFound,
     PreconditionRequired,
     ResolutionStatusTransitionForbidden,
@@ -100,19 +114,49 @@ def _orm_to_list_item(record: ComplaintRecord) -> ComplaintListItem:
     )
 
 
+# Cursor signing key — lazily loaded so test fixtures and the dev CA
+# regeneration can override it via override_cursor_signing_key_for_test().
+
+_cursor_signing_key: bytes | None = None
+
+
+def _get_cursor_signing_key() -> bytes:
+    global _cursor_signing_key
+    if _cursor_signing_key is None:
+        _cursor_signing_key = load_or_create_cursor_signing_key()
+    return _cursor_signing_key
+
+
+def override_cursor_signing_key_for_test(key: bytes) -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = key
+
+
+def reset_cursor_signing_key_for_test() -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = None
+
+
 def _encode_cursor(received_at: datetime, complaint_id: str) -> str:
+    """Sign + encode a cursor per ADR 0028 amendment §cursor-signing (F.5)."""
+
     payload = {"received_at": received_at.isoformat(), "complaint_id": complaint_id}
-    return base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+    return encode_cursor(payload, key=_get_cursor_signing_key())
 
 
 def _decode_cursor(cursor: str) -> tuple[datetime, str]:
+    """Verify signature and decode. Tampered cursors raise CURSOR_INVALID."""
+
     try:
-        raw = base64.urlsafe_b64decode(cursor.encode("ascii"))
-        payload = json.loads(raw.decode("utf-8"))
+        payload = decode_cursor(cursor, key=_get_cursor_signing_key())
         return datetime.fromisoformat(payload["received_at"]), payload["complaint_id"]
-    except Exception as exc:  # noqa: BLE001 — any parse error is CURSOR_INVALID
+    except (ValueError, KeyError) as exc:
         raise CursorInvalid(
-            detail="Cursor value could not be decoded. Pass back the value the server returned verbatim."
+            detail=(
+                "Cursor value could not be decoded or its signature is "
+                "invalid. Pass back the value the server returned verbatim; "
+                "do not modify it."
+            )
         ) from exc
 
 
@@ -129,11 +173,13 @@ async def create_complaint(
     response: Response,
     submission: ComplaintSubmission,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     # Tenant binding: body institution_id must match the authenticated caller.
-    if submission.complaint.institution_id != auth.institution_id:
+    if submission.complaint.institution_id != token.institution_id:
         raise ResourceNotFound(
             detail="institution_id in body does not match the authenticated caller."
         )
@@ -142,19 +188,32 @@ async def create_complaint(
     # equivalent JSON serialisations.
     body_bytes = await request.body()
     ctx = get_idempotency_context(
-        institution_id=auth.institution_id,
+        institution_id=token.institution_id,
         key=idempotency_key,
         body=body_bytes,
         method=request.method,
         path=request.url.path,
     )
-    cached = await lookup_cached(session, ctx)
-    if cached is not None:
-        cached_body = json.loads(cached.response_payload)
-        cached_headers = json.loads(cached.response_headers)
+    # Concurrent-POST claim: try to INSERT a placeholder in a short
+    # transaction so the row is visible to concurrent workers
+    # immediately. If we lose the race, return the cached response or
+    # 409 IDEMPOTENCY_KEY_IN_FLIGHT.
+    claim = await claim_idempotency_slot(get_sessionmaker(), ctx)
+    if claim.state == "in_flight":
+        raise IdempotencyKeyInFlight(
+            detail=(
+                "Another request with this Idempotency-Key is still "
+                "processing. Retry in a moment."
+            ),
+            extra_headers={"Retry-After": "1"},
+        )
+    if claim.state == "replay":
+        assert claim.record is not None
+        cached_body = json.loads(claim.record.response_payload)
+        cached_headers = json.loads(claim.record.response_headers)
         cached_headers["Idempotency-Replayed"] = "true"
         return JSONResponse(
-            status_code=cached.response_status,
+            status_code=claim.record.response_status,
             content=cached_body,
             headers=cached_headers,
         )
@@ -233,16 +292,19 @@ async def create_complaint(
         "ETag": etag,
     }
 
-    await store_idempotency(
-        session, ctx, status=201, body=body, headers=headers
-    )
+    await mark_complete(session, ctx, status=201, body=body, headers=headers)
     await session.commit()
-
-    for k, v in headers.items():
-        response.headers[k] = v
-    response.status_code = 201
+    # The placeholder row has already been INSERTed by
+    # claim_idempotency_slot in its own transaction; here we UPDATE it
+    # to state='complete' with the final response payload.
+    # Merge headers that dependencies (e.g. business_bucket) populated on
+    # the injected Response. FastAPI uses the injected `response` only when
+    # the handler returns a model; because we return a JSONResponse for the
+    # 201 + Location pattern, we must propagate the X-RateLimit-* headers
+    # explicitly. Existing `headers` (Location, ETag) take precedence.
+    for k, v in response.headers.items():
+        headers.setdefault(k, v)
     return JSONResponse(status_code=201, content=body, headers=headers)
-
 
 # --- GET /complaints (list) -----------------------------------------------
 
@@ -257,11 +319,12 @@ async def list_complaints(
     resolution_status: ResolutionStatus | None = Query(None),
     page_size: int = Query(50, ge=1, le=200),
     next_cursor: str | None = Query(None),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_READ)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> ComplaintListResponse:
     stmt = select(ComplaintRecord).where(
-        ComplaintRecord.institution_id == auth.institution_id
+        ComplaintRecord.institution_id == token.institution_id
     )
     if received_date_from is not None:
         stmt = stmt.where(ComplaintRecord.received_date >= received_date_from)
@@ -313,13 +376,14 @@ async def list_complaints(
 async def get_complaint(
     response: Response,
     complaint_id: str = Path(..., pattern=r"^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_READ)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     stmt = select(ComplaintRecord).where(ComplaintRecord.complaint_id == complaint_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         # Tenant mismatch and not-found both return 404 — does not leak existence.
         raise ResourceNotFound(
             detail=f"complaint_id {complaint_id!r} not found."
@@ -340,7 +404,9 @@ async def patch_complaint_status(
     complaint_id: str = Path(..., pattern=r"^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$"),
     if_match: str | None = Header(None, alias="If-Match"),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     if if_match is None:
@@ -351,7 +417,7 @@ async def patch_complaint_status(
     stmt = select(ComplaintRecord).where(ComplaintRecord.complaint_id == complaint_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"complaint_id {complaint_id!r} not found.")
 
     current_etag = compute_etag(record.complaint_id, record.etag_version)

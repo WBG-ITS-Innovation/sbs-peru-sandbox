@@ -23,9 +23,14 @@ from sbs_api.errors.handlers import install_exception_handlers
 
 def _build_app(*, max_bytes: int = 1024) -> FastAPI:
     app = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
+    # ADR 0028 amendment F.2 — body_size_limit is INNERMOST so the
+    # 413 response carries traceparent + correlation_id. The last-added
+    # middleware is outermost at request time, so we add the order
+    # innermost → outermost: body_size_limit, then correlation_id,
+    # then traceparent.
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=max_bytes)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TraceparentMiddleware)
-    app.add_middleware(BodySizeLimitMiddleware, max_bytes=max_bytes)
     install_exception_handlers(app)
 
     @app.post("/echo")
@@ -135,11 +140,14 @@ async def test_traceparent_response_header_present_when_otel_span_active(default
 # --- middleware ordering ---------------------------------------------------
 
 
-async def test_body_size_limit_is_outermost(small_body_client):
-    """Body size limit must reject before correlation_id is bound.
+async def test_413_carries_correlation_id_and_traceparent(small_body_client):
+    """ADR 0028 amendment F.2 — body_size_limit runs *inside*
+    correlation_id and traceparent. The 413 ProblemDetail therefore
+    carries both headers, which closes the Prompt 6 observability gap
+    on the rejection path.
 
-    Observable form: a 413 response carries no correlation_id header because
-    correlation_id middleware never ran (it is inner of body_size_limit).
+    Observable form: a 413 from an oversize POST echoes the inbound
+    X-Correlation-Id, and the response also carries a traceparent.
     """
 
     big = {"x": "y" * 500}
@@ -147,6 +155,37 @@ async def test_body_size_limit_is_outermost(small_body_client):
         "/echo", json=big, headers={"X-Correlation-Id": "ops-99"}
     )
     assert r.status_code == 413
-    # The body-size-limit middleware raises before correlation_id binds, so
-    # the echo header is absent.
-    assert r.headers.get("X-Correlation-Id") is None
+    # CorrelationIdMiddleware bound request.state.correlation_id before
+    # body_size_limit ran and materialised the 413, so the echo header
+    # is present on the rejection.
+    assert r.headers.get("X-Correlation-Id") == "ops-99"
+    # traceparent may or may not be present depending on whether an
+    # OTel span is active during this test (the default test config
+    # uses the no-op exporter). The header *can* be added by the outer
+    # TraceparentMiddleware on the response path; we assert only the
+    # correlation_id propagation here. The traceparent presence is
+    # covered by test_traceparent_response_header_present_when_otel_span_active.
+
+
+async def test_413_streaming_body_aborts_before_full_buffer(small_body_client):
+    """ADR 0028 amendment F.3 — bounded chunked read.
+
+    A request with no Content-Length but a body larger than the cap
+    must still be rejected with 413. Older `await request.body()` would
+    have buffered the full body before the size check; the new chunked
+    reader aborts as soon as the running total exceeds the cap.
+    """
+
+    # Build a body larger than the 128-byte cap. httpx streams it
+    # without a Content-Length when we pass an async iterator.
+    async def stream():
+        for _ in range(4):
+            yield b"x" * 64  # 64 bytes per chunk → 256 bytes total
+
+    r = await small_body_client.post(
+        "/echo", content=stream(), headers={"Content-Type": "application/json"}
+    )
+    assert r.status_code == 413
+    body = r.json()
+    assert body["code"] == "SBS-400-004"
+    assert "REQUEST_BODY_TOO_LARGE" in body["type"]

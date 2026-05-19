@@ -99,21 +99,23 @@ Progress so far (updated 2026-05-17 after Prompts 1 and 2 merged). Use `[~]` for
 **May 25 scope.** Full. OpenAPI 3.1 spec, Pydantic v2 models (Prompt 5 ships the 15-field subset; full taxonomy is Part 11), Alembic baseline (Prompt 6), FastAPI scaffold with `/health` triad (Prompt 6), Scalar docs site (replaced by Stoplight Elements per [ADR 0027](adr/0027-openapi-as-canonical-contract.md) and the stack-validation note), structured logging and OTel tracing (Prompt 6). `GET /v1/complaints` returns empty list with proper headers (Prompt 6). No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 3 — Ingestion Tier 1
-- [ ] mTLS termination + dev CA scripted
-- [ ] OAuth 2.0 client_credentials flow
-- [ ] HMAC-SHA256 request signing middleware
-- [ ] Idempotency-Key handling (24h cache)
-- [ ] Per-client rate limiting (Redis)
-- [ ] RFC 9457 problem+json errors with stable codes
-- [ ] POST /v1/complaints with full validation
-- [ ] Event emission to Redis Streams
-- [ ] Audit log on every state-changing operation
-- [ ] Python reference SDK started
-- [ ] ADR 0003: API authentication
-- [ ] ADR 0004: Error model RFC 9457
-- [ ] Build code review agent v1 (GitHub Action)
-- [ ] Second opinion: Template 3 (security) — GPT-5
-- [ ] Second opinion: Template 2 (library verification) — GPT-5
+
+First closed in Prompt 7 (branch `part-03/mtls-hmac-oauth-and-tier-1-hardening`).
+- [x] mTLS termination + dev CA scripted — workstream A. ADR 0031.
+- [x] OAuth 2.0 client_credentials flow — workstream C. ADR 0032.
+- [x] HMAC-SHA256 request signing dependency — workstream B. ADR 0027 amendment.
+- [x] Idempotency-Key handling (24h cache + concurrent-POST placeholder pattern) — Prompt 6 + F.1. ADR 0029.
+- [x] Per-institution Redis token-bucket rate limiter (large/small tiers + per-institution override) — workstream E. ADR 0033.
+- [x] RFC 9457 problem+json errors with stable codes — see [api/openapi/error-catalog.md](../api/openapi/error-catalog.md).
+- [x] POST /v1/complaints with full validation, ETag, idempotency — Prompt 6; migrated off the auth-stub to the real chain in F.7.
+- [ ] Event emission to Redis Streams — Prompt 8.
+- [ ] Audit log on every state-changing operation — Part 6 (audit-log subsystem). Auth-failure logging now passes through structlog; the durable audit-log store is a Part 6 deliverable.
+- [ ] Python reference SDK started — Part 7 (SDK distribution).
+- [x] ADR 0003: API authentication — Superseded by ADRs 0031 / 0032 / 0033 + the ADR 0027 HMAC amendment. See [docs/adr/README.md](adr/README.md).
+- [ ] ADR 0004: Error model RFC 9457 — the catalog rewrite landed in Prompt 7; the formal ADR remains queued and is folded into the error-catalog file itself.
+- [ ] Build code review agent v1 (GitHub Action) — Prompt 11.
+- [x] Second opinion: Template 3 (security) — pressure-test pass before workstream A + second-opinion subagent at H closeout.
+- [x] Second opinion: Template 2 (library verification) — cross-review pass at H closeout (docs/reviews/2026-05-19-docs-adr-003-123.md).
 
 **Exit:** signed mTLS request → 201 → event → audit log → trace
 

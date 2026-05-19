@@ -92,10 +92,25 @@ def _extract_bearer(request: Request) -> str:
     return value.strip()
 
 
+# Cache scope-set → dependency closures so the same call returns the
+# same function reference, which is what FastAPI's
+# ``app.dependency_overrides`` keys on. Without this, tests cannot
+# override the scope dep because each ``verified_oauth_token_with_scope("foo")``
+# call would build a fresh closure with a different identity.
+_dep_cache: dict[frozenset[str], "object"] = {}
+
+
 def verified_oauth_token_with_scope(*required_scopes: str):
-    """Return a FastAPI dependency that enforces the given scopes."""
+    """Return a FastAPI dependency that enforces the given scopes.
+
+    Cached by scope-set so test ``dependency_overrides`` can target the
+    closure produced by ``verified_oauth_token_with_scope(SCOPE)``.
+    """
 
     required = frozenset(required_scopes)
+    cached = _dep_cache.get(required)
+    if cached is not None:
+        return cached
 
     async def dependency(
         request: Request,
@@ -144,4 +159,5 @@ def verified_oauth_token_with_scope(*required_scopes: str):
             cert_thumbprint=claims.cert_thumbprint_sha256_hex,
         )
 
+    _dep_cache[required] = dependency
     return dependency

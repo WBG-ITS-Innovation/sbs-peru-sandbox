@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import json
 
+import fakeredis.aioredis
 import jwt
 import pytest
 import pytest_asyncio
@@ -21,6 +22,10 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sbs_api.auth.oauth import hash_client_secret
 from sbs_api.config import get_settings
 from sbs_api.db.session import reset_engine_for_test
+from sbs_api.dependencies.hmac_verify import (
+    override_redis_for_test,
+    reset_redis_for_test,
+)
 from sbs_api.dependencies.oauth import (
     override_signing_key_for_test,
     reset_signing_key_for_test,
@@ -46,11 +51,22 @@ async def oauth_settings(test_database_url, monkeypatch):
     monkeypatch.setenv("SBS_API_LOG_FORMAT", "json")
     monkeypatch.setenv("SBS_API_OTEL_TRACES_EXPORTER", "none")
     monkeypatch.setenv("SBS_API_ENVIRONMENT", "test")
+    monkeypatch.setenv("SBS_API_IDEMPOTENCY_SWEEP_ENABLED", "false")
+    monkeypatch.setenv("SBS_API_RATE_LIMIT_TOKEN_ENDPOINT_PER_MINUTE", "10000")
     get_settings.cache_clear()
     override_signing_key_for_test(TEST_KEY)
     yield get_settings()
     reset_signing_key_for_test()
     get_settings.cache_clear()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _fake_redis_for_claims_tests():
+    client = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    override_redis_for_test(client)
+    yield client
+    await client.aclose()
+    reset_redis_for_test()
 
 
 async def _seed(test_database_url: str) -> None:

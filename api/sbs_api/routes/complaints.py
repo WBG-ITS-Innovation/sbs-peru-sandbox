@@ -25,19 +25,21 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.auth import AuthContext, get_auth_context
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.etag import compute_etag
 from sbs_api.dependencies.idempotency import (
+    claim_idempotency_slot,
     get_idempotency_context,
-    lookup_cached,
-    store as store_idempotency,
+    mark_complete,
 )
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.errors.exceptions import (
     CursorInvalid,
     DuplicateComplaintId,
     ETagMismatch,
+    IdempotencyKeyInFlight,
     InstitutionNotFound,
     PreconditionRequired,
     ResolutionStatusTransitionForbidden,
@@ -148,13 +150,26 @@ async def create_complaint(
         method=request.method,
         path=request.url.path,
     )
-    cached = await lookup_cached(session, ctx)
-    if cached is not None:
-        cached_body = json.loads(cached.response_payload)
-        cached_headers = json.loads(cached.response_headers)
+    # Concurrent-POST claim: try to INSERT a placeholder in a short
+    # transaction so the row is visible to concurrent workers
+    # immediately. If we lose the race, return the cached response or
+    # 409 IDEMPOTENCY_KEY_IN_FLIGHT.
+    claim = await claim_idempotency_slot(get_sessionmaker(), ctx)
+    if claim.state == "in_flight":
+        raise IdempotencyKeyInFlight(
+            detail=(
+                "Another request with this Idempotency-Key is still "
+                "processing. Retry in a moment."
+            ),
+            extra_headers={"Retry-After": "1"},
+        )
+    if claim.state == "replay":
+        assert claim.record is not None
+        cached_body = json.loads(claim.record.response_payload)
+        cached_headers = json.loads(claim.record.response_headers)
         cached_headers["Idempotency-Replayed"] = "true"
         return JSONResponse(
-            status_code=cached.response_status,
+            status_code=claim.record.response_status,
             content=cached_body,
             headers=cached_headers,
         )
@@ -233,9 +248,10 @@ async def create_complaint(
         "ETag": etag,
     }
 
-    await store_idempotency(
-        session, ctx, status=201, body=body, headers=headers
-    )
+    # The placeholder row has already been INSERTed by
+    # claim_idempotency_slot in its own transaction; here we UPDATE it
+    # to state='complete' with the final response payload.
+    await mark_complete(session, ctx, status=201, body=body, headers=headers)
     await session.commit()
 
     for k, v in headers.items():

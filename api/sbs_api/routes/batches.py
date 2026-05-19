@@ -18,15 +18,16 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.auth import AuthContext, get_auth_context
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.idempotency import (
+    claim_idempotency_slot,
     get_idempotency_context,
-    lookup_cached,
-    store as store_idempotency,
+    mark_complete,
 )
 from sbs_api.db.models.batch import BatchRecord
-from sbs_api.errors.exceptions import ResourceNotFound
+from sbs_api.errors.exceptions import IdempotencyKeyInFlight, ResourceNotFound
 from sbs_api.models.requests import BatchManifest
 from sbs_api.models.responses import (
     BatchResultsResponse,
@@ -65,14 +66,23 @@ async def create_batch_manifest(
         method=request.method,
         path=request.url.path,
     )
-    cached = await lookup_cached(session, ctx)
-    if cached is not None:
+    claim = await claim_idempotency_slot(get_sessionmaker(), ctx)
+    if claim.state == "in_flight":
+        raise IdempotencyKeyInFlight(
+            detail=(
+                "Another batch upload with this Idempotency-Key is "
+                "still processing. Retry in a moment."
+            ),
+            extra_headers={"Retry-After": "1"},
+        )
+    if claim.state == "replay":
         import json as _json
-        cached_body = _json.loads(cached.response_payload)
-        cached_headers = _json.loads(cached.response_headers)
+        assert claim.record is not None
+        cached_body = _json.loads(claim.record.response_payload)
+        cached_headers = _json.loads(claim.record.response_headers)
         cached_headers["Idempotency-Replayed"] = "true"
         return JSONResponse(
-            status_code=cached.response_status,
+            status_code=claim.record.response_status,
             content=cached_body,
             headers=cached_headers,
         )
@@ -100,9 +110,7 @@ async def create_batch_manifest(
     )
     body = submission.model_dump(mode="json")
     headers: dict[str, str] = {}
-    await store_idempotency(
-        session, ctx, status=202, body=body, headers=headers
-    )
+    await mark_complete(session, ctx, status=202, body=body, headers=headers)
     await session.commit()
     return JSONResponse(status_code=202, content=body, headers=headers)
 

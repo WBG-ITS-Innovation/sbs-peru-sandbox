@@ -121,6 +121,21 @@ class IdempotencyKeyReuseWithDifferentBody(SBSAPIException):
     type_suffix = "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY"
 
 
+class IdempotencyKeyInFlight(SBSAPIException):
+    """Concurrent duplicate POST (ADR 0029 amendment).
+
+    A second request with the same ``Idempotency-Key`` arrived while the
+    first is still processing. After waiting up to 150ms for the first
+    to complete, the handler gives up and returns 409 so the client
+    retries after a brief pause.
+    """
+
+    code = "SBS-409-003"
+    status = 409
+    title = "Idempotency-Key in flight"
+    type_suffix = "IDEMPOTENCY_KEY_IN_FLIGHT"
+
+
 class CursorInvalid(SBSAPIException):
     code = "SBS-400-005"
     status = 400

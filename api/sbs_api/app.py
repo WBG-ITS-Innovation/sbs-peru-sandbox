@@ -89,12 +89,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=_build_lifespan(settings),
     )
 
-    # Last-added is outermost at request time. To produce the order
-    # body_size_limit → traceparent → correlation_id (outermost to
-    # innermost), add in reverse.
+    # Last-added is outermost at request time. ADR 0028 amendment (F.2):
+    # the middleware order is reversed so traceparent and correlation_id
+    # bind BEFORE body_size_limit runs. This lets 413 responses carry
+    # both `traceparent` and `X-Correlation-Id` headers, which closes
+    # the Prompt 6 carry-forward observability gap.
+    # Outermost → innermost at request time:
+    #   traceparent → correlation_id → body_size_limit
+    app.add_middleware(BodySizeLimitMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TraceparentMiddleware)
-    app.add_middleware(BodySizeLimitMiddleware)
 
     install_exception_handlers(app)
 

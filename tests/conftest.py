@@ -183,7 +183,7 @@ async def db_schema(test_database_url):
         )
         await conn.execute(
             text(
-                "INSERT INTO alembic_version (version_num) VALUES ('20260519_0001')"
+                "INSERT INTO alembic_version (version_num) VALUES ('20260519_0002')"
             )
         )
 
@@ -200,14 +200,16 @@ async def db_schema(test_database_url):
                     institution_id="SBS-001234",
                     display_name="BANCO_DEMO_001",
                     onboarded=True,
-                    rate_limit_per_minute=60,
+                    tier_classification="large",
+                    rate_limit_per_minute=None,
                     schema_version="v0.1.0",
                 ),
                 InstitutionRecord(
                     institution_id="SBS-005678",
                     display_name="COOPAC_DEMO_002",
                     onboarded=True,
-                    rate_limit_per_minute=60,
+                    tier_classification="small",
+                    rate_limit_per_minute=None,
                     schema_version="v0.1.0",
                 ),
             ]

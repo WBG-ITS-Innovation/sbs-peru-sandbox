@@ -211,6 +211,37 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- rate limiting (ADR 0033 + pressure-test amendment) -------------
+    rate_limit_tier_large_per_minute: int = Field(
+        default=1000,
+        ge=1,
+        description=(
+            "Default request-per-minute limit for institutions whose "
+            "tier_classification='large'. Overridable per institution "
+            "via institutions.rate_limit_per_minute. Illustrative for "
+            "May 25; recalibrated post-benchmark."
+        ),
+    )
+    rate_limit_tier_small_per_minute: int = Field(
+        default=100,
+        ge=1,
+        description=(
+            "Default request-per-minute limit for institutions whose "
+            "tier_classification='small'. Overridable per institution. "
+            "Illustrative for May 25; recalibrated post-benchmark."
+        ),
+    )
+    rate_limit_token_endpoint_per_minute: int = Field(
+        default=50,
+        ge=1,
+        description=(
+            "Tighter bucket for POST /v1/oauth/token, keyed on mTLS CN "
+            "(token has not been issued yet). Pressure-test amendment "
+            "to ADR 0033: protects against client_secret brute-force "
+            "by an attacker who already holds a valid cert."
+        ),
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

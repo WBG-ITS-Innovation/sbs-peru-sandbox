@@ -94,7 +94,18 @@ async def sbs_api_exception_handler(
         errors=exc.errors,
         trace_id=traceparent,
     )
-    return _problem_response(exc.status, payload, traceparent=traceparent)
+    headers: dict[str, str] = {}
+    if traceparent is not None:
+        headers["traceparent"] = traceparent
+    # Merge exception's extra_headers (e.g. Retry-After / X-RateLimit-*
+    # on 429). Exception-provided values win over the handler's defaults.
+    headers.update(exc.extra_headers)
+    return JSONResponse(
+        status_code=exc.status,
+        content=jsonable_encoder(payload),
+        media_type=PROBLEM_CONTENT_TYPE,
+        headers=headers,
+    )
 
 
 async def validation_exception_handler(

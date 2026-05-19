@@ -31,6 +31,12 @@ class IdempotencyRecord(Base):
     response_headers: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     request_method: Mapped[str] = mapped_column(String(8), nullable=False)
     request_path: Mapped[str] = mapped_column(String(256), nullable=False)
+    # ADR 0029 amendment: 'processing' for in-flight, 'complete' when the
+    # response payload is final. Rows written before the amendment landed
+    # default to 'complete' so the migration is backwards-compatible.
+    state: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="complete", server_default="complete"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -46,4 +52,5 @@ class IdempotencyRecord(Base):
             unique=True,
         ),
         Index("ix_idem_expires_at", "expires_at"),
+        Index("ix_idem_state", "state"),
     )

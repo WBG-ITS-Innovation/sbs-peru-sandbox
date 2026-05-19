@@ -63,7 +63,7 @@ breaking change. Claims:
 | `exp` | `iat + 900` seconds (15 minutes). |
 | `sub` | `institution_id` from the mTLS subject. |
 | `scope` | Space-separated list of granted scopes (`granted = requested ∩ permitted`; see below). |
-| `cnf.x5t#S256` | SHA-256 thumbprint of the presenting cert, per RFC 8705 §3.1. |
+| `cnf.x5t#S256` | The JWT confirmation claim that binds the token to a specific client certificate. Holds the SHA-256 thumbprint of the cert the institution presented when fetching the token. Per RFC 8705 §3.1 the resource server recomputes the thumbprint from the live connection's cert and rejects the token if it does not match — so a stolen bearer token cannot be used from a different cert. The sandbox encodes the thumbprint as lowercase hex; ADR 0031 §Consequences names the RFC-8705-base64url deviation and the Day-2 migration path. |
 
 **Cert-thumbprint source.** In `direct` mTLS mode the thumbprint is
 computed from the ASGI-scope peer cert. In `proxy` mode the thumbprint
@@ -174,7 +174,15 @@ operationalises a token-info service in Part 8, this ADR is amended.
   needs an unusual combination (e.g., a Part 6 "supervisor analyst" path
   needing both `complaints:read` and `auditlog:read`) declares both in
   the dependency. The enforcement code does not change.
-- The sandbox's signing-key on disk is a known sandbox-grade choice. The
-  second-opinion subagent is expected to flag it; the flag is
-  acknowledged and the production posture is deferred to Part 9 (Key
-  Vault, hardware-backed where the operator chooses).
+- The sandbox's signing-key on disk is a known sandbox-grade choice;
+  this is acknowledged and the production posture is deferred to Part 9
+  (Key Vault, hardware-backed where the operator chooses). The bigger
+  migration concern is not the file itself but the HS256→RS256
+  transition: the resource server must reject tokens whose `alg`
+  header is not in the configured accepted set, even during the
+  rollover window when both signing keys would otherwise be valid.
+  The verifier in `api/sbs_api/auth/oauth.py::verify_token` enforces
+  this by passing `accepted_algs` explicitly to `jwt.decode`; tests
+  in `tests/test_oauth_token_claims.py` pin the algorithm-confusion
+  rejection for both `alg=none` and `alg=HS384` against an HS256
+  verifier.

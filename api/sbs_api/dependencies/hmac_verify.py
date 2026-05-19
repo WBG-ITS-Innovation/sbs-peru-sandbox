@@ -143,7 +143,19 @@ async def verified_hmac_signature(
     if not host:
         # ASGITransport may omit Host; canonicalise to the literal
         # 'testserver' default httpx uses to keep tests deterministic.
-        host = "testserver"
+        # Confined to test environment — production paths must carry
+        # an explicit Host header (otherwise a proxy that strips Host
+        # could create a canonical-request ambiguity an attacker
+        # could exploit).
+        if settings.environment == "test":
+            host = "testserver"
+        else:
+            raise SignatureMissingHeader(
+                detail=(
+                    "Request is missing the Host header; HMAC canonical "
+                    "request cannot be reconstructed unambiguously."
+                )
+            )
 
     # --- 6. Institution_id from header for cross-check ---------------
     # The signed institution_id is part of the canonical string; the

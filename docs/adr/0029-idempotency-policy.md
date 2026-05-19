@@ -102,10 +102,12 @@ the wrong response.
   The body-size-limit middleware caches the body on `request._receive`
   so the second read is in-process and free.
 - The `idempotency_records` table grows linearly with 24-hour Tier 1
-  traffic. At the May 25 sandbox target of ~10k Tier 1 submissions per
-  day per institution, the table holds <500 KiB per institution at
-  steady state; not a capacity concern. The sweep job is preventive
-  hygiene, not load shedding.
+  traffic. The May 25 sandbox uses an *illustrative* planning figure of
+  ~10k Tier 1 submissions per day per institution, against which the
+  table would hold under 500 KiB per institution at steady state. Both
+  numbers are sandbox planning estimates, not measured values; a
+  post-May-25 benchmark will replace them. Either way the sweep job is
+  preventive hygiene, not load shedding.
 - The `Idempotency-Replayed: true` header lets observability dashboards
   distinguish unique submissions from retried ones. The Tier 1 ingestion
   count is per-unique-submission, not per-request.

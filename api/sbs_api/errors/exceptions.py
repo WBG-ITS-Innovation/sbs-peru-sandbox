@@ -20,6 +20,11 @@ class SBSAPIException(Exception):
     Subclasses set the class-level attributes. The constructor accepts an
     optional ``detail`` string and an optional ``errors`` list of field-level
     failures (used by validation paths).
+
+    ``extra_headers`` is the rate-limiter's seam: a subclass that wants
+    extra response headers (e.g. Retry-After, X-RateLimit-*) on the
+    materialised ProblemDetail can populate it via ``__init__``. The
+    exception handler merges it into the response.
     """
 
     code: str = "SBS-500-001"
@@ -33,11 +38,13 @@ class SBSAPIException(Exception):
         *,
         errors: list[dict[str, Any]] | None = None,
         instance: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(detail or self.title)
         self.detail = detail
         self.errors = errors
         self.instance = instance
+        self.extra_headers = extra_headers or {}
 
 
 class ResourceNotFound(SBSAPIException):
@@ -112,6 +119,21 @@ class IdempotencyKeyReuseWithDifferentBody(SBSAPIException):
     status = 409
     title = "Idempotency-Key reused with different body"
     type_suffix = "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY"
+
+
+class IdempotencyKeyInFlight(SBSAPIException):
+    """Concurrent duplicate POST (ADR 0029 amendment).
+
+    A second request with the same ``Idempotency-Key`` arrived while the
+    first is still processing. After waiting up to 150ms for the first
+    to complete, the handler gives up and returns 409 so the client
+    retries after a brief pause.
+    """
+
+    code = "SBS-409-003"
+    status = 409
+    title = "Idempotency-Key in flight"
+    type_suffix = "IDEMPOTENCY_KEY_IN_FLIGHT"
 
 
 class CursorInvalid(SBSAPIException):
@@ -306,3 +328,24 @@ class OAuthInvalidRequest(SBSAPIException):
     status = 400
     title = "OAuth invalid_request"
     type_suffix = "INVALID_REQUEST"
+
+
+# --- Rate limiting (ADR 0033) ---------------------------------------------
+
+
+class RateLimitExceeded(SBSAPIException):
+    """Business-bucket overrun: institution exceeded its per-minute limit."""
+
+    code = "SBS-429-001"
+    status = 429
+    title = "Rate limit exceeded"
+    type_suffix = "RATE_LIMIT_EXCEEDED"
+
+
+class TokenEndpointRateLimitExceeded(SBSAPIException):
+    """Token-endpoint bucket overrun (pressure-test amendment to ADR 0033)."""
+
+    code = "SBS-429-002"
+    status = 429
+    title = "OAuth token endpoint rate limit exceeded"
+    type_suffix = "TOKEN_ENDPOINT_RATE_LIMIT_EXCEEDED"

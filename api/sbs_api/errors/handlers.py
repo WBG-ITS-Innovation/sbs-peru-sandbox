@@ -19,6 +19,9 @@ from opentelemetry import trace
 
 from sbs_api.config import get_settings
 from sbs_api.errors.exceptions import SBSAPIException
+from sbs_api.observability.logging import get_logger
+
+_logger = get_logger(__name__)
 
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 
@@ -94,7 +97,38 @@ async def sbs_api_exception_handler(
         errors=exc.errors,
         trace_id=traceparent,
     )
-    return _problem_response(exc.status, payload, traceparent=traceparent)
+    headers: dict[str, str] = {}
+    if traceparent is not None:
+        headers["traceparent"] = traceparent
+    # Merge exception's extra_headers (e.g. Retry-After / X-RateLimit-*
+    # on 429). Exception-provided values win over the handler's defaults.
+    headers.update(exc.extra_headers)
+
+    # Audit-trail for the auth-chain failure surface (401/403/429).
+    # Without this every CertCnUnknown, SignatureReplayed,
+    # TokenScopeInsufficient, RateLimitExceeded etc. renders a clean
+    # ProblemDetail to the client but leaves zero structured log lines
+    # behind, so brute-force probes against the auth surface are
+    # invisible to ops. The audit-log proper is a Part 6 deliverable;
+    # this is the minimum-viable log emission until then.
+    if exc.status in (401, 403, 429):
+        _logger.warning(
+            "auth_failure",
+            code=exc.code,
+            type_suffix=exc.type_suffix,
+            status=exc.status,
+            method=request.method,
+            path=str(request.url.path),
+            correlation_id=getattr(request.state, "correlation_id", None),
+            traceparent=traceparent,
+        )
+
+    return JSONResponse(
+        status_code=exc.status,
+        content=jsonable_encoder(payload),
+        media_type=PROBLEM_CONTENT_TYPE,
+        headers=headers,
+    )
 
 
 async def validation_exception_handler(
@@ -131,6 +165,18 @@ async def unhandled_exception_handler(
     # Body-less detail by design: no internal information leaks. The trace_id
     # is the support handoff identifier.
     traceparent = _current_traceparent()
+    # F.4 — log the underlying exception with exc_info=True so the stack
+    # trace lands in the structured log. Without this the catch-all
+    # handler renders a clean 500 but the cause is invisible to ops.
+    correlation_id = getattr(request.state, "correlation_id", None)
+    _logger.error(
+        "unhandled_exception",
+        exc_info=True,
+        path=str(request.url.path),
+        method=request.method,
+        correlation_id=correlation_id,
+        traceparent=traceparent,
+    )
     payload = _problem_payload(
         code="SBS-500-001",
         status=500,

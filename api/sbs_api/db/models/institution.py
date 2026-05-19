@@ -23,7 +23,12 @@ class InstitutionRecord(Base):
     institution_id: Mapped[str] = mapped_column(String(10), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     onboarded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    rate_limit_per_minute: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
+    tier_classification: Mapped[str] = mapped_column(
+        String(8), nullable=False, default="small"
+    )
+    rate_limit_per_minute: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, default=None
+    )
     schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="v0.1.0")
     permitted_scopes: Mapped[list[str]] = mapped_column(
         ARRAY(String(32)),

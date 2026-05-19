@@ -39,9 +39,12 @@ was a single Proposed ADR covering all three mechanisms.
 **Cert is the institution identity.** All non-public endpoints require a
 valid client certificate issued by the SBS CA. In the sandbox the CA is
 the dev CA produced by `scripts/dev-ca.sh`; in production it is the SBS
-PKI. The CN of the leaf certificate is the institution identifier, e.g.
-`CN=BANCO_DEMO_001`. SAN is reserved for future use (e.g. multiple
-institutions sharing a key custodian); the runtime reads CN only.
+PKI. The CN (Common Name) of the leaf certificate is the institution
+identifier, e.g. `CN=BANCO_DEMO_001`. SAN (Subject Alternative Name) is
+reserved for future use (e.g. multiple institutions sharing a key
+custodian); the runtime reads CN only. Modern PKI practice favours
+SAN-based identity; SBS may revisit this in Part 9 alongside the
+production cert-profile decision.
 
 **Cert validation.** The TLS layer enforces, per request:
 
@@ -49,8 +52,9 @@ institutions sharing a key custodian); the runtime reads CN only.
   PKI's root bundle loaded by the reverse proxy).
 - Not expired (`notBefore` and `notAfter`).
 - Not in the revocation list. Sandbox: in-memory list seeded at boot,
-  mutable via an admin endpoint (deferred to Part 8). Production: CRL or
-  OCSP; the choice is a Part 9 production-readiness decision.
+  mutable via an admin endpoint (deferred to Part 8). Production: CRL
+  (Certificate Revocation List) or OCSP (Online Certificate Status
+  Protocol); the choice is a Part 9 production-readiness decision.
 
 **Two operating modes.** The runtime supports both direct termination (the
 sandbox path) and reverse-proxy termination (the production path),
@@ -59,8 +63,8 @@ selected by `SBS_API_MTLS_MODE`:
 - `direct` — uvicorn is configured with
   `ssl_certfile`, `ssl_keyfile`, `ssl_ca_certs`, and
   `ssl_cert_reqs=ssl.CERT_REQUIRED`. The verified peer cert is in the ASGI
-  scope; the runtime extracts the DN and computes the SHA-256
-  thumbprint from there.
+  scope; the runtime extracts the DN (Distinguished Name) and computes
+  the SHA-256 thumbprint from there.
 - `proxy` — the reverse proxy terminates TLS, validates the cert against
   the SBS CA root, and forwards the verified cert metadata in the
   `X-Forwarded-Client-Cert` (XFCC) header per the Envoy de-facto
@@ -174,9 +178,20 @@ validation is the SBS PKI's responsibility; pinning is not.
   trustworthy as the network path from the proxy to the runtime. Until
   Part 9 lands mTLS on the proxy→backend channel, anyone with network
   access to the `proxy`-mode port can forge an XFCC header and
-  impersonate any institution. The sandbox mitigates this by defaulting
-  to `direct` mode (the dev CA terminates at uvicorn) and exercising
-  smoke tests against `direct` only. Operators bringing up `proxy` mode
-  before Part 9 must isolate the proxy→backend hop at the network layer
-  (e.g., loopback-only listener, private subnet, or service mesh with
-  mTLS) — and document that mitigation in the deployment.
+  impersonate any institution. **Operating contract:** `proxy` mode
+  must not be enabled in any deployment that does not also enforce one
+  of the following at the network layer: a loopback-only backend
+  listener, a private subnet between the proxy and the backend, or a
+  service mesh that itself does mTLS on that hop. The sandbox defaults
+  to `direct` mode (the dev CA terminates at uvicorn) and exercises
+  smoke tests against `direct` only. A Part 9 deliverable is the Helm
+  chart that wires the proxy→backend mTLS without operator action.
+- **Thumbprint encoding deviation from RFC 8705 §3.1.** The
+  implementation encodes the cert thumbprint in `cnf.x5t#S256` as
+  lowercase hex (matches the XFCC `Hash=` field for direct
+  comparison). RFC 8705 §3.1 specifies base64url encoding. The sandbox
+  is internally consistent (same encoding on issuer and verifier) so
+  end-to-end behaviour is correct, but SDKs that follow RFC 8705
+  verbatim will not interoperate. The base64url migration is a Day-2
+  / Part 9 item alongside the HS256→RS256 transition; tracked in
+  [docs/DEFERRED.md](../DEFERRED.md).

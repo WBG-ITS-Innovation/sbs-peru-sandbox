@@ -1,9 +1,10 @@
 """mTLS dependency tests — workstream A.
 
 Direct-mode tests synthesize a leaf cert via the cryptography library
-and inject it into the ASGI scope the way uvicorn would when
-``ssl_cert_reqs=CERT_REQUIRED``. Proxy-mode tests inject an XFCC header
-in the Envoy shape.
+and inject its DER bytes onto ``request.state.peer_cert_der``, where the
+:class:`MtlsTransportCaptureMiddleware` would have stashed them when
+running behind real uvicorn (see ``api/sbs_api/middleware/mtls_transport.py``).
+Proxy-mode tests inject an XFCC header in the Envoy shape.
 
 The institution_certificates registry is provisioned via the existing
 ``db_schema`` testcontainer fixture; a per-test helper inserts the
@@ -174,10 +175,17 @@ def _make_app() -> FastAPI:
     return app
 
 
-def _direct_mode_request_scope(pem: str) -> dict:
-    """Build the ASGI scope extension uvicorn populates in direct mode."""
+def _pem_to_der(pem: str) -> bytes:
+    """Convert PEM-encoded cert to DER bytes for request.state injection.
 
-    return {"tls": {"client_cert_chain": [pem]}}
+    The mTLS dependency reads peer cert DER from ``request.state.peer_cert_der``,
+    which :class:`MtlsTransportCaptureMiddleware` populates from uvicorn's
+    SSL transport in production. Tests use this helper plus a FastAPI
+    middleware shim to simulate that injection over ASGITransport.
+    """
+
+    cert = x509.load_pem_x509_certificate(pem.encode("ascii"))
+    return cert.public_bytes(serialization.Encoding.DER)
 
 
 @pytest.mark.asyncio
@@ -196,15 +204,13 @@ async def test_direct_mode_resolves_known_cert(
     app = _make_app()
     transport = ASGITransport(app=app)
 
-    # httpx's ASGITransport does not surface a way to set scope extensions
-    # directly; we patch the request via FastAPI middleware that copies
-    # them in. The simplest way for the test: hook a middleware that
-    # injects the scope.
+    # httpx's ASGITransport does not run a real uvicorn protocol, so the
+    # MtlsTransportCaptureMiddleware can't reach a RequestResponseCycle.
+    # We inject the DER bytes onto request.state directly to simulate what
+    # the middleware would have done in production.
     @app.middleware("http")
-    async def inject_tls_scope(request, call_next):
-        request.scope.setdefault("extensions", {}).update(
-            _direct_mode_request_scope(pem)
-        )
+    async def inject_tls_state(request, call_next):
+        request.scope.setdefault("state", {})["peer_cert_der"] = _pem_to_der(pem)
         return await call_next(request)
 
     async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
@@ -228,10 +234,8 @@ async def test_direct_mode_rejects_unknown_cn(
     app = _make_app()
 
     @app.middleware("http")
-    async def inject_tls_scope(request, call_next):
-        request.scope.setdefault("extensions", {}).update(
-            _direct_mode_request_scope(pem)
-        )
+    async def inject_tls_state(request, call_next):
+        request.scope.setdefault("state", {})["peer_cert_der"] = _pem_to_der(pem)
         return await call_next(request)
 
     transport = ASGITransport(app=app)
@@ -274,10 +278,8 @@ async def test_direct_mode_rejects_revoked_cert(
     app = _make_app()
 
     @app.middleware("http")
-    async def inject_tls_scope(request, call_next):
-        request.scope.setdefault("extensions", {}).update(
-            _direct_mode_request_scope(pem)
-        )
+    async def inject_tls_state(request, call_next):
+        request.scope.setdefault("state", {})["peer_cert_der"] = _pem_to_der(pem)
         return await call_next(request)
 
     transport = ASGITransport(app=app)
@@ -308,10 +310,8 @@ async def test_direct_mode_rejects_expired_cert(
     app = _make_app()
 
     @app.middleware("http")
-    async def inject_tls_scope(request, call_next):
-        request.scope.setdefault("extensions", {}).update(
-            _direct_mode_request_scope(pem)
-        )
+    async def inject_tls_state(request, call_next):
+        request.scope.setdefault("state", {})["peer_cert_der"] = _pem_to_der(pem)
         return await call_next(request)
 
     transport = ASGITransport(app=app)

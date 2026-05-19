@@ -29,8 +29,9 @@ from __future__ import annotations
 import base64
 import binascii
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,6 +46,7 @@ from sbs_api.db.models.oauth_client import OAuthClient
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.mtls import MtlsSubject, verified_mtls_subject
 from sbs_api.dependencies.oauth import get_signing_key
+from sbs_api.dependencies.rate_limit import oauth_token_bucket
 from sbs_api.errors.exceptions import (
     OAuthInvalidGrant,
     OAuthInvalidRequest,
@@ -78,16 +80,19 @@ def _decode_basic(header: str) -> tuple[str, str]:
 
 @router.post(
     "/token",
-    response_class=JSONResponse,
     summary="OAuth 2.0 client_credentials token endpoint",
 )
 async def token_endpoint(
     request: Request,
     grant_type: str = Form(...),
     scope: str = Form(""),
-    mtls_subject: MtlsSubject = Depends(verified_mtls_subject),
+    # `oauth_token_bucket` transitively depends on verified_mtls_subject,
+    # so we ask FastAPI for the bucket and receive the same mTLS subject
+    # back. The bucket enforces 50/min on POST /v1/oauth/token per the
+    # ADR 0033 pressure-test amendment.
+    mtls_subject: MtlsSubject = Depends(oauth_token_bucket),
     session: AsyncSession = Depends(get_session),
-) -> JSONResponse:
+) -> dict[str, Any]:
     if grant_type != "client_credentials":
         raise OAuthInvalidRequest(
             detail=(
@@ -161,12 +166,11 @@ async def token_endpoint(
     )
     access_token = issue_token(options, key=get_signing_key())
 
-    return JSONResponse(
-        status_code=200,
-        content={
-            "access_token": access_token,
-            "token_type": "Bearer",
-            "expires_in": options.ttl_seconds,
-            "scope": " ".join(sorted(granted)),
-        },
-    )
+    # Returning a dict lets FastAPI merge the X-RateLimit-* headers set
+    # by the oauth_token_bucket dependency on the response parameter.
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": options.ttl_seconds,
+        "scope": " ".join(sorted(granted)),
+    }

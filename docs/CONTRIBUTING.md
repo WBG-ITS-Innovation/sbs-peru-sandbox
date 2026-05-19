@@ -73,12 +73,15 @@ To lint the OpenAPI specification with Spectral (project-local install — `npm 
 The FastAPI service ships in Prompt 6 (Part 2 close). The local dev loop is three commands:
 
 ```bash
-# 1. Bring up Postgres (pgvector) and apply Alembic migrations.
+# 1. Bring up Postgres + Redis, apply Alembic migrations, seed demo
+#    institutions + HMAC secrets, generate the dev CA + leaf certs,
+#    seed oauth_clients with argon2-hashed credentials. Single command.
 bash scripts/dev-up.sh
-# Prints the DSN on success. Exits 2 if Docker is not reachable, 3 if
-# postgres did not become healthy, 4 if alembic migration failed.
+# Prints the DSN on success. Exits 2 if Docker is not reachable, 3/6 if
+# postgres/redis did not become healthy, 4 if alembic migration failed,
+# 7 if the dev CA / oauth-client seed step failed.
 
-# 2. Run the API (binds 127.0.0.1:8000 by default).
+# 2. Run the API (binds 127.0.0.1:8000 by default; the auth-stub path).
 bash scripts/run-api.sh
 
 # 3. In a second terminal, exercise the running app end-to-end.
@@ -86,14 +89,30 @@ bash scripts/smoke-test.sh
 # Asserts ETag round-trip, idempotency replay (match + mismatch),
 # Location is fetchable, state machine forbidden transition, tenant
 # binding, body size limit, canonical YAML reachable, traceparent
-# header echo. Exits non-zero on the first failed assertion.
+# header echo. Exits non-zero on the first failed assertion. Run with
+# `SMOKE_RESET=1 bash scripts/smoke-test.sh` to wipe prior smoke
+# artifacts before starting.
+```
+
+For the full signed-request path (mTLS + HMAC + OAuth + rate limit), use
+the auth-chain variants:
+
+```bash
+SBS_API_MTLS_MODE=direct \
+SBS_API_AUTH_STUB_ENABLED=false \
+  bash scripts/run-api.sh
+
+# In a second terminal:
+bash scripts/smoke-test-auth.sh
+# Exercises mTLS handshake → POST /v1/oauth/token → signed POST
+# /v1/complaints → replay rejection → rate-limit 429 with four headers.
 ```
 
 The API does not auto-serve `/openapi.json` or `/docs` — the canonical YAML is reached at `/v1/openapi.yaml` per [ADR 0028](adr/0028-fastapi-application-structure.md) §6. To browse the human-rendered docs, run `bash scripts/serve-devportal.sh` (separate process, no DB dependency).
 
-Stop the stack with `bash scripts/dev-down.sh`. Add `-v` (`docker compose down -v`) to wipe the Postgres volume.
+Stop the stack with `bash scripts/dev-down.sh`. Add `-v` (`docker compose down -v`) to wipe both the Postgres and Redis volumes.
 
-The `AUTH_STUB_ENABLED` setting is the foot-gun mitigation from [ADR 0028](adr/0028-fastapi-application-structure.md). `scripts/run-api.sh` defaults it to `true` so local dev "just works"; `docker-compose.yaml` and production overlays leave it at `false`, so any tenant-binding endpoint returns 503 `AUTH_NOT_CONFIGURED` until Prompt 7 lands real authentication.
+The `AUTH_STUB_ENABLED` setting is the foot-gun mitigation from [ADR 0028](adr/0028-fastapi-application-structure.md). `scripts/run-api.sh` defaults it to `true` so local dev "just works" without an mTLS client; the auth-chain path (see above) sets it to `false`, and protected endpoints then require mTLS + OAuth Bearer + HMAC signature per workstream F.7 (Prompt 7).
 
 ### First-time repo bootstrap (maintainer only)
 

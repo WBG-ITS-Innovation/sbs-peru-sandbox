@@ -1,7 +1,9 @@
 """ASGI middleware.
 
-Order at install time, outermost to innermost: ``body_size_limit`` →
-``traceparent`` → ``correlation_id``. ADR 0028 §3 records why.
+Order at request time, outermost to innermost:
+``traceparent`` → ``correlation_id`` → ``body_size_limit``. ADR 0028
+§3 with the F.2 amendment records why — putting body-size innermost
+means 413 responses carry ``traceparent`` and ``X-Correlation-Id``.
 """
 
 from sbs_api.middleware.body_size_limit import BodySizeLimitMiddleware

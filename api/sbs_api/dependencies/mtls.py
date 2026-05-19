@@ -129,39 +129,54 @@ def _extract_cn(subject: str) -> str | None:
     return match.group(1).strip()
 
 
-def _direct_mode_extract(request: Request) -> tuple[str, str]:
-    """Return (cn, thumbprint_hex) from the ASGI scope.
+def _peer_cert_der_from_request(request: Request) -> bytes | None:
+    """Read the verified peer cert DER bytes off ``request.state``.
 
-    Uvicorn surfaces the peer cert at ``request.scope['extensions']
-    ['tls']['client_cert_chain']`` when ``ssl_cert_reqs=CERT_REQUIRED``.
-    The chain is a list of PEM strings. We use the leaf (index 0).
+    The :class:`MtlsTransportCaptureMiddleware` ASGI middleware
+    (installed in :func:`sbs_api.app.create_app`) walks the asyncio
+    task at request entry to find uvicorn\'s ``RequestResponseCycle``,
+    extracts the peer cert DER from the SSL transport, and stashes it
+    at ``request.state.peer_cert_der``. This dependency only reads.
+
+    Uvicorn 0.47 does not implement the ASGI TLS extension
+    (``scope[\'extensions\']["tls"]``); the middleware is the bridge
+    until we upgrade or switch to hypercorn (Part 9).
     """
 
-    extensions = request.scope.get("extensions") or {}
-    tls = extensions.get("tls") or {}
-    chain = tls.get("client_cert_chain") or []
-    if not chain:
+    return getattr(request.state, "peer_cert_der", None)
+
+
+def _direct_mode_extract(request: Request) -> tuple[str, str]:
+    """Return (cn, thumbprint_hex) from the connection's verified peer cert.
+
+    Uvicorn 0.47 does not implement the ASGI TLS extension, so we reach
+    into its internal :class:`RequestResponseCycle` to find the
+    ``_SSLProtocolTransport`` and pull the verified peer cert DER bytes
+    from the underlying SSL socket (see :func:`_peer_cert_der_from_uvicorn`).
+    The TLS handshake has already validated the chain against the CA at
+    this point — we're only reading what uvicorn already accepted.
+    """
+
+    der_bytes = _peer_cert_der_from_request(request)
+    if der_bytes is None:
         raise CertRequired(
             detail="No client certificate was presented to the TLS layer."
         )
-    leaf_pem = chain[0]
 
     # Lazy import: cryptography pulls in OpenSSL at import; tests that
     # never exercise direct mode should not pay the cost.
     try:
         from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
     except ImportError as exc:  # pragma: no cover
         raise CertInvalid(
             detail=f"cryptography library not installed: {exc}"
         ) from exc
 
     try:
-        cert = x509.load_pem_x509_certificate(leaf_pem.encode("ascii"))
+        cert = x509.load_der_x509_certificate(der_bytes)
     except (ValueError, TypeError) as exc:
         raise CertInvalid(detail=f"Could not parse client certificate: {exc}") from exc
 
-    der_bytes = cert.public_bytes(serialization.Encoding.DER)
     thumbprint = hashlib.sha256(der_bytes).hexdigest()
 
     cn_attrs = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)

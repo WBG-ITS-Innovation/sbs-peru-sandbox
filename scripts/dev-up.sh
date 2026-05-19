@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-# Bring up the local-dev Postgres, wait for health, run migrations, seed
-# demo institutions.
+# Bring up the local-dev stack — Postgres + Redis + dev CA + OAuth
+# clients — so a fresh clone reaches a working signed-request demo in
+# one command.
+#
+# Steps:
+#   1. docker compose up -d postgres redis
+#   2. Wait for both healthchecks
+#   3. alembic upgrade head
+#   4. Seed demo institutions + HMAC secrets (scripts/dev-seed.sql)
+#   5. scripts/dev-ca.sh (if missing) → dev CA + leaf certs
+#   6. Seed institution_certificates from dev-ca/seed-certificates.sql
+#   7. scripts/seed-oauth-clients.sh → argon2 hashes for demo clients
 #
 # Exit codes:
 #   0  ready (DSN printed to stdout on the last line)
@@ -9,6 +19,8 @@
 #   3  Postgres failed to become healthy within the timeout
 #   4  Alembic migration failed
 #   5  Demo-institution seed failed
+#   6  Redis failed to become healthy within the timeout
+#   7  dev-ca / OAuth client seed failed
 
 set -euo pipefail
 
@@ -20,8 +32,8 @@ if ! docker info >/dev/null 2>&1; then
   exit 2
 fi
 
-echo "==> docker compose up -d postgres"
-docker compose up -d postgres
+echo "==> docker compose up -d postgres redis"
+docker compose up -d postgres redis
 
 echo "==> waiting for postgres to become healthy"
 deadline=$(( $(date +%s) + 60 ))
@@ -36,6 +48,20 @@ while true; do
   sleep 1
 done
 echo "    postgres healthy"
+
+echo "==> waiting for redis to become healthy"
+deadline=$(( $(date +%s) + 30 ))
+while true; do
+  status="$(docker inspect --format '{{.State.Health.Status}}' sbs-redis 2>/dev/null || echo missing)"
+  if [[ "$status" == "healthy" ]]; then break; fi
+  if [[ $(date +%s) -ge $deadline ]]; then
+    echo "ERROR: redis did not become healthy within 30s (status=$status)" >&2
+    docker compose logs redis | tail -40 >&2 || true
+    exit 6
+  fi
+  sleep 1
+done
+echo "    redis healthy"
 
 DSN="postgresql+asyncpg://sbs:sbs@localhost:5432/sbs_dev" # pragma: allowlist secret
 
@@ -54,6 +80,14 @@ docker exec -e PGPASSWORD=sbs -i sbs-postgres \
 }
 echo "    institutions: SBS-001234 (BANCO_DEMO_001), SBS-005678 (COOPAC_DEMO_002)"
 
+if [[ ! -f dev-ca/ca.pem ]]; then
+  echo "==> generating dev CA + leaf certs (scripts/dev-ca.sh)"
+  bash scripts/dev-ca.sh || {
+    echo "ERROR: dev-ca.sh failed" >&2
+    exit 7
+  }
+fi
+
 if [[ -f dev-ca/seed-certificates.sql ]]; then
   echo "==> seeding institution_certificates from dev-ca/seed-certificates.sql"
   docker exec -e PGPASSWORD=sbs -i sbs-postgres \
@@ -63,9 +97,14 @@ if [[ -f dev-ca/seed-certificates.sql ]]; then
     exit 5
   }
   echo "    certificate thumbprints loaded (see dev-ca/thumbprints.txt)"
-else
-  echo "    (dev-ca/seed-certificates.sql absent — run scripts/dev-ca.sh to enable mTLS)"
 fi
+
+echo "==> seeding oauth_clients (argon2id hashes)"
+bash scripts/seed-oauth-clients.sh >/dev/null || {
+  echo "ERROR: seed-oauth-clients.sh failed" >&2
+  exit 7
+}
+echo "    oauth_clients: banco-demo-001 (SBS-001234), coopac-demo-002 (SBS-005678)"
 
 echo
 echo "==> ready"

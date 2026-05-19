@@ -8,8 +8,14 @@ from fastapi import APIRouter, Depends, Path
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sbs_api.dependencies.auth import AuthContext, get_auth_context
+from sbs_api.auth.scopes import STATUS_READ
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.mtls import MtlsSubject
+from sbs_api.dependencies.oauth import (
+    VerifiedToken,
+    verified_oauth_token_with_scope,
+)
+from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.db.models.institution import InstitutionRecord
 from sbs_api.errors.exceptions import ResourceNotFound
@@ -21,10 +27,11 @@ router = APIRouter(tags=["Institutions"])
 @router.get("/institutions/{institution_id}/status", response_model=InstitutionStatus)
 async def get_institution_status(
     institution_id: str = Path(..., pattern=r"^SBS-\d{4,6}$"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(STATUS_READ)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> InstitutionStatus:
-    if institution_id != auth.institution_id:
+    if institution_id != token.institution_id:
         # Same posture as complaints: 404 not 403, do not leak existence.
         raise ResourceNotFound(detail=f"institution {institution_id!r} not found.")
 

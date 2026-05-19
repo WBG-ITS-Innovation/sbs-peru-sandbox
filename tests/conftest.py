@@ -247,15 +247,103 @@ async def db_schema(test_database_url):
 
 @pytest_asyncio.fixture()
 async def app(app_settings, db_schema):
-    """Build a fresh FastAPI app per test."""
+    """Build a fresh FastAPI app per test.
 
-    from sbs_api.db.session import reset_engine_for_test
+    After workstream F.7 the protected routes use the real auth chain
+    (mTLS → OAuth scope → business rate limit). To keep the existing
+    endpoint tests simple, this fixture installs dependency overrides
+    that bypass the chain:
+
+    * ``verified_mtls_subject`` returns a fixed BANCO_DEMO_001 MtlsSubject
+      (mirrors the auth-stub default institution_id=SBS-001234).
+    * ``verified_oauth_token_with_scope(*scopes)`` for every scope set
+      the protected routes declare returns a VerifiedToken with all
+      four scopes granted.
+    * ``business_bucket`` and ``oauth_token_bucket`` skip the rate
+      limiter, returning the same MtlsSubject.
+    * A fakeredis client is installed for any path that still touches
+      Redis (HMAC replay cache, rate limit bucket implementation).
+
+    Tests that want to exercise the real auth chain end-to-end should
+    use the dedicated fixtures in test_rate_limiter*.py and the
+    workstream B/C test files. Tests that want a 401 from the chain
+    can pop the override they care about via
+    ``app.dependency_overrides.pop(verified_mtls_subject, None)``.
+    """
+
+    import fakeredis.aioredis
+
     from sbs_api.app import create_app
+    from sbs_api.auth.scopes import ALL_SCOPES
+    from sbs_api.db.session import reset_engine_for_test
+    from sbs_api.dependencies.hmac_verify import (
+        override_redis_for_test,
+        reset_redis_for_test,
+    )
+    from sbs_api.dependencies.mtls import MtlsSubject, verified_mtls_subject
+    from sbs_api.dependencies.oauth import (
+        VerifiedToken,
+        verified_oauth_token_with_scope,
+    )
+    from sbs_api.dependencies.rate_limit import (
+        business_bucket,
+        oauth_token_bucket,
+    )
 
     await reset_engine_for_test()
     application = create_app(settings=app_settings)
-    yield application
-    await reset_engine_for_test()
+
+    # mTLS bypass — fixed BANCO_DEMO_001 subject.
+    bypass_subject = MtlsSubject(
+        institution_id="SBS-001234",
+        cn="BANCO_DEMO_001",
+        cert_thumbprint="0" * 64,
+    )
+
+    async def _mtls_bypass() -> MtlsSubject:
+        return bypass_subject
+
+    application.dependency_overrides[verified_mtls_subject] = _mtls_bypass
+
+    # OAuth scope-set bypass — install overrides for every scope set
+    # the protected routes declare. The factory's closure cache means
+    # each ``verified_oauth_token_with_scope(SCOPE)`` returns a stable
+    # function reference, which is what ``dependency_overrides`` keys
+    # on.
+    granted_all = frozenset(ALL_SCOPES)
+    test_token = VerifiedToken(
+        institution_id="SBS-001234",
+        granted_scopes=granted_all,
+        cert_thumbprint="0" * 64,
+    )
+
+    async def _oauth_bypass() -> VerifiedToken:
+        return test_token
+
+    for scope in ALL_SCOPES:
+        dep = verified_oauth_token_with_scope(scope)
+        application.dependency_overrides[dep] = _oauth_bypass
+
+    # Rate-limit bypass — return the mTLS subject without consuming
+    # any bucket capacity. Tests that exercise the limiter wire it up
+    # explicitly.
+    async def _bucket_bypass() -> MtlsSubject:
+        return bypass_subject
+
+    application.dependency_overrides[business_bucket] = _bucket_bypass
+    application.dependency_overrides[oauth_token_bucket] = _bucket_bypass
+
+    # Fakeredis for any code path that still touches the real client
+    # (HMAC replay cache lookups from a workstream-B-enabled route).
+    fake = fakeredis.aioredis.FakeRedis(decode_responses=False)
+    override_redis_for_test(fake)
+
+    try:
+        yield application
+    finally:
+        await fake.aclose()
+        reset_redis_for_test()
+        await reset_engine_for_test()
 
 
 @pytest_asyncio.fixture()

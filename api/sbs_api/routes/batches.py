@@ -18,14 +18,20 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sbs_api.auth.scopes import BATCH_UPLOAD
 from sbs_api.db.session import get_sessionmaker
-from sbs_api.dependencies.auth import AuthContext, get_auth_context
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.idempotency import (
     claim_idempotency_slot,
     get_idempotency_context,
     mark_complete,
 )
+from sbs_api.dependencies.mtls import MtlsSubject
+from sbs_api.dependencies.oauth import (
+    VerifiedToken,
+    verified_oauth_token_with_scope,
+)
+from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.db.models.batch import BatchRecord
 from sbs_api.errors.exceptions import IdempotencyKeyInFlight, ResourceNotFound
 from sbs_api.models.requests import BatchManifest
@@ -51,16 +57,17 @@ async def create_batch_manifest(
     request: Request,
     manifest: BatchManifest,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> JSONResponse:
-    if manifest.institution_id != auth.institution_id:
+    if manifest.institution_id != token.institution_id:
         raise ResourceNotFound(
             detail="institution_id in manifest does not match the authenticated caller."
         )
     body_bytes = await request.body()
     ctx = get_idempotency_context(
-        institution_id=auth.institution_id,
+        institution_id=token.institution_id,
         key=idempotency_key,
         body=body_bytes,
         method=request.method,
@@ -118,13 +125,14 @@ async def create_batch_manifest(
 @router.get("/batches/{batch_id}", response_model=BatchStatus)
 async def get_batch_status(
     batch_id: str = Path(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> BatchStatus:
     stmt = select(BatchRecord).where(BatchRecord.batch_id == batch_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"batch_id {batch_id!r} not found.")
     return BatchStatus(
         batch_id=record.batch_id,
@@ -143,13 +151,14 @@ async def get_batch_results(
     batch_id: str = Path(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$"),
     page_size: int = Query(200, ge=1, le=1000),
     next_cursor: str | None = Query(None),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> BatchResultsResponse:
     stmt = select(BatchRecord).where(BatchRecord.batch_id == batch_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"batch_id {batch_id!r} not found.")
     # Per-row results land in Prompt 8 alongside the upload pipeline. Today
     # the endpoint returns an empty page rather than 501 so smoke and

@@ -9,8 +9,9 @@ Five endpoints from the canonical OpenAPI spec land here:
 
 The route handler is the enforcement point for tenant binding (the body's
 ``institution_id`` must match the caller's identity from
-:func:`get_auth_context`). Tenant mismatch on a read returns 404, not 403,
-so existence does not leak across tenants. See open-questions §5.6.
+:func:`verified_oauth_token_with_scope`, ultimately tied to the mTLS
+cert subject). Tenant mismatch on a read returns 404, not 403, so
+existence does not leak across tenants. See open-questions §5.6.
 """
 
 from __future__ import annotations
@@ -29,9 +30,15 @@ from sbs_api.auth.cursor import (
     encode_cursor,
     load_or_create_cursor_signing_key,
 )
+from sbs_api.auth.scopes import COMPLAINTS_READ, COMPLAINTS_WRITE
 from sbs_api.db.session import get_sessionmaker
-from sbs_api.dependencies.auth import AuthContext, get_auth_context
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.mtls import MtlsSubject
+from sbs_api.dependencies.oauth import (
+    VerifiedToken,
+    verified_oauth_token_with_scope,
+)
+from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.dependencies.etag import compute_etag
 from sbs_api.dependencies.idempotency import (
     claim_idempotency_slot,
@@ -165,11 +172,12 @@ async def create_complaint(
     response: Response,
     submission: ComplaintSubmission,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
     # Tenant binding: body institution_id must match the authenticated caller.
-    if submission.complaint.institution_id != auth.institution_id:
+    if submission.complaint.institution_id != token.institution_id:
         raise ResourceNotFound(
             detail="institution_id in body does not match the authenticated caller."
         )
@@ -178,7 +186,7 @@ async def create_complaint(
     # equivalent JSON serialisations.
     body_bytes = await request.body()
     ctx = get_idempotency_context(
-        institution_id=auth.institution_id,
+        institution_id=token.institution_id,
         key=idempotency_key,
         body=body_bytes,
         method=request.method,
@@ -307,11 +315,12 @@ async def list_complaints(
     resolution_status: ResolutionStatus | None = Query(None),
     page_size: int = Query(50, ge=1, le=200),
     next_cursor: str | None = Query(None),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_READ)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> ComplaintListResponse:
     stmt = select(ComplaintRecord).where(
-        ComplaintRecord.institution_id == auth.institution_id
+        ComplaintRecord.institution_id == token.institution_id
     )
     if received_date_from is not None:
         stmt = stmt.where(ComplaintRecord.received_date >= received_date_from)
@@ -363,13 +372,14 @@ async def list_complaints(
 async def get_complaint(
     response: Response,
     complaint_id: str = Path(..., pattern=r"^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_READ)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     stmt = select(ComplaintRecord).where(ComplaintRecord.complaint_id == complaint_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         # Tenant mismatch and not-found both return 404 — does not leak existence.
         raise ResourceNotFound(
             detail=f"complaint_id {complaint_id!r} not found."
@@ -390,7 +400,8 @@ async def patch_complaint_status(
     complaint_id: str = Path(..., pattern=r"^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$"),
     if_match: str | None = Header(None, alias="If-Match"),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
-    auth: AuthContext = Depends(get_auth_context),
+    token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     if if_match is None:
@@ -401,7 +412,7 @@ async def patch_complaint_status(
     stmt = select(ComplaintRecord).where(ComplaintRecord.complaint_id == complaint_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    if record is None or record.institution_id != auth.institution_id:
+    if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"complaint_id {complaint_id!r} not found.")
 
     current_etag = compute_etag(record.complaint_id, record.etag_version)

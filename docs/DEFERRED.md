@@ -228,3 +228,19 @@ At the start of Part 9, the planner reads this document top-to-bottom and produc
 - **Resolved by:** Prompt 3 (this PR).
 - **What landed:** The empty markdown table in `docs/sessions/_template.md` has been replaced with an inline `## Subagent verdicts` heading and a short instruction that the operator writes one line per subagent at closeout. Two prompts of evidence (both with empty tables) did not justify the plumbing for auto-population; revisit if subagent run volume grows.
 - **Trail:** Prompt 2 retrospective, Prompt 3 session journal.
+
+## 2026-05-19 — Runtime fix addendum deferrals
+
+### uvicorn internals fragility (Part 9)
+`api/sbs_api/middleware/mtls_transport.py` reaches into uvicorn-private
+state by walking asyncio task frames to find `RequestResponseCycle`.
+This is the bridge until uvicorn ships the ASGI TLS extension or we
+migrate to hypercorn. Part 9 deliverable: pick one path and remove the
+frame-walking middleware.
+
+### PR squash-merge style (Day-2 conversation with Fisnik / Antoine)
+PR #33 squash-merged 13 commits of Prompt 7 work and lost ~3,700 lines
+during the squash conflict resolution. Switch the repo's default merge
+style for large multi-file PRs from squash to merge-commit or
+rebase-merge. Squash works for small fix-it PRs; it does not scale to
+architectural multi-workstream deliveries that span 12+ days.

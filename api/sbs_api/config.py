@@ -82,6 +82,31 @@ class Settings(BaseSettings):
         ge=60,
         description="Idempotency-Key record retention window (default 24 hours).",
     )
+    idempotency_sweep_enabled: bool = Field(
+        default=True,
+        description=(
+            "When True the FastAPI lifespan starts the APScheduler job "
+            "that deletes expired idempotency_records rows. Tests set this "
+            "False so the scheduler does not race the test fixture."
+        ),
+    )
+    idempotency_sweep_interval_seconds: int = Field(
+        default=3600,
+        ge=10,
+        description=(
+            "How often the idempotency sweep job runs. 1 hour by default; "
+            "production operators may tune based on table growth."
+        ),
+    )
+    idempotency_sweep_grace_seconds: int = Field(
+        default=300,
+        ge=0,
+        description=(
+            "Records are deleted only when expires_at < now() - grace, so "
+            "the sweep cannot race a concurrent read of a row that is "
+            "expiring this exact second."
+        ),
+    )
 
     # --- health probe ----------------------------------------------------
     readiness_db_ping_timeout_ms: int = Field(default=200, ge=10, le=5000)

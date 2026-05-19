@@ -25,6 +25,7 @@ dependencies = [
     "pyjwt>=2.10.0",
     "argon2-cffi>=23.1.0",
     "python-multipart>=0.0.9",
+    "apscheduler>=3.10.4",
 ]
 
 [tool.uv]

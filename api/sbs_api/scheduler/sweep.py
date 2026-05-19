@@ -60,16 +60,41 @@ async def sweep_expired_idempotency_records(
     started = time.monotonic()
     async with sessionmaker() as session:
         async with session.begin():
+            # Only delete rows that have reached state='complete'. A
+            # row stuck in state='processing' past its TTL is an
+            # orphaned-handler signal that ops should investigate
+            # (e.g. crash mid-write); deleting it would let a
+            # subsequent retry create a duplicate, and would also let
+            # a still-running handler's mark_complete UPDATE no-op
+            # silently (the row would be gone). Orphan reaping is a
+            # Day-2 admin-endpoint deliverable; sweep stays narrow.
             stmt = delete(IdempotencyRecord).where(
-                IdempotencyRecord.expires_at < cutoff
+                IdempotencyRecord.expires_at < cutoff,
+                IdempotencyRecord.state == "complete",
             )
             result = await session.execute(stmt)
             deleted = result.rowcount or 0
+
+            # Surface orphaned processing rows separately so the
+            # operator alert hook in observability has something to
+            # bind to. Counted but not deleted here.
+            from sqlalchemy import select, func
+
+            orphan_stmt = (
+                select(func.count())
+                .select_from(IdempotencyRecord)
+                .where(
+                    IdempotencyRecord.expires_at < cutoff,
+                    IdempotencyRecord.state == "processing",
+                )
+            )
+            orphan_count = int((await session.execute(orphan_stmt)).scalar() or 0)
     duration_ms = (time.monotonic() - started) * 1000.0
 
     _logger.info(
         "idempotency.sweep.completed",
         deleted_count=deleted,
+        orphan_processing_count=orphan_count,
         duration_ms=duration_ms,
         cutoff=cutoff.isoformat(),
         grace_seconds=grace,

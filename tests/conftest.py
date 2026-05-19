@@ -279,6 +279,7 @@ async def app(app_settings, db_schema):
     from sbs_api.dependencies.hmac_verify import (
         override_redis_for_test,
         reset_redis_for_test,
+        verified_hmac_signature,
     )
     from sbs_api.dependencies.mtls import MtlsSubject, verified_mtls_subject
     from sbs_api.dependencies.oauth import (
@@ -332,6 +333,12 @@ async def app(app_settings, db_schema):
 
     application.dependency_overrides[business_bucket] = _bucket_bypass
     application.dependency_overrides[oauth_token_bucket] = _bucket_bypass
+
+    # HMAC bypass — returns the same mTLS subject without verifying any
+    # signature. Tests that want to exercise the HMAC dep proper use
+    # the dedicated fixtures in tests/test_hmac_*.py and the auth-chain
+    # smoke test in scripts/smoke-test-auth.sh.
+    application.dependency_overrides[verified_hmac_signature] = _bucket_bypass
 
     # Fakeredis for any code path that still touches the real client
     # (HMAC replay cache lookups from a workstream-B-enabled route).

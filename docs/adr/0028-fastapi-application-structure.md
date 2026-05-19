@@ -244,10 +244,23 @@ client passes verbatim) is undermined.
 
 **Amendment.** The cursor is HMAC-signed with a server-side master key.
 Encoded as
-`base64(payload || hmac_sha256(key=master_key, msg=payload))` where
-`payload` is the JSON object from §7. On decode the server splits the
-trailing 32 bytes as the signature, recomputes against the payload, and
-returns 400 `CURSOR_INVALID` on mismatch. The master key is generated at
-first boot via `secrets.token_bytes(32)` and persisted at
-`dev-ca/cursor-signing-key.bin` for the sandbox; production loads from
-the secret manager.
+`base64url(payload || hmac_sha256(key=master_key, msg=payload))` where
+`payload` is the JSON object from §7 serialised with sorted keys and
+compact separators (so the same logical payload produces the same
+cursor regardless of dict ordering). On decode the server splits the
+trailing 32 bytes as the signature, recomputes against the payload
+with `hmac.compare_digest` (constant-time), and returns 400
+`CURSOR_INVALID` on mismatch. The master key is generated at first
+boot via `secrets.token_bytes(32)` and persisted at
+`dev-ca/cursor-signing-key.bin` (chmod 600) for the sandbox;
+production loads from the secret manager.
+
+**Precedent.** AWS SigV4 §Task 1 (CreateCanonicalRequest), cited at
+[docs/research/market-comparators.md §5.A.M](../research/market-comparators.md#5am-authentication-signing-and-rate-limiting-for-regulator-facing-apis).
+The construction is the same HMAC-over-payload-with-server-key pattern
+SigV4 uses for request signing, applied here to opaque pagination
+cursors. The constant-time-comparison requirement carries over
+verbatim. SBS divergence: the cursor signature is bound to a fixed
+master key rather than rotated per-request (rotation is unnecessary
+when the cursor payload is short-lived and the master key is held
+server-side).

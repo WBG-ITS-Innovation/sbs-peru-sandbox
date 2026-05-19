@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sbs_api.auth.scopes import BATCH_UPLOAD
 from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.hmac_verify import verified_hmac_signature
 from sbs_api.dependencies.idempotency import (
     claim_idempotency_slot,
     get_idempotency_context,
@@ -58,6 +59,7 @@ async def create_batch_manifest(
     manifest: BatchManifest,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     token: VerifiedToken = Depends(verified_oauth_token_with_scope(BATCH_UPLOAD)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
     _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> JSONResponse:

@@ -135,6 +135,70 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Target:** Before May 25 (so the scope-lock decision is fully grounded by sprint kickoff). Must land off the critical path (i.e., interleaved between or after Prompts 5-8, not inside them) — Prompts 5-8 are the signed-ingestion stack and displacing one of them directly increases the schedule risk that ADR 0025 Consequences names as "real."
 - **Trail:** ADR 0025 Promotion criteria, Prompt 4 session journal, [docs/reviews/2026-05-17-may-25-critical-path-restructure.md](reviews/2026-05-17-may-25-critical-path-restructure.md) (benchmark-checker finding).
 
+### Prompt 7 closeout — Day-2 review-disposition deferrals
+
+- **Status:** Surfaced by the H subagents and the cross-review on 2026-05-19.
+  Fix-now items landed in commits on this branch; the items below are
+  named explicitly so the next Part-3-touching prompt can pick them up.
+- **What's deferred:**
+  - **RFC 8705 base64url thumbprint encoding.** The implementation uses
+    lowercase hex on both sides. The sandbox is internally consistent
+    but SDKs that follow RFC 8705 verbatim will not interoperate. Migrate
+    alongside the HS256→RS256 transition in Part 9. ADR 0031
+    §Consequences names the gap.
+  - **JWT `kid` resolver.** The token header carries `kid=sandbox-v1`
+    from issuance day one, but `verify_token` ignores `kid` and uses a
+    single configured key. Rotation today therefore requires synchronous
+    cutover. Add a `kid → key` resolver with a previous-kid grace
+    window; update ADR 0032 to amend the claimed rotation mechanism.
+  - **Rate-limit Lua script clock source.** The script uses Python's
+    `time.time()` (sent via `ARGV[1]`) rather than Redis's `TIME`
+    command. Multi-replica NTP drift can produce apparent-refill spikes;
+    swap to `redis.call("TIME")` in Part 9 when the Helm chart adds
+    multi-replica.
+  - **Test-fixture blanket override blind spot.** `tests/conftest.py`
+    bypasses mTLS, OAuth, HMAC, and rate-limit dependencies on every
+    test app. A future route that forgets to declare the OAuth dep
+    would pass tests. Add a conformance test that introspects every v1
+    route's `dependant` to assert OAuth scope dep presence on protected
+    routes.
+  - **JWS signing-key secret-hygiene.** `dev-ca/oauth-signing-key.bin`
+    and `dev-ca/cursor-signing-key.bin` are sandbox-only but the README
+    "one-command deploy" leaves them on disk. Add a `dev-ca/.gitignore`
+    with `*` and a "If you leaked a sandbox secret" subsection to
+    SECURITY.md before any external vendor onboards.
+  - **Audit-log subsystem proper.** Workstream F's auth-failure
+    `_logger.warning("auth_failure", ...)` is the minimum-viable
+    observability hook. Part 6 lands the durable audit-log table that
+    queries against the same event family.
+  - **OpenAPI spec match-test on scopes / new tables.** The match test
+    does not yet cover the `oauth_clients`, `institution_certificates`,
+    `institution_secrets` operator-side tables, nor the scope set in
+    `securitySchemes`. Extend `test_openapi_pydantic_match.py` (or
+    a sibling test) in Part 7 alongside the developer-portal cut.
+  - **`disable_mtls_for_tests` environment guard.** Settings should
+    refuse to instantiate when `disable_mtls_for_tests=true` AND
+    `environment in {"staging","prod"}` to prevent an accidental env
+    var from granting ambient admin in non-dev overlays.
+  - **`oauth_clients.cert_thumbprint_required` not populated.** Demo
+    seed leaves it NULL; the per-client cert-binding check at the token
+    endpoint is therefore a no-op for the demo clients (the JWT-level
+    `cnf.x5t#S256` still binds at verify time). Populate in Part 8
+    admin-API onboarding flow.
+- **Why deferred:** Each is a follow-on engineering item, not a May 25
+  demo blocker; the auth chain in this branch is correct end-to-end
+  (320 tests pass) and the demo claim "every request is mTLS-authenticated,
+  HMAC-signed, OAuth-authorised, rate-limited" is verifiable via
+  `bash scripts/smoke-test-auth.sh`.
+- **Action when triggered:** Each item has a named home (Part 6, Part 7,
+  Part 8, or Part 9) above.
+- **Target:** Day-2 prompt opening Part 6 (audit log) is the natural
+  vehicle for the audit-trail items; cert-binding seed lands with Part 8
+  admin-API work; the rest cluster around Part 9 production readiness.
+- **Trail:** docs/reviews/2026-05-19-docs-adr-003-123.md (cross-review),
+  /tmp/prompt-07-status.md, the H subagent reports (six in total,
+  embedded in the session journal).
+
 ### Pressure-test findings deferred to Day 2 amendment pass
 
 - **Status:** Surfaced during the Prompt 7 pre-workstream-A pressure-test review. Five findings are real but out of scope for tonight's auth-chain landing.

@@ -33,6 +33,7 @@ from sbs_api.auth.cursor import (
 from sbs_api.auth.scopes import COMPLAINTS_READ, COMPLAINTS_WRITE
 from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.db import get_session
+from sbs_api.dependencies.hmac_verify import verified_hmac_signature
 from sbs_api.dependencies.mtls import MtlsSubject
 from sbs_api.dependencies.oauth import (
     VerifiedToken,
@@ -173,6 +174,7 @@ async def create_complaint(
     submission: ComplaintSubmission,
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
     _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
@@ -401,6 +403,7 @@ async def patch_complaint_status(
     if_match: str | None = Header(None, alias="If-Match"),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     token: VerifiedToken = Depends(verified_oauth_token_with_scope(COMPLAINTS_WRITE)),
+    _hmac: MtlsSubject = Depends(verified_hmac_signature),
     _rate_limit: MtlsSubject = Depends(business_bucket),
     session: AsyncSession = Depends(get_session),
 ) -> dict:

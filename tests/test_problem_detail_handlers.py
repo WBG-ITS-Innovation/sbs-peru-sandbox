@@ -150,15 +150,33 @@ async def test_unhandled_500_is_body_less_problem_json(client):
     assert "RuntimeError" not in r.text
 
 
-async def test_unhandled_500_logs_exc_info(client):
+async def test_unhandled_500_logs_exc_info(client, monkeypatch):
     """F.4 — catch-all 500 handler logs the underlying exception with
     exc_info=True so ops sees the stack trace in the structured log.
+
+    Asserts via a direct patch on the handler's logger object rather
+    than structlog.testing.capture_logs() — the latter is fragile under
+    full-suite runs because every ``create_app()`` call invokes
+    ``configure_logging()`` which can race the context manager.
     """
 
-    from structlog.testing import capture_logs
+    from sbs_api.errors import handlers as handlers_module
 
-    with capture_logs() as captured:
-        r = await client.get("/boom")
+    captured: list[dict] = []
+
+    class _Spy:
+        def error(self, event: str, **kwargs):
+            captured.append({"event": event, **kwargs})
+
+        def warning(self, event: str, **kwargs):
+            captured.append({"event": event, **kwargs})
+
+        def info(self, event: str, **kwargs):
+            captured.append({"event": event, **kwargs})
+
+    monkeypatch.setattr(handlers_module, "_logger", _Spy())
+
+    r = await client.get("/boom")
     assert r.status_code == 500
 
     unhandled_events = [
@@ -166,10 +184,7 @@ async def test_unhandled_500_logs_exc_info(client):
     ]
     assert unhandled_events, f"no unhandled_exception event in: {captured}"
     event = unhandled_events[-1]
-    # structlog's capture_logs records the exc_info=True flag as a key
-    # on the captured event; the presence of the key (truthy) confirms
-    # the handler asked for the stack trace.
-    assert event.get("exc_info") is True or event.get("exception") is not None
+    assert event.get("exc_info") is True
     assert event.get("path") == "/boom"
     assert event.get("method") == "GET"
 

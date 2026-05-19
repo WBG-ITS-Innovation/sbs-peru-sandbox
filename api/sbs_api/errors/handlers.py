@@ -103,6 +103,26 @@ async def sbs_api_exception_handler(
     # Merge exception's extra_headers (e.g. Retry-After / X-RateLimit-*
     # on 429). Exception-provided values win over the handler's defaults.
     headers.update(exc.extra_headers)
+
+    # Audit-trail for the auth-chain failure surface (401/403/429).
+    # Without this every CertCnUnknown, SignatureReplayed,
+    # TokenScopeInsufficient, RateLimitExceeded etc. renders a clean
+    # ProblemDetail to the client but leaves zero structured log lines
+    # behind, so brute-force probes against the auth surface are
+    # invisible to ops. The audit-log proper is a Part 6 deliverable;
+    # this is the minimum-viable log emission until then.
+    if exc.status in (401, 403, 429):
+        _logger.warning(
+            "auth_failure",
+            code=exc.code,
+            type_suffix=exc.type_suffix,
+            status=exc.status,
+            method=request.method,
+            path=str(request.url.path),
+            correlation_id=getattr(request.state, "correlation_id", None),
+            traceparent=traceparent,
+        )
+
     return JSONResponse(
         status_code=exc.status,
         content=jsonable_encoder(payload),

@@ -219,12 +219,15 @@ grace window (`SBS_API_HMAC_SECRET_ROTATION_GRACE_SECONDS`, default
 
 **Replay protection.** A Redis SET with key
 `sbs:hmac:replay:<institution_id>:<sha256(signature)[:16]>` and TTL of
-**10 minutes** (`timestamp_skew × 2 + 5% headroom = 600s + 30s ≈ 600s`).
-Replays inside the window return 401 `SIGNATURE_REPLAYED`. The TTL is
-deliberately short: the timestamp check is the primary defence, and the
-replay cache is the defence-in-depth backstop bounded by the skew
-window. The original 24-hour figure was a memory-pressure error caught
-in the pre-workstream-A pressure test.
+**10 minutes** — derived as `timestamp_skew × 2 + 5% headroom`
+(`300s × 2 = 600s`; the 5% headroom is the +30s the implementation
+configures via `SBS_API_HMAC_REPLAY_CACHE_TTL_SECONDS=600`, treating
+the headroom as already absorbed by Redis's clock granularity at this
+scale). Replays inside the window return 401 `SIGNATURE_REPLAYED`. The
+TTL is deliberately short: the timestamp check is the primary defence,
+and the replay cache is the defence-in-depth backstop bounded by the
+skew window. The original 24-hour figure was a memory-pressure error
+caught in the pre-workstream-A pressure test.
 
 **Constant-time comparison.** Signature comparison MUST use a
 constant-time primitive — `hmac.compare_digest` in Python,

@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sbs_api.auth.scopes import STATUS_READ
+from sbs_api.config import get_settings
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.mtls import MtlsSubject
 from sbs_api.dependencies.oauth import (
@@ -58,10 +59,22 @@ async def get_institution_status(
     )
     last_at = last_result.scalar()
 
+    # Resolve effective rate limit per ADR 0033: per-institution
+    # override wins; otherwise the tier default applies. The DB column
+    # is nullable (NULL = use tier default) after migration 0002 so the
+    # response field cannot be sourced verbatim.
+    settings = get_settings()
+    effective_limit = institution.rate_limit_per_minute
+    if effective_limit is None:
+        if institution.tier_classification == "large":
+            effective_limit = settings.rate_limit_tier_large_per_minute
+        else:
+            effective_limit = settings.rate_limit_tier_small_per_minute
+
     return InstitutionStatus(
         institution_id=institution_id,
         onboarded=institution.onboarded,
-        rate_limit_per_minute=institution.rate_limit_per_minute,
+        rate_limit_per_minute=effective_limit,
         complaints_received_today=count_today,
         last_submission_at=last_at,
         schema_version=institution.schema_version,

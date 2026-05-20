@@ -25,10 +25,13 @@ INSERT INTO institutions (
     permitted_scopes,
     created_at
 ) VALUES
-    ('SBS-001234', 'BANCO_DEMO_001',  true, 'large', NULL, 'v0.1.0',
+    ('SBS-001234', 'BANCO_DEMO_001',      true, 'large', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now()),
-    ('SBS-005678', 'COOPAC_DEMO_002', true, 'small', NULL, 'v0.1.0',
+    ('SBS-005678', 'COOPAC_DEMO_002',     true, 'small', NULL, 'v0.1.0',
+        ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
+        now()),
+    ('SBS-009012', 'FINANCIERA_DEMO_003', true, 'small', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now())
 ON CONFLICT (institution_id) DO NOTHING;
@@ -49,6 +52,9 @@ INSERT INTO institution_secrets (
         now(), now()),
     ('SBS-005678',
         decode('1f2e3d4c5b6a79880f1e2d3c4b5a69877f8e9d0c1b2a39481f2e3d4c5b6a7988', 'hex'),  -- pragma: allowlist secret
+        now(), now()),
+    ('SBS-009012',
+        decode('2b3c4d5e6f70819203041526374859602b3c4d5e6f70819203041526374859ab', 'hex'),  -- pragma: allowlist secret
         now(), now())
 ON CONFLICT (institution_id) DO NOTHING;
 
@@ -75,6 +81,9 @@ INSERT INTO outbound_webhook_secrets (
         now(), now()),
     ('SBS-005678', 'sandbox-v1',
         decode('5f4e3d2c1b0a99887766554433221100ffeeddccbbaa99887766554433221100', 'hex'),  -- pragma: allowlist secret
+        now(), now()),
+    ('SBS-009012', 'sandbox-v1',
+        decode('c0d1e2f30415263748596a7b8c9d0e1fc0d1e2f30415263748596a7b8c9d0e1f', 'hex'),  -- pragma: allowlist secret
         now(), now())
 ON CONFLICT (institution_id) DO NOTHING;
 
@@ -90,5 +99,6 @@ INSERT INTO institution_webhook_configs (
     created_at
 ) VALUES
     ('SBS-001234', 'http://webhook-listener:8080/sbs-callback', true, now()),
-    ('SBS-005678', 'http://webhook-listener:8080/sbs-callback', true, now())
+    ('SBS-005678', 'http://webhook-listener:8080/sbs-callback', true, now()),
+    ('SBS-009012', 'http://webhook-listener:8080/sbs-callback', true, now())
 ON CONFLICT (institution_id) DO NOTHING;

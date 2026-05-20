@@ -1,0 +1,29 @@
+# Synthetic complaint narrative templates — ADR 0036.
+#
+# Templates are deliberately not LLM-generated so the corpus is
+# deterministic, reviewable, and audit-friendly. Adding inappropriate
+# content here is visible in PR review.
+#
+# Placeholders:
+#   {amount}    decimal monetary amount in PEN (e.g. 245.00)
+#   {product}   product slug for prose readability
+#   {date}      ISO date of the original operation
+#   {channel}   Spanish prose channel name
+#   {entity}    institution display name
+#
+# The generator picks one template per row and substitutes the
+# placeholders with deterministic values derived from the row's seed.
+
+templates:
+  - "Se realizó un cargo no autorizado por S/ {amount} en mi {product} el {date}. Solicito la reversa inmediata y revisión del estado de cuenta."
+  - "El día {date} intenté realizar una operación de {amount} soles por {channel} y el sistema mostró un error. La operación nunca se completó pero el monto fue descontado."
+  - "Mi {product} reporta movimientos que yo no he realizado por un total de S/ {amount}. Reporté el caso por {channel} pero no he recibido respuesta de {entity}."
+  - "Solicité información sobre comisiones en mi {product} el {date}. La información que me proporcionó {entity} no coincide con lo que aparece en el contrato firmado."
+  - "El cobro de membresía anual en mi {product} por S/ {amount} no estaba acordado. Pido la devolución y aclaración de los términos."
+  - "El {date} realicé un retiro por {channel} de {amount} soles y nunca recibí el dinero. {entity} dice que la operación fue exitosa pero no es así."
+  - "Mi reclamo previo no fue atendido por {entity}. Solicito una nueva revisión del caso relacionado con mi {product} y el cargo de S/ {amount}."
+  - "Hay una demora excesiva en la atención de mi solicitud sobre {product}. Llevo más de 30 días esperando respuesta sobre el cargo de {amount}."
+  - "{entity} aplicó intereses no informados a mi {product}, lo que sumó S/ {amount} adicionales en el último estado de cuenta del {date}."
+  - "Me cancelaron mi {product} sin previo aviso el {date}. Necesito conocer los motivos y recuperar el saldo de {amount} soles."
+  - "La publicidad de mi {product} prometía cero comisiones, pero el {date} me cobraron S/ {amount} por mantenimiento. Esto es publicidad engañosa."
+  - "Realicé una transferencia por {channel} el {date} por S/ {amount}. El dinero salió de mi cuenta pero no llegó al destinatario."

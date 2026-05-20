@@ -188,9 +188,10 @@ async def create_batch(
     on_disk_path = storage_dir / f"{batch_id}.csv"
     on_disk_path.write_bytes(csv_bytes)
     settings = get_settings()
-    # Store the absolute path so the worker can read it regardless of
-    # its working directory.
-    abs_path_str = str(on_disk_path.resolve())
+    # Store the basename only. The worker resolves the full path via
+    # settings.batch_storage_path so the API host and the worker
+    # container can mount the same data directory at different paths.
+    rel_file_name = f"{batch_id}.csv"
 
     # --- 5. INSERT batch row --------------------------------------------
     record = BatchRecord(
@@ -203,23 +204,33 @@ async def create_batch(
         row_count_submitted=manifest_obj.row_count_submitted,
         sha256=manifest_obj.checksum_sha256,
         status="pending",
-        file_path=abs_path_str,
+        file_path=rel_file_name,
     )
     session.add(record)
     await session.flush()
 
-    # --- 6. Enqueue arq job (Workstream B wires the real enqueue) -------
-    # The job picks up the batch_id and reads the file from disk. In
-    # Workstream A the enqueue is a structlog event so the smoke test
-    # can confirm the route reached the enqueue path even without the
-    # worker running. Workstream B replaces this with arq.enqueue_job.
-    _logger.info(
-        "batch.enqueue.requested",
-        batch_id=batch_id,
-        institution_id=token.institution_id,
-        row_count_submitted=manifest_obj.row_count_submitted,
-        file_path=abs_path_str,
-    )
+    # --- 6. Enqueue arq job ---------------------------------------------
+    # The job picks up the batch_id and reads the file from disk. On
+    # arq pool errors (Redis unreachable, etc.) we log and continue —
+    # the batch row is durable, and an operator can re-enqueue. The
+    # status endpoint surfaces `pending` indefinitely in that case.
+    try:
+        from sbs_api.workers.arq_pool import enqueue_job
+
+        await enqueue_job("process_batch", batch_id)
+        _logger.info(
+            "batch.enqueue.success",
+            batch_id=batch_id,
+            institution_id=token.institution_id,
+            row_count_submitted=manifest_obj.row_count_submitted,
+        )
+    except Exception:  # noqa: BLE001
+        _logger.error(
+            "batch.enqueue.failed",
+            batch_id=batch_id,
+            institution_id=token.institution_id,
+            exc_info=True,
+        )
 
     # --- 7. Compose response --------------------------------------------
     submission = BatchSubmission(batch_id=batch_id, status="pending")

@@ -24,4 +24,8 @@ paths = [
   # Sandbox-only test fixture secret used by webhook-delivery tests
   # (mirrors the well-known dev-seed value).
   '''^tests/test_webhook_delivery\.py$''',
+  # Upstream vendored Stoplight Elements bundles (ADR 0037). Minified
+  # JS has high-entropy substrings that look like secrets but are
+  # public open-source code; SHA-384 in VENDOR.md is the provenance.
+  '''^vendor/stoplight-elements/''',
 ]

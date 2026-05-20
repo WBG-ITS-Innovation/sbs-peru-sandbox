@@ -21,3 +21,19 @@ rules:
   operation-tag-defined: warn
   operation-operationId: error
   no-$ref-siblings: off  # OpenAPI 3.1 allows $ref siblings in some positions
+  # The portal route's canonical path includes a trailing slash per
+  # ADR 0037 Divergence ("FastAPI's default behaviour is the contract").
+  # The rule remains active for every other path in the spec.
+  path-keys-no-trailing-slash: off
+
+overrides:
+  # tests/test_openapi_examples_validate.py loads components.examples by
+  # name and validates each through its Pydantic model. The
+  # ValidBatchManifest example is exercised there as a drift catcher —
+  # Spectral cannot see Python test references, so it would warn this
+  # component is unused. The override scopes the rule off to just this
+  # one component; the rule remains active for everything else.
+  - files:
+      - "api/openapi/sbs-api-v1.yaml#/components/examples/ValidBatchManifest"
+    rules:
+      oas3-unused-component: off

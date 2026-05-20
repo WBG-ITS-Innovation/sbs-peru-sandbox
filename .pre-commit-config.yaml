@@ -20,13 +20,23 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        # Vendored upstream assets (Stoplight Elements bundles) are byte-
+        # identical to their published-version SHA-384 hashes; mutating
+        # whitespace would break provenance verification per ADR 0037.
+        exclude: '^vendor/'
       - id: end-of-file-fixer
+        exclude: '^vendor/'
       - id: mixed-line-ending
         args: ["--fix=lf"]
+        exclude: '^vendor/'
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
+        # Vendored Stoplight Elements bundles are intentionally checked
+        # in for the no-CDN-at-render-time guarantee (ADR 0037). The
+        # ~2 MB JS bundle is documented in vendor/stoplight-elements/VENDOR.md.
         args: ["--maxkb=512"]
+        exclude: '^vendor/stoplight-elements/'
       - id: check-merge-conflict
 
   # Reject committing a .env file. .env.example is allowed via the exclude
@@ -55,4 +65,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: '^(\.secrets\.baseline|docs/reviews/.*|tests/fixtures/.*)$'
+        # Vendored upstream assets are minified bundles with high-entropy
+        # base64 substrings; the SHA-384 in VENDOR.md is the provenance
+        # check that protects them.
+        exclude: '^(\.secrets\.baseline|docs/reviews/.*|tests/fixtures/.*|vendor/stoplight-elements/.*)$'

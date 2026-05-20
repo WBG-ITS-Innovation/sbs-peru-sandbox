@@ -113,8 +113,9 @@ We diverge from Open Banking UK's partial-vendoring posture (OBIE
 relies on a CDN for some renderer assets while committing the spec
 itself). The Lima venue wifi risk is the load-bearing reason for
 strict vendoring; OBIE's portal does not have the same demonstration-
-venue constraint. The cost is ~600 KB of committed JavaScript that
-must be re-vendored on Stoplight Elements security updates.
+venue constraint. The cost is ~2.4 MB of committed JavaScript and
+CSS that must be re-vendored on Stoplight Elements security
+updates.
 
 We diverge from the simpler `StaticFiles` mount approach. A path-
 parameter route with an allowlist costs ~10 lines of code; the
@@ -137,9 +138,12 @@ is the contract: the canonical path includes the trailing slash.
 
 ## Consequences
 
-- The `vendor/stoplight-elements/` directory adds ~600 KB to the
-  repository. The Apache 2.0 LICENSE is committed alongside so the
-  licensing is explicit and auditable.
+- The `vendor/stoplight-elements/` directory adds ~2.4 MB to the
+  repository (`web-components.min.js` is ~2.0 MB and
+  `styles.min.css` is ~290 KB at version 9.0.19). The Apache 2.0
+  LICENSE is committed alongside so the licensing is explicit and
+  auditable. The size cost is documented in
+  [vendor/stoplight-elements/VENDOR.md](../../vendor/stoplight-elements/VENDOR.md).
 
 - Re-vendoring is a manual step. CONTRIBUTING.md documents the
   procedure: fetch the new version from unpkg, verify the SHA256

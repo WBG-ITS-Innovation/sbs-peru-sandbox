@@ -565,6 +565,76 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionInfo"
 
+  /portal/:
+    get:
+      tags: [Meta]
+      summary: Developer portal (HTML)
+      operationId: getPortalIndex
+      security: []
+      description: |
+        Return the developer portal HTML page. Renders the canonical
+        OpenAPI 3.1 contract via Stoplight Elements (vendored locally,
+        no CDN). Public — no authentication required. The portal is
+        documentation only; invoking endpoints from a browser is
+        deliberately disabled because mTLS cannot be satisfied from a
+        browser UI. See ADR 0037.
+      responses:
+        "200":
+          description: Portal HTML page.
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /portal/assets/{filename}:
+    get:
+      tags: [Meta]
+      summary: Vendored portal asset
+      operationId: getPortalAsset
+      security: []
+      description: |
+        Return one of the vendored Stoplight Elements asset files.
+        The allowlist is `web-components.min.js`, `styles.min.css`,
+        `LICENSE`; any other filename returns 404. Public — no
+        authentication required. Cached as immutable for one year.
+        See ADR 0037 for the allowlist mechanism and re-vendoring
+        procedure.
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          description: One of the allowlisted vendored asset filenames.
+          schema:
+            type: string
+            enum:
+              - web-components.min.js
+              - styles.min.css
+              - LICENSE
+      responses:
+        "200":
+          description: Vendored asset bytes.
+          headers:
+            Cache-Control:
+              description: Immutable cache directive for the vendored asset.
+              schema:
+                type: string
+                example: public, max-age=31536000, immutable
+          content:
+            application/javascript:
+              schema:
+                type: string
+            text/css:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Filename is not in the vendored-asset allowlist.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
 components:
 
   securitySchemes:

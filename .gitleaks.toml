@@ -15,4 +15,13 @@ paths = [
   '''^docs/research/''',
   '''^docs/reviews/''',
   '''^docs/setup/corporate-proxy-and-zscaler\.md$''',
+  # Sandbox-only well-known HMAC values. Mirror of dev-seed.sql so the
+  # docker-compose webhook-listener can verify outbound callbacks with
+  # the same keys the API uses. Production never sets these env vars
+  # (the listener service is dev-only, gated to the compose network).
+  '''^docker-compose\.yaml$''',
+  '''^scripts/dev-seed\.sql$''',
+  # Sandbox-only test fixture secret used by webhook-delivery tests
+  # (mirrors the well-known dev-seed value).
+  '''^tests/test_webhook_delivery\.py$''',
 ]

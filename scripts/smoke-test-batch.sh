@@ -96,8 +96,25 @@ case "$STAGE" in
     echo
     echo "stage-d: PASS"
     ;;
-  stage-e|stage-g-full)
-    fail "Stage $STAGE lands in the workstream that owns it (E/G respectively)."
+  stage-e)
+    step "Stage E — synthetic corpus + FINANCIERA_DEMO_003 + golden sample"
+    note "  tests/test_synthetic_corpus_generator.py — 8 assertions"
+    note "  (determinism, schema compliance, no unfilled placeholders,"
+    note "  monetary range, golden-sample reproducibility,"
+    note "  RUC checksum helper, pattern-cluster stub)"
+    uv run pytest -q --tb=short \
+      tests/test_synthetic_corpus_generator.py \
+      || fail "stage-e assertions did not pass"
+    note "Golden sample regenerates byte-stable from the deterministic seed"
+    uv run python scripts/generate-synthetic-corpus.py --golden > /tmp/sbs-prompt08-corpus-summary.json
+    if ! git diff --quiet data/synthetic-corpus-golden/ 2>/dev/null; then
+      fail "Golden sample regeneration produced a diff — commit the new bytes"
+    fi
+    echo
+    echo "stage-e: PASS"
+    ;;
+  stage-g-full)
+    fail "Stage stage-g-full lands in Workstream G."
     ;;
   *)
     fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"

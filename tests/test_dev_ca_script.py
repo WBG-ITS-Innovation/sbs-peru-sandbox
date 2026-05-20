@@ -140,9 +140,10 @@ def test_thumbprints_are_distinct(dev_ca_root: pathlib.Path) -> None:
     )
     thumbs = (dev_ca_root / "dev-ca" / "thumbprints.txt").read_text()
     lines = [line for line in thumbs.splitlines() if line and not line.startswith("#")]
-    assert len(lines) == 2
+    # Three demo institutions land with Prompt 8 (FINANCIERA_DEMO_003).
+    assert len(lines) == 3
     tp_values = [line.split("\t")[2] for line in lines]
-    assert tp_values[0] != tp_values[1]
+    assert len(set(tp_values)) == len(tp_values)
     for tp in tp_values:
         assert len(tp) == 64
         assert all(c in "0123456789abcdef" for c in tp)

@@ -95,8 +95,9 @@ issue_leaf () {
   echo "    wrote $cert"
 }
 
-issue_leaf "BANCO_DEMO_001"  "clientAuth"
-issue_leaf "COOPAC_DEMO_002" "clientAuth"
+issue_leaf "BANCO_DEMO_001"     "clientAuth"
+issue_leaf "COOPAC_DEMO_002"    "clientAuth"
+issue_leaf "FINANCIERA_DEMO_003" "clientAuth"
 # Sandbox server cert (serverAuth EKU; SAN covers localhost and the
 # sandbox host name). Used by scripts/run-api.sh and the mTLS
 # integration test as uvicorn's TLS identity.
@@ -121,14 +122,17 @@ leaf_thumbprint () {
 
 BANCO_CERT="$CA_DIR/banco-demo-001.pem"
 COOPAC_CERT="$CA_DIR/coopac-demo-002.pem"
+FINANCIERA_CERT="$CA_DIR/financiera-demo-003.pem"
 
 BANCO_TP="$(leaf_thumbprint "$BANCO_CERT")"
 COOPAC_TP="$(leaf_thumbprint "$COOPAC_CERT")"
+FINANCIERA_TP="$(leaf_thumbprint "$FINANCIERA_CERT")"
 
 cat > "$THUMBS" <<EOF
-# institution_id    CN                  SHA-256(DER) thumbprint
+# institution_id    CN                       SHA-256(DER) thumbprint
 SBS-001234	BANCO_DEMO_001	$BANCO_TP
 SBS-005678	COOPAC_DEMO_002	$COOPAC_TP
+SBS-009012	FINANCIERA_DEMO_003	$FINANCIERA_TP
 EOF
 
 cat > "$SEED_SQL" <<EOF
@@ -140,8 +144,9 @@ INSERT INTO institution_certificates (
     institution_id, cn, sha256_thumbprint,
     not_before, not_after, revoked_at, created_at
 ) VALUES
-    ('SBS-001234', 'BANCO_DEMO_001',  '$BANCO_TP',  now() - interval '1 day', now() + interval '365 days', NULL, now()),
-    ('SBS-005678', 'COOPAC_DEMO_002', '$COOPAC_TP', now() - interval '1 day', now() + interval '365 days', NULL, now())
+    ('SBS-001234', 'BANCO_DEMO_001',      '$BANCO_TP',      now() - interval '1 day', now() + interval '365 days', NULL, now()),
+    ('SBS-005678', 'COOPAC_DEMO_002',     '$COOPAC_TP',     now() - interval '1 day', now() + interval '365 days', NULL, now()),
+    ('SBS-009012', 'FINANCIERA_DEMO_003', '$FINANCIERA_TP', now() - interval '1 day', now() + interval '365 days', NULL, now())
 ON CONFLICT (sha256_thumbprint) DO NOTHING;
 EOF
 

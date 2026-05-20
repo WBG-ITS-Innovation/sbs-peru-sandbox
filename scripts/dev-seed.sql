@@ -58,3 +58,37 @@ ON CONFLICT (institution_id) DO NOTHING;
 -- `bash scripts/seed-oauth-clients.sh` (run after dev-up.sh) which
 -- invokes the API's argon2 helper to compute fresh hashes and INSERT
 -- them with ON CONFLICT DO NOTHING.
+
+-- Outbound webhook secrets for the two demo institutions (Prompt 8 /
+-- ADR 0035). Mirrors institution_secrets shape; the kid column carries
+-- `sandbox-v1` so the X-SBS-Key-Id header on outbound callbacks is
+-- predictable for SDK writers.
+INSERT INTO outbound_webhook_secrets (
+    institution_id,
+    kid,
+    active_secret,
+    rotated_at,
+    created_at
+) VALUES
+    ('SBS-001234', 'sandbox-v1',
+        decode('a1b2c3d4e5f607182930415263748596a1b2c3d4e5f607182930415263748596', 'hex'),  -- pragma: allowlist secret
+        now(), now()),
+    ('SBS-005678', 'sandbox-v1',
+        decode('5f4e3d2c1b0a99887766554433221100ffeeddccbbaa99887766554433221100', 'hex'),  -- pragma: allowlist secret
+        now(), now())
+ON CONFLICT (institution_id) DO NOTHING;
+
+-- Webhook callback URLs pointing at the docker-compose `webhook-listener`
+-- service. These URLs fail all three validation checks (HTTP not HTTPS,
+-- bare hostname, private IP after Docker DNS resolution). The
+-- SBS_API_ALLOW_INSECURE_WEBHOOK_URLS=true env override (gated to
+-- environment=dev|test) bypasses the checks for the sandbox.
+INSERT INTO institution_webhook_configs (
+    institution_id,
+    callback_url,
+    enabled,
+    created_at
+) VALUES
+    ('SBS-001234', 'http://webhook-listener:8080/sbs-callback', true, now()),
+    ('SBS-005678', 'http://webhook-listener:8080/sbs-callback', true, now())
+ON CONFLICT (institution_id) DO NOTHING;

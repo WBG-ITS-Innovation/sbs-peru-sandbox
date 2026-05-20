@@ -375,11 +375,16 @@ async def _mark_failed(batch_id: str, *, reason: str) -> None:
 class WorkerSettings:
     """arq picks up this class with ``arq sbs_api.workers.batch_worker.WorkerSettings``.
 
-    Functions registered: ``process_batch``. Workstream D adds
-    ``deliver_webhook_for_batch``.
+    Functions registered: ``process_batch`` and ``deliver_webhook_for_batch``.
+    arq drives both with exponential backoff; the webhook delivery function
+    has its own bookkeeping for the longer ADR 0035 backoff window.
     """
 
-    functions = [process_batch]
+    # Late-bound import: webhook.delivery transitively imports the
+    # arq pool, which can re-enter this module during package init.
+    from sbs_api.webhook.delivery import deliver_webhook_for_batch
+
+    functions = [process_batch, deliver_webhook_for_batch]
     max_tries = _MAX_TRIES
     # arq default retry-with-exponential-backoff: 1s, 2s, 4s, 8s, 16s
     # (powers of 2) — sufficient for sandbox transient errors.

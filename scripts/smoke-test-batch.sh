@@ -80,8 +80,24 @@ case "$STAGE" in
     echo
     echo "stage-c: PASS"
     ;;
-  stage-d|stage-e|stage-g-full)
-    fail "Stage $STAGE lands in the workstream that owns it (D/E/G respectively)."
+  stage-d)
+    step "Stage D — webhook signing + delivery + URL validation"
+    note "  tests/test_webhook_signing.py — 7 assertions (canonical shape,"
+    note "  determinism, constant-time compare, header round-trip)"
+    note "  tests/test_webhook_url_validation.py — 11 assertions (HTTPS,"
+    note "  FQDN, public-IP, dev/test override, prod-boot-refusal)"
+    note "  tests/test_webhook_delivery.py — 4 assertions (happy 200,"
+    note "  retry on 500, dead-letter after 5 attempts, URL-rejected no-retry)"
+    uv run pytest -q --tb=short \
+      tests/test_webhook_signing.py \
+      tests/test_webhook_url_validation.py \
+      tests/test_webhook_delivery.py \
+      || fail "stage-d assertions did not pass"
+    echo
+    echo "stage-d: PASS"
+    ;;
+  stage-e|stage-g-full)
+    fail "Stage $STAGE lands in the workstream that owns it (E/G respectively)."
     ;;
   *)
     fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"

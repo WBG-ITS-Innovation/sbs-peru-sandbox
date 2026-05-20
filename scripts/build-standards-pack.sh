@@ -56,7 +56,9 @@ log "building pack name=$PACK_NAME version=$PACK_VERSION"
 log "git_commit=$GIT_COMMIT generated_at=$GENERATED_AT"
 
 # --- Clean and re-populate the pack tree --------------------------------------
-# Preserve manifest.schema.json and README.md (hand-maintained).
+# Preserved (hand-authored): manifest.schema.json, README.md, recipes/.
+# Wiped (regenerated):       openapi/, schemas/, catalogs/, sdk-helpers/,
+#                            examples/, manifest.json, checksums.sha256.
 
 log "cleaning generated content under $STANDARDS_PACK_DIR"
 rm -rf \
@@ -65,7 +67,6 @@ rm -rf \
   "$STANDARDS_PACK_DIR/catalogs" \
   "$STANDARDS_PACK_DIR/sdk-helpers" \
   "$STANDARDS_PACK_DIR/examples" \
-  "$STANDARDS_PACK_DIR/recipes" \
   "$STANDARDS_PACK_DIR/manifest.json" \
   "$STANDARDS_PACK_DIR/checksums.sha256"
 
@@ -127,20 +128,15 @@ uv run python scripts/build-standards-pack-examples.py \
   --out "$STANDARDS_PACK_DIR/examples"
 
 # --- Recipes ----------------------------------------------------------------
-# Recipes live in standards-pack/recipes/ as authored content. The build
-# does not regenerate them — they are source files. They land via
-# workstream E.1 and E.2.
-
-if [[ -d "$REPO_ROOT/standards-pack-recipes-source" ]]; then
-  log "copying recipes from standards-pack-recipes-source/"
-  cp "$REPO_ROOT"/standards-pack-recipes-source/*.md \
-     "$STANDARDS_PACK_DIR/recipes/"
-fi
-# Otherwise the recipes are committed directly under standards-pack/recipes/
-# (workstream E lands them there). The build doesn't re-write the directory.
+# Recipes are hand-authored content committed directly under
+# standards-pack/recipes/. The build neither generates them nor
+# wipes them — only verifies they are present so the pack ships with
+# the documented Java/Go/Python/TypeScript verification surface.
 
 if ! ls "$STANDARDS_PACK_DIR/recipes"/*.md >/dev/null 2>&1; then
-  log "WARNING: no recipes/*.md found — pack will be incomplete until E.1/E.2 lands"
+  log "WARNING: no recipes/*.md found under standards-pack/recipes/"
+  log "         (E.1 Java+Go webhook snippets + Python/TypeScript pointers"
+  log "          land there)"
 fi
 
 # --- Manifest ----------------------------------------------------------------

@@ -2,19 +2,24 @@
 # Tier 2 batch ingestion smoke test (Prompt 8).
 #
 # Stage flags (per spec §4):
-#   stage-a       — POST /v1/batches happy path + 413 + checksum mismatch
-#   stage-b       — arq worker processes a batch end-to-end (Workstream B)
-#   stage-c       — GET /v1/batches/{batch_id}/rejections paginates correctly (Workstream C)
-#   stage-d       — outbound webhook fires + retry + URL validation (Workstream D)
-#   stage-e       — synthetic corpus generator produces FINANCIERA_DEMO_003 batch (Workstream E)
-#   stage-g-full  — full end-to-end against the running mTLS API (Workstream G)
-#
-# Workstream A only requires stage-a to pass. The stages after a land
-# with their respective workstreams.
+#   stage-a          — POST /v1/batches happy path + 413 + checksum mismatch
+#   stage-b          — arq worker processes a batch end-to-end (Workstream B)
+#   stage-c          — GET /v1/batches/{batch_id}/rejections paginates correctly (Workstream C)
+#   stage-d          — outbound webhook fires + retry + URL validation (Workstream D)
+#   stage-e          — synthetic corpus generator produces FINANCIERA_DEMO_003 batch (Workstream E)
+#   stage-g-contract — union of A–F's pytest assertions + Spectral + golden-sample byte-stability
+#   stage-g-full     — stage-g-contract + the live-stack signed-callback test
+#                       (compose worker + webhook-listener required up;
+#                        scripts/smoke_stage_g_live.py drives the live path)
 #
 # Pre-conditions:
-#   1. bash scripts/dev-up.sh   — Postgres + Redis + migrations + seed
-#   2. Docker is running (the test fixture uses a pgvector testcontainer)
+#   stage-a … stage-f and stage-g-contract:
+#     bash scripts/dev-up.sh   — Postgres + Redis + migrations + seed
+#     Docker is running (the pytest fixture uses a pgvector testcontainer)
+#   stage-g-full additionally requires:
+#     docker compose up -d worker webhook-listener
+#     The host API does NOT need to be running for stage-g-full; the
+#     live path enqueues directly via arq, not via HTTP.
 #
 # Exit codes:
 #   0 — stage passed
@@ -126,24 +131,13 @@ case "$STAGE" in
     echo
     echo "stage-f: PASS"
     ;;
-  stage-g-full)
-    step "Stage G — full Prompt 8 acceptance run (union of A-F)"
-    note "Runs every workstream's pytest assertions against the live"
-    note "testcontainer Postgres, plus the Spectral lint check and the"
-    note "golden-sample byte-stability check."
-    note ""
-    note "Out of scope for this stage runner (lands with the developer-"
-    note "portal in Prompt 9 + smoke-test-auth-batch.sh in a follow-up):"
-    note "  - docker-compose webhook-listener service for end-to-end"
-    note "    HMAC-signed callback verification against the running"
-    note "    mTLS API. The in-process httpx.MockTransport tests in"
-    note "    stage-d already cover the signing + retry contract; the"
-    note "    listener container is the demo-day visualisation."
-    note "  - PASS/FAIL log-tail assertions against the listener."
-    note ""
-    note "If the user wants a live-mTLS smoke test today, the existing"
-    note "scripts/smoke-test-auth.sh exercises the auth chain against"
-    note "the running API."
+  stage-g-contract)
+    step "Stage G (contract) — pytest union + Spectral + golden-sample"
+    note "Contract-level acceptance: runs every workstream's pytest"
+    note "assertions against the live testcontainer Postgres + httpx"
+    note "MockTransport (signing + retry + URL validation contract)."
+    note "Does NOT exercise the docker-compose worker container or the"
+    note "webhook-listener container. stage-g-full covers those."
     uv run pytest -q --tb=short \
       tests/test_batch_endpoint.py \
       tests/test_complaints_source_backfill.py \
@@ -159,7 +153,7 @@ case "$STAGE" in
       tests/test_fixture_conformance.py \
       tests/test_batch_storage_prune.py \
       tests/test_webhook_delivery_telemetry.py \
-      || fail "stage-g-full pytest assertions did not pass"
+      || fail "stage-g-contract pytest assertions did not pass"
 
     note "Spectral lint 0 errors on api/openapi/sbs-api-v1.yaml"
     ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
@@ -173,9 +167,34 @@ case "$STAGE" in
     fi
 
     echo
+    echo "stage-g-contract: PASS"
+    ;;
+  stage-g-full)
+    step "Stage G (full) — live-stack signed-callback test"
+    note "Requires the docker-compose worker + webhook-listener services"
+    note "to be running. Spec §7."
+    note ""
+    note "Sequence (scripts/smoke_stage_g_live.py):"
+    note "  1. Confirm compose services up (postgres, redis, worker, webhook-listener)"
+    note "  2. Poll webhook-state/ready (5s timeout)"
+    note "  3. Insert batches row + write CSV to data/batches/"
+    note "  4. Enqueue process_batch via live arq Redis"
+    note "  5. Poll batch status until complete"
+    note "  6. Tail webhook-listener log for PASS line"
+    echo
+
+    # First run the contract suite so any contract regression fails
+    # before we touch the live stack.
+    bash "$0" stage-g-contract || fail "stage-g-contract failed; live-stack check skipped"
+
+    echo
+    step "Live-stack check"
+    uv run python scripts/smoke_stage_g_live.py || fail "live-stack signed-callback path failed"
+
+    echo
     echo "stage-g-full: PASS"
     ;;
   *)
-    fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"
+    fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-f stage-g-contract stage-g-full"
     ;;
 esac

@@ -42,9 +42,15 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sbs_api.auth.cursor import (
+    decode_cursor,
+    encode_cursor,
+    load_or_create_cursor_signing_key,
+)
 from sbs_api.auth.scopes import BATCH_UPLOAD
 from sbs_api.config import get_settings
 from sbs_api.db.models.batch import BatchRecord
+from sbs_api.db.models.batch_row_rejection import BatchRowRejection
 from sbs_api.db.session import get_sessionmaker
 from sbs_api.dependencies.db import get_session
 from sbs_api.dependencies.hmac_verify import verified_hmac_signature
@@ -62,12 +68,14 @@ from sbs_api.dependencies.rate_limit import business_bucket
 from sbs_api.errors.exceptions import (
     BatchChecksumMismatch,
     BatchManifestInvalid,
+    CursorInvalid,
     IdempotencyKeyInFlight,
     ResourceNotFound,
 )
 from sbs_api.models.requests import BatchManifest
 from sbs_api.models.responses import (
     BatchRejectionsResponse,
+    BatchRowRejectionDetail,
     BatchStatus,
     BatchSubmission,
 )
@@ -269,6 +277,44 @@ async def get_batch_status(
     )
 
 
+_cursor_signing_key: bytes | None = None
+
+
+def _get_cursor_signing_key() -> bytes:
+    global _cursor_signing_key
+    if _cursor_signing_key is None:
+        _cursor_signing_key = load_or_create_cursor_signing_key()
+    return _cursor_signing_key
+
+
+def override_cursor_signing_key_for_test(key: bytes) -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = key
+
+
+def reset_cursor_signing_key_for_test() -> None:
+    global _cursor_signing_key
+    _cursor_signing_key = None
+
+
+def _encode_rejection_cursor(last_id: int) -> str:
+    return encode_cursor({"id": last_id}, key=_get_cursor_signing_key())
+
+
+def _decode_rejection_cursor(cursor: str) -> int:
+    try:
+        payload = decode_cursor(cursor, key=_get_cursor_signing_key())
+        return int(payload["id"])
+    except (ValueError, KeyError, TypeError) as exc:
+        raise CursorInvalid(
+            detail=(
+                "Cursor value could not be decoded or its signature is "
+                "invalid. Pass back the value the server returned verbatim; "
+                "do not modify it."
+            )
+        ) from exc
+
+
 @router.get(
     "/batches/{batch_id}/rejections",
     response_model=BatchRejectionsResponse,
@@ -288,11 +334,35 @@ async def get_batch_rejections(
     record = result.scalar_one_or_none()
     if record is None or record.institution_id != token.institution_id:
         raise ResourceNotFound(detail=f"batch_id {batch_id!r} not found.")
-    # Workstream C wires the full rejection pagination using the
-    # cursor-signing primitive from ADR 0028 amendment. Workstream A's
-    # implementation returns an empty page so smoke tests can hit the
-    # route shape; the underlying batch_row_rejections table is filled
-    # by the worker in Workstream B.
+
+    rej_stmt = select(BatchRowRejection).where(
+        BatchRowRejection.batch_id == batch_id
+    )
+    if next_cursor is not None:
+        cursor_id = _decode_rejection_cursor(next_cursor)
+        rej_stmt = rej_stmt.where(BatchRowRejection.id > cursor_id)
+    rej_stmt = rej_stmt.order_by(BatchRowRejection.id.asc()).limit(
+        page_size + 1
+    )
+
+    rej_result = await session.execute(rej_stmt)
+    rows = list(rej_result.scalars().all())
+    has_more = len(rows) > page_size
+    page = rows[:page_size]
+    next_cursor_out: str | None = None
+    if has_more and page:
+        next_cursor_out = _encode_rejection_cursor(page[-1].id)
+
     return BatchRejectionsResponse(
-        batch_id=batch_id, rejections=[], next_cursor=None
+        batch_id=batch_id,
+        rejections=[
+            BatchRowRejectionDetail(
+                row_index=r.row_index,
+                field=r.field,
+                rule=r.rule,
+                message=r.message,
+            )
+            for r in page
+        ],
+        next_cursor=next_cursor_out,
     )

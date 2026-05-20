@@ -65,8 +65,23 @@ case "$STAGE" in
     echo
     echo "stage-b: PASS"
     ;;
-  stage-c|stage-d|stage-e|stage-g-full)
-    fail "Stage $STAGE lands in the workstream that owns it (C/D/E/G respectively)."
+  stage-c)
+    step "Stage C — batch status + rejections pagination"
+    note "  tests/test_batch_status_endpoint.py — 3 assertions"
+    note "  tests/test_batch_rejections_pagination.py — 4 assertions"
+    uv run pytest -q --tb=short \
+      tests/test_batch_status_endpoint.py \
+      tests/test_batch_rejections_pagination.py \
+      || fail "stage-c assertions did not pass"
+    note "Spectral lint 0 errors"
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+      | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
+      || fail "Spectral reports errors"
+    echo
+    echo "stage-c: PASS"
+    ;;
+  stage-d|stage-e|stage-g-full)
+    fail "Stage $STAGE lands in the workstream that owns it (D/E/G respectively)."
     ;;
   *)
     fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"

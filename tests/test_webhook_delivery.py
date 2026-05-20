@@ -179,10 +179,15 @@ async def test_delivery_retry_on_500(test_database_url, client):
 
     delivery_mod.httpx.AsyncClient = _Patched
     try:
-        with pytest.raises(delivery_mod._DeliveryRetry):
+        from arq.worker import Retry as ArqRetry
+
+        with pytest.raises(ArqRetry) as exc:
             await delivery_mod.deliver_webhook_for_batch(
                 {"job_try": 1}, batch_id, "batch.complete"
             )
+        # ADR 0035: first retry should wait 30s. arq stores the
+        # defer in `defer_score` (milliseconds since now).
+        assert exc.value.defer_score == 30_000
     finally:
         delivery_mod.httpx.AsyncClient = real_client_cls
 
@@ -232,8 +237,10 @@ async def test_delivery_dead_letter_after_max_attempts(
 
     delivery_mod.httpx.AsyncClient = _Patched
     try:
+        # MAX_ATTEMPTS is 6 (5 retries after the initial attempt). On
+        # job_try=6 a further failure dead-letters.
         result = await delivery_mod.deliver_webhook_for_batch(
-            {"job_try": 5}, batch_id, "batch.complete"
+            {"job_try": 6}, batch_id, "batch.complete"
         )
     finally:
         delivery_mod.httpx.AsyncClient = real_client_cls
@@ -252,8 +259,59 @@ async def test_delivery_dead_letter_after_max_attempts(
         (status, attempts_n, reason) = row.one()
     await engine.dispose()
     assert status == "delivery_failed"
-    assert attempts_n == 5
+    assert attempts_n == 6
     assert "max attempts exhausted" in (reason or "")
+
+
+@pytest.mark.parametrize(
+    "job_try,expected_defer_seconds",
+    [
+        (1, 30),
+        (2, 120),
+        (3, 600),
+        (4, 3600),
+        (5, 21600),
+    ],
+)
+async def test_delivery_retry_defer_matches_adr_0035_schedule(
+    test_database_url, client, job_try, expected_defer_seconds
+):
+    """ADR 0035 retry schedule: 30s / 2min / 10min / 1hr / 6hr.
+
+    Table-driven across all five retry boundaries. Cross-review
+    flagged the absence of the 6hr (job_try=5) test as a gap.
+    """
+
+    batch_id = f"batch_whdtable{job_try:02d}000000000000000000"[:35]
+    await _seed_webhook(
+        test_database_url, callback_url="https://webhook.example.com/sbs-callback"
+    )
+    await _create_batch(test_database_url, batch_id=batch_id)
+
+    async def _handler(request):
+        return httpx.Response(500)
+
+    transport = httpx.MockTransport(_handler)
+    import sbs_api.webhook.delivery as delivery_mod
+
+    real_client_cls = httpx.AsyncClient
+
+    class _Patched(httpx.AsyncClient):
+        def __init__(self, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(**kwargs)
+
+    delivery_mod.httpx.AsyncClient = _Patched
+    try:
+        from arq.worker import Retry as ArqRetry
+
+        with pytest.raises(ArqRetry) as exc:
+            await delivery_mod.deliver_webhook_for_batch(
+                {"job_try": job_try}, batch_id, "batch.complete"
+            )
+        assert exc.value.defer_score == expected_defer_seconds * 1000
+    finally:
+        delivery_mod.httpx.AsyncClient = real_client_cls
 
 
 async def test_delivery_url_rejected_no_retry(

@@ -180,6 +180,49 @@ async def test_process_batch_idempotent_on_terminal(client):
 
 
 @pytest.mark.asyncio
+async def test_process_batch_duplicate_complaint_id_within_batch(
+    client, test_database_url
+):
+    """Two rows with the same complaint_id — first wins, second is rejected.
+
+    Regression test for the SAVEPOINT-per-row pattern: a UNIQUE-constraint
+    failure on row N must not poison the outer transaction.
+    """
+
+    csv_text = _csv_from_rows(
+        [
+            {"complaint_id": "BCO-2026-100500"},
+            {"complaint_id": "BCO-2026-100500"},  # duplicate
+            {"complaint_id": "BCO-2026-100501"},
+        ]
+    )
+    batch_id = await _upload_batch(client, csv_text, idem="wkr-dup-1")
+
+    from sbs_api.workers.batch_worker import process_batch
+
+    result = await process_batch({"job_try": 1}, batch_id)
+    assert result["status"] == "complete"
+    assert result["row_count_accepted"] == 2
+    assert result["row_count_rejected"] == 1
+
+    # The duplicate row is recorded with rule='duplicate'.
+    engine = create_async_engine(test_database_url)
+    async with engine.connect() as conn:
+        rejections = (
+            await conn.execute(
+                text(
+                    "SELECT row_index, rule FROM batch_row_rejections "
+                    "WHERE batch_id = :bid"
+                ),
+                {"bid": batch_id},
+            )
+        ).all()
+    await engine.dispose()
+    assert len(rejections) == 1
+    assert rejections[0][1] == "duplicate"
+
+
+@pytest.mark.asyncio
 async def test_process_batch_missing_file_marks_failed(client, test_database_url):
     csv_text = _csv_from_rows(
         [{"complaint_id": "BCO-2026-100400"}]

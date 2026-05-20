@@ -43,6 +43,10 @@ class WebhookUrlValidationResult:
     valid: bool
     reason: str | None = None  # set when valid=False
     code: str = "WEBHOOK_URL_REJECTED"
+    # The address the host resolved to at validation time. Callers pin
+    # the HTTP connection to this IP to close the DNS-rebinding TOCTOU
+    # window (second-opinion finding, Workstream D closeout).
+    resolved_address: str | None = None
 
 
 def _looks_like_ip_literal(host: str) -> bool:
@@ -170,4 +174,9 @@ def validate_callback_url(url: str) -> WebhookUrlValidationResult:
                 ),
             )
 
-    return WebhookUrlValidationResult(valid=True)
+    # Pin the first resolved address; the caller dials this IP rather
+    # than letting httpx re-resolve. Closes the DNS-rebinding TOCTOU
+    # window flagged in the Prompt 8 second-opinion review.
+    return WebhookUrlValidationResult(
+        valid=True, resolved_address=addresses[0]
+    )

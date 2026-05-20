@@ -2,19 +2,31 @@ name: sbs-suptech-prototype
 
 # Local development stack for the SBS SupTech sandbox.
 #
-# This Compose file is deliberately minimal for the May 25 critical path:
-# postgres + pgvector + redis. The FastAPI scaffold runs from the host shell
-# via `bash scripts/run-api.sh`; running the API inside a container is the
-# Prompt 9 production-readiness scope, not a May 25 deliverable. Redis lands
-# in Prompt 7 (HMAC replay cache, rate-limit token buckets); vLLM and the
-# observability stack land in later prompts.
+# Postgres + pgvector + Redis are the always-on dependencies. The
+# `worker` service (Prompt 8) drains Tier 2 batch jobs queued by the
+# host-side FastAPI; the FastAPI itself runs from the host shell via
+# `bash scripts/run-api.sh` (containerising the API is Prompt 9 scope).
+#
+# The worker shares the API's runtime env via the `x-api-env` YAML
+# anchor below — DATABASE_URL, REDIS_URL, SBS_API_ENVIRONMENT, and the
+# `SBS_API_ALLOW_INSECURE_WEBHOOK_URLS` gate all match so URL-validation
+# and any other env-gated logic behaves identically on both sides.
 #
 # Usage:
-#   bash scripts/dev-up.sh    — bring postgres up, wait for health, run
-#                               alembic upgrade head, print the DSN
-#   bash scripts/dev-down.sh  — tear down (pass `-v` to wipe the data volume)
-#
-# Data survives `docker compose down`. Wipe with `docker compose down -v`.
+#   bash scripts/dev-up.sh    — bring postgres + redis up, run alembic,
+#                               seed institutions and certs
+#   docker compose up -d worker   — start the arq worker
+#   docker compose down       — tear down (pass `-v` to wipe volumes)
+
+x-api-env: &api-env
+  SBS_API_DATABASE_URL: postgresql+asyncpg://sbs:sbs@postgres:5432/sbs_dev  # pragma: allowlist secret
+  SBS_API_REDIS_URL: redis://redis:6379/0
+  SBS_API_ENVIRONMENT: dev
+  SBS_API_LOG_FORMAT: json
+  SBS_API_OTEL_TRACES_EXPORTER: none
+  SBS_API_AUTH_STUB_ENABLED: "false"
+  SBS_API_BATCH_STORAGE_PATH: /app/data/batches
+  SBS_API_ALLOW_INSECURE_WEBHOOK_URLS: "true"
 
 services:
   postgres:
@@ -50,6 +62,28 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+
+  worker:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    container_name: sbs-worker
+    restart: unless-stopped
+    working_dir: /app
+    environment: *api-env
+    volumes:
+      - .:/app:ro
+      - ./data/batches:/app/data/batches
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command:
+      - "/bin/bash"
+      - "-lc"
+      - |
+        cd /app && \
+        UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev && \
+        uv run --no-sync arq sbs_api.workers.batch_worker.WorkerSettings
 
 volumes:
   sbs_postgres_data: {}

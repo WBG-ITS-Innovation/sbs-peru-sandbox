@@ -51,8 +51,22 @@ case "$STAGE" in
     echo
     echo "stage-a: PASS"
     ;;
-  stage-b|stage-c|stage-d|stage-e|stage-g-full)
-    fail "Stage $STAGE lands in the workstream that owns it (B/C/D/E/G respectively). Workstream A only requires stage-a."
+  stage-b)
+    step "Stage B — arq worker processes a batch end-to-end"
+    note "Worker function called in-process against live Postgres:"
+    note "  tests/test_batch_worker.py — 4 assertions (happy path, mixed rows,"
+    note "  idempotent on terminal, missing-file → failed)"
+    note "  tests/test_batch_validation_uses_tier_1_models.py — 2 assertions"
+    note "  (Complaint class identity; ComplaintSubmission annotation)"
+    uv run pytest -q --tb=short \
+      tests/test_batch_worker.py \
+      tests/test_batch_validation_uses_tier_1_models.py \
+      || fail "stage-b pytest assertions did not pass"
+    echo
+    echo "stage-b: PASS"
+    ;;
+  stage-c|stage-d|stage-e|stage-g-full)
+    fail "Stage $STAGE lands in the workstream that owns it (C/D/E/G respectively)."
     ;;
   *)
     fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"

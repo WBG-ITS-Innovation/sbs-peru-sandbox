@@ -1,0 +1,40 @@
+# Hand-maintained webhook verification helper for the SBS SupTech API.
+#
+# Pure Python stdlib — no external dependencies. Per ADR 0038, this
+# package is distributed exclusively via the standards pack tarball at
+# v0.1; public-registry (PyPI) publication is deferred to post-sprint
+# alongside the conformance suite and the WBG-legal-cleared license.
+
+[project]
+name = "sbs-webhooks-helper"
+version = "0.1.0"
+description = "Webhook signature verification for the SBS SupTech Complaints API."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "LicenseRef-sandbox-pending-legal-review" }
+authors = [{ name = "SBS Peru via WBG ITS Innovation Office" }]
+keywords = ["sbs", "webhook", "hmac", "verification"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Security :: Cryptography",
+]
+
+# Pure stdlib only — empty dependencies list is intentional per ADR 0038.
+dependencies = []
+
+[project.urls]
+Documentation = "https://example.invalid/sbs-suptech/v1/portal/"
+Repository = "https://example.invalid/sbs-suptech/sandbox"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sbs_webhooks.py"]
+only-include = ["sbs_webhooks.py"]

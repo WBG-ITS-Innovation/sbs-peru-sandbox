@@ -14,6 +14,7 @@ from sbs_api.routes.institutions import router as institutions_router
 from sbs_api.routes.meta import router as meta_router
 from sbs_api.routes.oauth import router as oauth_router
 from sbs_api.routes.openapi import router as openapi_router
+from sbs_api.routes.portal import router as portal_router
 
 v1_router = APIRouter(prefix="/v1")
 v1_router.include_router(complaints_router)
@@ -22,5 +23,6 @@ v1_router.include_router(institutions_router)
 v1_router.include_router(meta_router)
 v1_router.include_router(oauth_router)
 v1_router.include_router(openapi_router)
+v1_router.include_router(portal_router)
 
 __all__ = ["v1_router"]

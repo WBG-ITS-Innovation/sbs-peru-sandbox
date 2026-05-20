@@ -211,6 +211,59 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- Tier 2 batch ingestion (ADR 0034) ------------------------------
+    max_batch_file_bytes: int = Field(
+        default=52_428_800,
+        ge=1024,
+        description=(
+            "Hard cap on the CSV file inside a `POST /v1/batches` multipart "
+            "upload. Default 50 MiB ~= 50,000-100,000 typical Anexo 1-A rows. "
+            "Overrun returns 413 BATCH_FILE_TOO_LARGE. Tunable so a fresh "
+            "stack can be tested with a smaller cap."
+        ),
+    )
+    batch_storage_path: str = Field(
+        default="data/batches",
+        description=(
+            "Repo-relative directory where Tier 2 CSV files are persisted. "
+            "Sandbox uses the local filesystem; production overlay swaps in "
+            "Azure Blob (deferred to Part 9 per ADR 0034)."
+        ),
+    )
+    batch_storage_prune_days: int = Field(
+        default=7,
+        ge=1,
+        description=(
+            "Files in `batch_storage_path` older than this are deleted by "
+            "the APScheduler prune job that shares the idempotency-sweep "
+            "scheduler. Production overlay uses object-store lifecycle "
+            "policies instead."
+        ),
+    )
+
+    # --- outbound webhook delivery (ADR 0035) ---------------------------
+    allow_insecure_webhook_urls: bool = Field(
+        default=False,
+        description=(
+            "Sandbox-only override that bypasses webhook URL validation "
+            "(HTTPS-only, FQDN-only, public-IP-only). Required by the "
+            "docker-compose seed because the seeded callback URL is "
+            "`http://webhook-listener:8080/sbs-callback` (non-HTTPS, "
+            "bare hostname, private IP). The application refuses to start "
+            "when this is True and `environment` is `staging` or `prod`. "
+            "Env var name (with prefix): SBS_API_ALLOW_INSECURE_WEBHOOK_URLS."
+        ),
+    )
+    webhook_request_timeout_seconds: float = Field(
+        default=10.0,
+        gt=0.0,
+        le=60.0,
+        description=(
+            "Per-attempt HTTP timeout for outbound webhook delivery. The "
+            "delivery worker retries on timeout (treated as 5xx)."
+        ),
+    )
+
     # --- rate limiting (ADR 0033 + pressure-test amendment) -------------
     rate_limit_tier_large_per_minute: int = Field(
         default=1000,

@@ -21,7 +21,8 @@ from pydantic import BaseModel
 
 from sbs_api.models import (
     BatchManifest,
-    BatchResultRow,
+    BatchRejectionsResponse,
+    BatchRowRejectionDetail,
     BatchStatus,
     BatchSubmission,
     Complaint,
@@ -35,7 +36,7 @@ from sbs_api.models import (
     ProblemDetail,
     VersionInfo,
 )
-from sbs_api.models.responses import BatchResultsResponse, ComplaintListResponse
+from sbs_api.models.responses import ComplaintListResponse
 
 
 PUBLIC_MODELS: tuple[type[BaseModel], ...] = (
@@ -49,8 +50,8 @@ PUBLIC_MODELS: tuple[type[BaseModel], ...] = (
     BatchManifest,
     BatchSubmission,
     BatchStatus,
-    BatchResultRow,
-    BatchResultsResponse,
+    BatchRowRejectionDetail,
+    BatchRejectionsResponse,
     InstitutionStatus,
     HealthStatus,
     VersionInfo,

@@ -5,19 +5,29 @@ sees the full metadata graph.
 """
 
 from sbs_api.db.models.batch import BatchRecord
+from sbs_api.db.models.batch_row_rejection import BatchRowRejection
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.db.models.idempotency import IdempotencyRecord
 from sbs_api.db.models.institution import InstitutionRecord
 from sbs_api.db.models.institution_certificate import InstitutionCertificate
 from sbs_api.db.models.institution_secret import InstitutionSecret
+from sbs_api.db.models.institution_webhook_config import (
+    InstitutionWebhookConfig,
+)
 from sbs_api.db.models.oauth_client import OAuthClient
+from sbs_api.db.models.outbound_webhook_secret import OutboundWebhookSecret
+from sbs_api.db.models.webhook_delivery import WebhookDelivery
 
 __all__ = [
     "BatchRecord",
+    "BatchRowRejection",
     "ComplaintRecord",
     "IdempotencyRecord",
     "InstitutionRecord",
     "InstitutionCertificate",
     "InstitutionSecret",
+    "InstitutionWebhookConfig",
     "OAuthClient",
+    "OutboundWebhookSecret",
+    "WebhookDelivery",
 ]

@@ -138,6 +138,32 @@ async def verified_hmac_signature(
     # --- 4. Body -----------------------------------------------------
     body = await request.body()
 
+    # ADR 0027 amendment (multipart body-hash definition): for
+    # multipart/form-data requests, the canonical-request body-hash is
+    # taken over the *file* part's bytes only, not the multipart
+    # envelope. Rationale: the manifest already declares the CSV's
+    # SHA-256 as a verifiable field, and the multipart boundary
+    # encoding is implementation-detail-dependent. Practically: this
+    # lets the institution's signing client compute one hash (over the
+    # file it is uploading) and the server's verifier compute the same
+    # hash on receipt.
+    content_type = request.headers.get("content-type", "").lower()
+    if content_type.startswith("multipart/form-data"):
+        form = await request.form()
+        file_part = form.get("file")
+        if file_part is None or not hasattr(file_part, "read"):
+            raise SignatureMissingHeader(
+                detail=(
+                    "Multipart request missing 'file' part; the canonical "
+                    "request body-hash is computed over the file bytes per "
+                    "ADR 0027 amendment, so the 'file' part is required."
+                )
+            )
+        await file_part.seek(0)
+        body = await file_part.read()
+        # Rewind so downstream handlers can read the file again.
+        await file_part.seek(0)
+
     # --- 5. Host header ---------------------------------------------
     host = request.headers.get("host", "")
     if not host:

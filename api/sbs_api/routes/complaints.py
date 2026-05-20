@@ -235,6 +235,7 @@ async def create_complaint(
         original_reference_id=submission.complaint.original_reference_id,
         resolution_status=submission.complaint.resolution_status,
         client_submission_id=submission.client_submission_id,
+        source="api_realtime",
     )
     session.add(record)
     try:

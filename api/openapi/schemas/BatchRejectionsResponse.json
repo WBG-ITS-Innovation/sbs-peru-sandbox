@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "BatchRowRejectionDetail": {
+      "additionalProperties": false,
+      "description": "One row of ``GET /v1/batches/{batch_id}/rejections`` (Workstream C).\n\nPer-row outcome for the *failed* rows of a batch. Accepted rows are\nnot enumerated here — they appear in the Tier 1 GET /v1/complaints\nlisting once persisted by the worker. Rejection envelope mirrors the\n:class:`ProblemFieldError` shape so SDK error handlers can reuse one\ncode path for Tier 1 and Tier 2 field errors.",
+      "properties": {
+        "field": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "JSON-path of the offending field; null when multi-field.",
+          "title": "Field"
+        },
+        "message": {
+          "description": "Human-readable message describing the rule violation.",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "row_index": {
+          "description": "Zero-indexed row position in the source CSV.",
+          "minimum": 0,
+          "title": "Row Index",
+          "type": "integer"
+        },
+        "rule": {
+          "description": "Validation rule that failed (e.g. 'pattern', 'min_length').",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "row_index",
+        "rule",
+        "message"
+      ],
+      "title": "BatchRowRejectionDetail",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Body of ``GET /v1/batches/{batch_id}/rejections`` (Workstream C).",
+  "properties": {
+    "batch_id": {
+      "pattern": "^batch_[A-Za-z0-9]{16,32}$",
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Cursor"
+    },
+    "rejections": {
+      "items": {
+        "$ref": "#/$defs/BatchRowRejectionDetail"
+      },
+      "title": "Rejections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "batch_id",
+    "rejections"
+  ],
+  "title": "BatchRejectionsResponse",
+  "type": "object"
+}

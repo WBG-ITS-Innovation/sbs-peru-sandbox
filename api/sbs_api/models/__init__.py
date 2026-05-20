@@ -28,8 +28,8 @@ from sbs_api.models.requests import (
     ComplaintSubmission,
 )
 from sbs_api.models.responses import (
-    BatchResultRow,
-    BatchResultsResponse,
+    BatchRejectionsResponse,
+    BatchRowRejectionDetail,
     BatchStatus,
     BatchSubmission,
     ComplaintCreated,
@@ -60,8 +60,8 @@ __all__ = [
     "ComplaintStatusPatch",
     "ComplaintSubmission",
     # responses
-    "BatchResultRow",
-    "BatchResultsResponse",
+    "BatchRejectionsResponse",
+    "BatchRowRejectionDetail",
     "BatchStatus",
     "BatchSubmission",
     "ComplaintCreated",

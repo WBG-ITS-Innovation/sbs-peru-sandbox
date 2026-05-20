@@ -1,0 +1,78 @@
+name: standards-pack-validate
+
+# Validate the standards pack v0.1 build on every PR touching the
+# standards pack, the SDK helpers, the OpenAPI spec, or the error
+# catalog. The build is hermetic — runs from the same scripts a
+# maintainer runs locally (ADR 0039 §how-to-verify).
+
+on:
+  pull_request:
+    paths:
+      - 'standards-pack/**'
+      - 'sdk-helpers/**'
+      - 'api/openapi/**'
+      - 'scripts/build-standards-pack.sh'
+      - 'scripts/build-standards-pack-examples.py'
+      - 'scripts/regenerate-schemas.sh'
+      - 'Makefile'
+      - '.github/workflows/standards-pack-validate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # build script reads HEAD SHA
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: setup Python (uv-managed)
+        run: uv sync --all-groups
+
+      - name: setup Node.js (for the TypeScript helper smoke check)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: install TypeScript helper deps
+        working-directory: sdk-helpers/typescript
+        run: npm ci
+
+      - name: build TypeScript helper
+        working-directory: sdk-helpers/typescript
+        run: npm run build
+
+      - name: run TypeScript helper tests
+        working-directory: sdk-helpers/typescript
+        run: npm test
+
+      - name: build the standards pack
+        run: bash scripts/build-standards-pack.sh
+
+      - name: run pack-build verification tests
+        run: uv run pytest tests/test_standards_pack_build.py -v
+
+      - name: lint the OpenAPI spec
+        run: npx --yes @stoplight/spectral-cli lint --fail-severity warn api/openapi/sbs-api-v1.yaml
+
+      - name: verify tarball SHA-256 companion
+        run: |
+          cd dist/
+          shasum -a 256 -c standards-pack-v0.1.0.tar.gz.sha256
+
+      - name: upload tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: standards-pack-v0.1.0
+          path: |
+            dist/standards-pack-v0.1.0.tar.gz
+            dist/standards-pack-v0.1.0.tar.gz.sha256
+          retention-days: 14

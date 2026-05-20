@@ -70,3 +70,17 @@ data/synthetic-corpus/
 
 # Webhook listener readiness file (shared docker volume mount point)
 webhook-state/
+
+# Standards pack — `make standards-pack` regenerates these subdirectories
+# from authoritative sources elsewhere in the repository (api/openapi/,
+# sdk-helpers/, etc.) plus a freshly-captured git_commit and generated_at.
+# Committing them would create churn on every build. Sources of truth
+# that the build pipeline reads stay committed; outputs do not.
+# See ADR 0039 and standards-pack/README.md.
+standards-pack/manifest.json
+standards-pack/checksums.sha256
+standards-pack/openapi/
+standards-pack/schemas/
+standards-pack/catalogs/
+standards-pack/sdk-helpers/
+standards-pack/examples/

@@ -395,6 +395,19 @@ async def _mark_failed(batch_id: str, *, reason: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _build_worker_settings_redis() -> RedisSettings:
+    """Constructed at WorkerSettings class-load time.
+
+    arq reads ``WorkerSettings.redis_settings`` as a *value* (a
+    :class:`RedisSettings` instance), not a callable. A previous
+    ``@staticmethod`` shape left the attribute as a descriptor, which
+    arq then dereferenced with ``settings.host`` — a no-op against a
+    staticmethod and an immediate AttributeError at boot.
+    """
+
+    return _redis_settings_from_url(get_settings().redis_url)
+
+
 class WorkerSettings:
     """arq picks up this class with ``arq sbs_api.workers.batch_worker.WorkerSettings``.
 
@@ -411,8 +424,4 @@ class WorkerSettings:
     max_tries = _MAX_TRIES
     # arq default retry-with-exponential-backoff: 1s, 2s, 4s, 8s, 16s
     # (powers of 2) — sufficient for sandbox transient errors.
-
-    @staticmethod
-    def redis_settings() -> RedisSettings:
-        settings = get_settings()
-        return _redis_settings_from_url(settings.redis_url)
+    redis_settings: RedisSettings = _build_worker_settings_redis()

@@ -7,16 +7,21 @@ name: sbs-suptech-prototype
 # host-side FastAPI; the FastAPI itself runs from the host shell via
 # `bash scripts/run-api.sh` (containerising the API is Prompt 9 scope).
 #
+# The `webhook-listener` service (Prompt 8) is the demo-day verification
+# endpoint: it receives the worker's outbound batch-completion callbacks,
+# verifies the HMAC signature using the institution's outbound secret,
+# and logs PASS / FAIL lines that the smoke test asserts against.
+#
 # The worker shares the API's runtime env via the `x-api-env` YAML
 # anchor below — DATABASE_URL, REDIS_URL, SBS_API_ENVIRONMENT, and the
 # `SBS_API_ALLOW_INSECURE_WEBHOOK_URLS` gate all match so URL-validation
 # and any other env-gated logic behaves identically on both sides.
 #
 # Usage:
-#   bash scripts/dev-up.sh    — bring postgres + redis up, run alembic,
-#                               seed institutions and certs
-#   docker compose up -d worker   — start the arq worker
-#   docker compose down       — tear down (pass `-v` to wipe volumes)
+#   bash scripts/dev-up.sh             — Postgres + Redis + migrations + seed
+#   docker compose up -d worker        — start the arq batch worker
+#   docker compose up -d webhook-listener — start the demo callback receiver
+#   docker compose down                — tear down (pass `-v` to wipe volumes)
 
 x-api-env: &api-env
   SBS_API_DATABASE_URL: postgresql+asyncpg://sbs:sbs@postgres:5432/sbs_dev  # pragma: allowlist secret
@@ -27,6 +32,10 @@ x-api-env: &api-env
   SBS_API_AUTH_STUB_ENABLED: "false"
   SBS_API_BATCH_STORAGE_PATH: /app/data/batches
   SBS_API_ALLOW_INSECURE_WEBHOOK_URLS: "true"
+  # uv writes a `.lock` into UV_PROJECT_ENVIRONMENT during `sync`. The
+  # source mount is read-only (so a container bug cannot corrupt the
+  # repo); the venv lives in a dedicated writable named volume.
+  UV_PROJECT_ENVIRONMENT: /var/sbs/venv
 
 services:
   postgres:
@@ -71,6 +80,7 @@ services:
     environment: *api-env
     volumes:
       - .:/app:ro
+      - sbs_worker_venv:/var/sbs/venv
       - ./data/batches:/app/data/batches
     depends_on:
       postgres:
@@ -82,9 +92,40 @@ services:
       - "-lc"
       - |
         cd /app && \
-        UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev && \
-        uv run --no-sync arq sbs_api.workers.batch_worker.WorkerSettings
+        UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev --package sbs-api && \
+        cd /app/api && \
+        PYTHONPATH=/app/api uv run --no-sync --package sbs-api arq sbs_api.workers.batch_worker.WorkerSettings
+
+  webhook-listener:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    container_name: sbs-webhook-listener
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      <<: *api-env
+      # Same demo HMAC secrets as dev-seed.sql so the listener can verify
+      # callbacks for any of the three demo institutions. Sandbox-only.
+      LISTENER_OUTBOUND_SECRET_SBS_001234: a1b2c3d4e5f607182930415263748596a1b2c3d4e5f607182930415263748596  # pragma: allowlist secret
+      LISTENER_OUTBOUND_SECRET_SBS_005678: 5f4e3d2c1b0a99887766554433221100ffeeddccbbaa99887766554433221100  # pragma: allowlist secret
+      LISTENER_OUTBOUND_SECRET_SBS_009012: c0d1e2f30415263748596a7b8c9d0e1fc0d1e2f30415263748596a7b8c9d0e1f  # pragma: allowlist secret
+      LISTENER_BIND_PORT: "8080"
+      LISTENER_READY_FILE: /webhook-state/ready
+    volumes:
+      - .:/app:ro
+      - sbs_webhook_listener_venv:/var/sbs/venv
+      - ./webhook-state:/webhook-state
+    ports:
+      - "8080:8080"
+    command:
+      - "/bin/bash"
+      - "-lc"
+      - |
+        cd /app && \
+        UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev --package sbs-api && \
+        uv run --no-sync --package sbs-api python scripts/webhook-listener.py
 
 volumes:
   sbs_postgres_data: {}
   sbs_redis_data: {}
+  sbs_worker_venv: {}
+  sbs_webhook_listener_venv: {}

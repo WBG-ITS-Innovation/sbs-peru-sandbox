@@ -71,6 +71,10 @@ data/synthetic-corpus/
 # Webhook listener readiness file (shared docker volume mount point)
 webhook-state/
 
+# scripts/demo.sh writes per-run outputs to tmp/demo-run/<timestamp>/
+# (summary.json, corpus, listener log captures). Never committed.
+tmp/
+
 # Standards pack — `make standards-pack` regenerates these subdirectories
 # from authoritative sources elsewhere in the repository (api/openapi/,
 # sdk-helpers/, etc.) plus a freshly-captured git_commit and generated_at.

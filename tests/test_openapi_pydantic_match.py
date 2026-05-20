@@ -36,8 +36,8 @@ SHARED_MODELS = [
     "BatchManifest",
     "BatchSubmission",
     "BatchStatus",
-    "BatchResultRow",
-    "BatchResultsResponse",
+    "BatchRowRejectionDetail",
+    "BatchRejectionsResponse",
     "InstitutionStatus",
     "HealthStatus",
     "VersionInfo",
@@ -269,10 +269,20 @@ def test_openapi_info_version_matches_schemas(openapi_spec):
     carries the schema version institutions are aligned to)."""
     info_version = openapi_spec["info"]["version"]
     assert info_version == "0.1.0"
-    # schemas/BatchManifest schema_version field expects "v0.1.0"
+    # schemas/BatchManifest schema_version is Optional[str], so the pattern
+    # is nested under anyOf[0]. Find the non-null branch and pull its
+    # pattern.
     pyd = _load_pydantic_schema("BatchManifest")
-    pattern = pyd["properties"]["schema_version"]["pattern"]
-    # the pattern allows any vN.N.N — confirm v + info_version matches
+    schema_version_field = pyd["properties"]["schema_version"]
+    if "pattern" in schema_version_field:
+        pattern = schema_version_field["pattern"]
+    else:
+        any_of = schema_version_field["anyOf"]
+        string_branch = next(
+            b for b in any_of if b.get("type") == "string"
+        )
+        pattern = string_branch["pattern"]
+
     import re
 
     assert re.match(pattern, f"v{info_version}"), (

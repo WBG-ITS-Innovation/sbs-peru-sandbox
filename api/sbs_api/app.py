@@ -78,6 +78,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     settings = settings or get_settings()
 
+    # ADR 0035 §webhook-url-validation gate. The
+    # `allow_insecure_webhook_urls` knob is sandbox-only; refuse to boot
+    # if it is set with a non-dev/test environment. Catching this at
+    # startup is cheaper than catching it at first webhook delivery.
+    if settings.allow_insecure_webhook_urls and settings.environment in {
+        "staging",
+        "prod",
+    }:
+        raise RuntimeError(
+            "SBS_API_ALLOW_INSECURE_WEBHOOK_URLS=true is rejected when "
+            f"SBS_API_ENVIRONMENT={settings.environment!r}. Webhook URL "
+            "validation must not be bypassed outside dev/test."
+        )
+
     configure_logging()
     configure_tracing()
 

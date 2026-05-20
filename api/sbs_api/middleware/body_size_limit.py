@@ -30,13 +30,23 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
 
-from sbs_api.config import get_settings
-from sbs_api.errors.exceptions import RequestBodyTooLarge
+from sbs_api.config import Settings, get_settings
+from sbs_api.errors.exceptions import BatchFileTooLarge, RequestBodyTooLarge, SBSAPIException
 
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 
+# ADR 0034: the Tier 2 multipart upload may carry up to
+# `settings.max_batch_file_bytes` of CSV, which is two orders of magnitude
+# larger than the general default. The middleware applies a per-path cap
+# on these endpoints and uses BATCH_FILE_TOO_LARGE as the error code so
+# the integrator's error handler can distinguish "your batch is too big"
+# from "your JSON payload was wrong".
+_BATCH_UPLOAD_PATH = "/v1/batches"
 
-def _too_large_response(detail: str, *, correlation_id: str | None) -> JSONResponse:
+
+def _too_large_response(
+    exc: SBSAPIException, *, correlation_id: str | None
+) -> JSONResponse:
     """Build the 413 ProblemDetail directly.
 
     Pulls the correlation_id from the outer middleware's request-state
@@ -44,7 +54,6 @@ def _too_large_response(detail: str, *, correlation_id: str | None) -> JSONRespo
     """
 
     settings = get_settings()
-    exc = RequestBodyTooLarge(detail=detail)
     body: dict = {
         "type": f"{settings.problem_type_namespace}/{exc.type_suffix}",
         "title": exc.title,
@@ -63,19 +72,47 @@ def _too_large_response(detail: str, *, correlation_id: str | None) -> JSONRespo
     )
 
 
+def _limit_for(path: str, method: str, settings: Settings) -> tuple[int, type[SBSAPIException]]:
+    """Return (max_bytes, exception_class) for the request shape.
+
+    The Tier 2 multipart upload (`POST /v1/batches`) takes the batch cap;
+    the equivalent GET endpoints stay on the general cap (they have no
+    body to speak of). Future per-path overrides land here.
+    """
+
+    if method == "POST" and path == _BATCH_UPLOAD_PATH:
+        return settings.max_batch_file_bytes, BatchFileTooLarge
+    return settings.max_request_body_bytes, RequestBodyTooLarge
+
+
 class BodySizeLimitMiddleware(BaseHTTPMiddleware):
-    """Enforce ``settings.max_request_body_bytes``.
+    """Enforce per-path body-size caps.
 
     Runs inside CorrelationIdMiddleware (F.2 order) so the 413 response
-    can pull ``request.state.correlation_id``.
+    can pull ``request.state.correlation_id``. The cap and the
+    error-code that surfaces on overflow are both per-path so the Tier 2
+    upload at `/v1/batches` can carry tens of megabytes while everything
+    else stays on the 256-KiB default.
     """
 
     def __init__(self, app: ASGIApp, *, max_bytes: int | None = None) -> None:
         super().__init__(app)
-        self._max_bytes = max_bytes if max_bytes is not None else get_settings().max_request_body_bytes
+        self._override_max = max_bytes
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[override]
         correlation_id = getattr(request.state, "correlation_id", None)
+
+        settings = get_settings()
+        max_bytes, exc_cls = _limit_for(
+            request.url.path, request.method, settings
+        )
+        if self._override_max is not None:
+            # Test override: same cap on every route. Stays on the
+            # general RequestBodyTooLarge code because the override is
+            # only used by tests that don't care about the per-path
+            # error-code distinction.
+            max_bytes = self._override_max
+            exc_cls = RequestBodyTooLarge
 
         # Fast path: trust Content-Length when present and small enough.
         content_length = request.headers.get("content-length")
@@ -84,25 +121,32 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
                 declared = int(content_length)
             except ValueError:
                 declared = None
-            if declared is not None and declared > self._max_bytes:
+            if declared is not None and declared > max_bytes:
                 return _too_large_response(
-                    f"Request body declared {declared} bytes; "
-                    f"server maximum is {self._max_bytes} bytes.",
+                    exc_cls(
+                        detail=(
+                            f"Request body declared {declared} bytes; "
+                            f"server maximum is {max_bytes} bytes."
+                        )
+                    ),
                     correlation_id=correlation_id,
                 )
 
-        # F.3 — bounded streaming read. Accumulate the body chunk-by-
-        # chunk and abort as soon as the running total exceeds the
-        # max. A client lying about Content-Length cannot force a
-        # full-body allocation.
+        # Bounded streaming read. Accumulate the body chunk-by-chunk and
+        # abort as soon as the running total exceeds the cap so a client
+        # lying about Content-Length cannot force a full-body allocation.
         accumulated = bytearray()
         async for chunk in request.stream():
             accumulated.extend(chunk)
-            if len(accumulated) > self._max_bytes:
+            if len(accumulated) > max_bytes:
                 return _too_large_response(
-                    f"Request body exceeded {self._max_bytes} bytes "
-                    f"after streaming (declared "
-                    f"{content_length or 'unknown'} bytes).",
+                    exc_cls(
+                        detail=(
+                            f"Request body exceeded {max_bytes} bytes "
+                            f"after streaming (declared "
+                            f"{content_length or 'unknown'} bytes)."
+                        )
+                    ),
                     correlation_id=correlation_id,
                 )
         body = bytes(accumulated)

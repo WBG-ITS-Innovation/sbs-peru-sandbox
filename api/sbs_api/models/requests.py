@@ -135,33 +135,19 @@ class ComplaintQuery(BaseModel):
 
 
 class BatchManifest(BaseModel):
-    """Metadata-only submission for ``POST /v1/batches``.
+    """Manifest part of a ``POST /v1/batches`` multipart upload (ADR 0034).
 
-    Tier 2 batch upload is a two-step flow: the institution POSTs this
-    manifest to receive a presigned URL (or batch_id with upload instructions),
-    then uploads the file out-of-band. Manifest fields are inspired by the
-    standards-pack table in market-comparators.md §5.A ("Batch manifest: file
-    name, reporting period, institution ID, schema version, row count, hash").
+    Tier 2 batch upload is a one-shot multipart request: the manifest JSON
+    and the CSV file ride together. The institution_id is *not* in the
+    manifest — the server reads it from the OAuth token and the mTLS
+    subject, both of which are already authenticated. The file name is
+    carried in the multipart `Content-Disposition: filename=` header, not
+    a manifest field. Both reductions remove the redundant fields the
+    Prompt 5/6 metadata-only scaffold required.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    file_name: str = Field(
-        ...,
-        min_length=4,
-        max_length=255,
-        pattern=r"^[A-Za-z0-9._-]+\.(csv|jsonl|json)$",
-        description=(
-            "File name, ASCII safe characters only, with extension .csv, "
-            ".jsonl, or .json."
-        ),
-        examples=["BCO-2026-05.jsonl"],
-    )
-    institution_id: str = Field(
-        ...,
-        pattern=r"^SBS-\d{4,6}$",
-        description="Submitting institution code.",
-    )
     reporting_period_start: date = Field(
         ...,
         description="Inclusive start of the reporting period covered by this batch.",
@@ -170,39 +156,48 @@ class BatchManifest(BaseModel):
         ...,
         description="Inclusive end of the reporting period covered by this batch.",
     )
-    schema_version: str = Field(
-        ...,
-        pattern=r"^v\d+\.\d+\.\d+$",
-        description=(
-            "Anexo 1-A schema version targeted by the batch. Matches the "
-            "OpenAPI info.version on submission day. Example: v0.1.0."
-        ),
-        examples=["v0.1.0"],
-    )
-    row_count: int = Field(
+    row_count_submitted: int = Field(
         ...,
         ge=1,
         le=1_000_000,
-        description="Number of complaint rows in the file.",
+        description=(
+            "Number of complaint rows the institution claims are in the CSV. "
+            "The server records this for cross-check; the worker counts the "
+            "actual rows during processing."
+        ),
     )
-    sha256: str = Field(
+    checksum_sha256: str = Field(
         ...,
         pattern=r"^[a-f0-9]{64}$",
         description=(
-            "Lowercase hex SHA-256 of the file contents the institution will "
-            "upload. The server recomputes on receipt and rejects on mismatch."
+            "Lowercase hex SHA-256 of the CSV file bytes the institution is "
+            "uploading. The server recomputes on receipt and rejects with "
+            "BATCH_CHECKSUM_MISMATCH on disagreement. Also the body-hash "
+            "input for the HMAC canonical request per ADR 0027 amendment "
+            "(multipart body-hash definition: CSV bytes only)."
         ),
         examples=[
-            # Illustrative only — repeating cafebabe pattern, clearly not a
-            # real hash. The server recomputes on receipt.
+            # Repeating cafebabe — clearly illustrative, not a real hash.
             "cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe"
         ],
     )
-    submitted_at: datetime = Field(
-        ...,
+    schema_version: str | None = Field(
+        default=None,
+        pattern=r"^v\d+\.\d+\.\d+$",
         description=(
-            "Institution-side timestamp of manifest preparation. Used only "
-            "for audit log correlation; the authoritative receipt time is "
-            "server-assigned."
+            "Optional. Anexo 1-A schema version the institution is targeting. "
+            "Defaults to the server's current schema_version when omitted. "
+            "Specifying it explicitly lets the server reject a batch built "
+            "against a different schema with a clearer error than per-row "
+            "validation failures."
         ),
+        examples=["v0.1.0"],
     )
+
+    @model_validator(mode="after")
+    def _reporting_period_ordered(self) -> "BatchManifest":
+        if self.reporting_period_end < self.reporting_period_start:
+            raise ValueError(
+                "reporting_period_end must be on or after reporting_period_start"
+            )
+        return self

@@ -221,7 +221,13 @@ class ComplaintListResponse(BaseModel):
 
 
 class BatchSubmission(BaseModel):
-    """202 response from ``POST /v1/batches`` (manifest accepted)."""
+    """202 response from ``POST /v1/batches`` (multipart upload accepted).
+
+    The Location header on the 202 carries the URL of the status endpoint;
+    the body is intentionally minimal — just the batch_id and the initial
+    state. The institution polls the status endpoint or waits for the
+    outbound webhook callback (ADR 0035) on completion.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -230,20 +236,13 @@ class BatchSubmission(BaseModel):
         pattern=r"^batch_[A-Za-z0-9]{16,32}$",
         description="Server-assigned batch identifier.",
     )
-    upload_url: AnyUrl = Field(
+    status: Literal["pending"] = Field(
         ...,
         description=(
-            "Presigned URL the institution PUTs the batch file to. Expires "
-            "60 minutes after issue."
+            "Initial state. The batch has been persisted and queued; the "
+            "worker transitions it to `processing` and then `complete` or "
+            "`failed`."
         ),
-    )
-    upload_expires_at: datetime = Field(
-        ...,
-        description="Expiry of upload_url. Absolute UTC.",
-    )
-    status: Literal["pending_upload"] = Field(
-        ...,
-        description="Initial status. Transitions to 'processing' on receipt.",
     )
 
 
@@ -255,51 +254,75 @@ class BatchStatus(BaseModel):
     batch_id: str = Field(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$")
     institution_id: str = Field(..., pattern=r"^SBS-\d{4,6}$")
     status: Literal[
-        "pending_upload",
-        "received",
+        "pending",
         "processing",
-        "completed",
-        "completed_with_errors",
+        "complete",
         "failed",
     ] = Field(
         ...,
-        description="Lifecycle state of the batch.",
+        description=(
+            "Lifecycle state. ADR 0034 §state-machine: pending → processing "
+            "→ complete | failed. Once terminal, the state does not change."
+        ),
     )
     submitted_at: datetime
     completed_at: datetime | None = None
     row_count_submitted: int = Field(..., ge=0)
     row_count_accepted: int = Field(..., ge=0)
     row_count_rejected: int = Field(..., ge=0)
+    failure_reason: str | None = Field(
+        default=None,
+        description=(
+            "Set when status is 'failed'. Short human-readable message; "
+            "details (e.g. exception type, stack) live in the structlog "
+            "stream, not in the API response."
+        ),
+    )
 
 
-class BatchResultRow(BaseModel):
-    """One row of ``GET /v1/batches/{batch_id}/results``.
+class BatchRowRejectionDetail(BaseModel):
+    """One row of ``GET /v1/batches/{batch_id}/rejections`` (Workstream C).
 
-    Per-row outcome of batch processing. Successful rows carry the assigned
-    complaint_id; failures carry a problem detail describing the rejection.
+    Per-row outcome for the *failed* rows of a batch. Accepted rows are
+    not enumerated here — they appear in the Tier 1 GET /v1/complaints
+    listing once persisted by the worker. Rejection envelope mirrors the
+    :class:`ProblemFieldError` shape so SDK error handlers can reuse one
+    code path for Tier 1 and Tier 2 field errors.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    row_index: int = Field(..., ge=0, description="Zero-indexed row position in the source file.")
-    accepted: bool
-    complaint_id: str | None = Field(
-        default=None,
-        description="Set on accepted=true. Absent on rejection.",
+    row_index: int = Field(
+        ...,
+        ge=0,
+        description="Zero-indexed row position in the source CSV.",
     )
-    problem: ProblemDetail | None = Field(
+    field: str | None = Field(
         default=None,
-        description="Set on accepted=false. Mirrors the Tier 1 RFC 9457 envelope.",
+        max_length=200,
+        description="JSON-path of the offending field; null when multi-field.",
+    )
+    rule: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        description="Validation rule that failed (e.g. 'pattern', 'min_length').",
+    )
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Human-readable message describing the rule violation.",
     )
 
 
-class BatchResultsResponse(BaseModel):
-    """Body of ``GET /v1/batches/{batch_id}/results``."""
+class BatchRejectionsResponse(BaseModel):
+    """Body of ``GET /v1/batches/{batch_id}/rejections`` (Workstream C)."""
 
     model_config = ConfigDict(extra="forbid")
 
     batch_id: str = Field(..., pattern=r"^batch_[A-Za-z0-9]{16,32}$")
-    rows: list[BatchResultRow]
+    rejections: list[BatchRowRejectionDetail]
     next_cursor: str | None = None
 
 
@@ -397,8 +420,8 @@ ProblemDetail.model_rebuild()
 
 
 __all__ = [
-    "BatchResultRow",
-    "BatchResultsResponse",
+    "BatchRejectionsResponse",
+    "BatchRowRejectionDetail",
     "BatchStatus",
     "BatchSubmission",
     "ComplaintCreated",

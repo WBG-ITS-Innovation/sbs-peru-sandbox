@@ -1,23 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Metadata-only submission for ``POST /v1/batches``.\n\nTier 2 batch upload is a two-step flow: the institution POSTs this\nmanifest to receive a presigned URL (or batch_id with upload instructions),\nthen uploads the file out-of-band. Manifest fields are inspired by the\nstandards-pack table in market-comparators.md §5.A (\"Batch manifest: file\nname, reporting period, institution ID, schema version, row count, hash\").",
+  "description": "Manifest part of a ``POST /v1/batches`` multipart upload (ADR 0034).\n\nTier 2 batch upload is a one-shot multipart request: the manifest JSON\nand the CSV file ride together. The institution_id is *not* in the\nmanifest — the server reads it from the OAuth token and the mTLS\nsubject, both of which are already authenticated. The file name is\ncarried in the multipart `Content-Disposition: filename=` header, not\na manifest field. Both reductions remove the redundant fields the\nPrompt 5/6 metadata-only scaffold required.",
   "properties": {
-    "file_name": {
-      "description": "File name, ASCII safe characters only, with extension .csv, .jsonl, or .json.",
+    "checksum_sha256": {
+      "description": "Lowercase hex SHA-256 of the CSV file bytes the institution is uploading. The server recomputes on receipt and rejects with BATCH_CHECKSUM_MISMATCH on disagreement. Also the body-hash input for the HMAC canonical request per ADR 0027 amendment (multipart body-hash definition: CSV bytes only).",
       "examples": [
-        "BCO-2026-05.jsonl"
+        "cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe"
       ],
-      "maxLength": 255,
-      "minLength": 4,
-      "pattern": "^[A-Za-z0-9._-]+\\.(csv|jsonl|json)$",
-      "title": "File Name",
-      "type": "string"
-    },
-    "institution_id": {
-      "description": "Submitting institution code.",
-      "pattern": "^SBS-\\d{4,6}$",
-      "title": "Institution Id",
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Checksum Sha256",
       "type": "string"
     },
     "reporting_period_end": {
@@ -32,47 +24,36 @@
       "title": "Reporting Period Start",
       "type": "string"
     },
-    "row_count": {
-      "description": "Number of complaint rows in the file.",
+    "row_count_submitted": {
+      "description": "Number of complaint rows the institution claims are in the CSV. The server records this for cross-check; the worker counts the actual rows during processing.",
       "maximum": 1000000,
       "minimum": 1,
-      "title": "Row Count",
+      "title": "Row Count Submitted",
       "type": "integer"
     },
     "schema_version": {
-      "description": "Anexo 1-A schema version targeted by the batch. Matches the OpenAPI info.version on submission day. Example: v0.1.0.",
+      "anyOf": [
+        {
+          "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional. Anexo 1-A schema version the institution is targeting. Defaults to the server's current schema_version when omitted. Specifying it explicitly lets the server reject a batch built against a different schema with a clearer error than per-row validation failures.",
       "examples": [
         "v0.1.0"
       ],
-      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
-      "title": "Schema Version",
-      "type": "string"
-    },
-    "sha256": {
-      "description": "Lowercase hex SHA-256 of the file contents the institution will upload. The server recomputes on receipt and rejects on mismatch.",
-      "examples": [
-        "cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe"
-      ],
-      "pattern": "^[a-f0-9]{64}$",
-      "title": "Sha256",
-      "type": "string"
-    },
-    "submitted_at": {
-      "description": "Institution-side timestamp of manifest preparation. Used only for audit log correlation; the authoritative receipt time is server-assigned.",
-      "format": "date-time",
-      "title": "Submitted At",
-      "type": "string"
+      "title": "Schema Version"
     }
   },
   "required": [
-    "file_name",
-    "institution_id",
     "reporting_period_start",
     "reporting_period_end",
-    "schema_version",
-    "row_count",
-    "sha256",
-    "submitted_at"
+    "row_count_submitted",
+    "checksum_sha256"
   ],
   "title": "BatchManifest",
   "type": "object"

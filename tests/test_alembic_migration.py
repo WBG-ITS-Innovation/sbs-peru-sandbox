@@ -27,11 +27,23 @@ async def _drop_schema(test_database_url: str) -> None:
 
     engine = create_async_engine(test_database_url)
     async with engine.begin() as conn:
-        await conn.execute(text("DROP TABLE IF EXISTS alembic_version CASCADE"))
-        await conn.execute(text("DROP TABLE IF EXISTS idempotency_records CASCADE"))
-        await conn.execute(text("DROP TABLE IF EXISTS batches CASCADE"))
-        await conn.execute(text("DROP TABLE IF EXISTS complaints CASCADE"))
-        await conn.execute(text("DROP TABLE IF EXISTS institutions CASCADE"))
+        # Drop in reverse-dependency order so FKs are released before
+        # their parents. CASCADE handles indirect dependents.
+        for table in (
+            "alembic_version",
+            "webhook_deliveries",
+            "outbound_webhook_secrets",
+            "institution_webhook_configs",
+            "batch_row_rejections",
+            "oauth_clients",
+            "institution_secrets",
+            "institution_certificates",
+            "idempotency_records",
+            "batches",
+            "complaints",
+            "institutions",
+        ):
+            await conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
     await engine.dispose()
 
 
@@ -101,12 +113,16 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
         "institutions",
         "complaints",
         "batches",
+        "batch_row_rejections",
         "idempotency_records",
         "institution_certificates",
         "institution_secrets",
+        "institution_webhook_configs",
         "oauth_clients",
+        "outbound_webhook_secrets",
+        "webhook_deliveries",
         "alembic_version",
     }
     missing = expected - tables
     assert not missing, f"missing tables: {missing}"
-    assert version_num == "20260519_0003"
+    assert version_num == "20260520_0001"

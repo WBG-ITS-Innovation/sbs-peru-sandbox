@@ -45,6 +45,12 @@ class ComplaintRecord(Base):
     submission_method: Mapped[str] = mapped_column(String(32), nullable=False)
     original_reference_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
     resolution_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pendiente")
+    # Tier provenance — `api_realtime` (Tier 1 POST) or `batch` (Tier 2 worker).
+    # ADR 0034: same Pydantic validation for both tiers; the column records
+    # which path a complaint travelled so dashboards can break out the mix.
+    source: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="api_realtime"
+    )
 
     # Server-assigned bookkeeping.
     received_at: Mapped[datetime] = mapped_column(
@@ -71,4 +77,5 @@ class ComplaintRecord(Base):
         ),
         Index("ix_complaints_resolution_status", "resolution_status"),
         Index("ix_complaints_motivo_code", "motivo_code"),
+        Index("ix_complaints_source", "source"),
     )

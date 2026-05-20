@@ -150,6 +150,58 @@ class RequestBodyTooLarge(SBSAPIException):
     type_suffix = "REQUEST_BODY_TOO_LARGE"
 
 
+class BatchFileTooLarge(SBSAPIException):
+    """Tier 2 multipart upload exceeded the per-endpoint CSV size cap.
+
+    Distinct from :class:`RequestBodyTooLarge` so the integrator's error
+    handler can branch on the code: a 413 on `/v1/complaints` means the
+    JSON payload was malformed; a 413 on `/v1/batches` means the CSV file
+    itself was too large and the institution should split the batch.
+    """
+
+    code = "SBS-413-002"
+    status = 413
+    title = "Batch file too large"
+    type_suffix = "BATCH_FILE_TOO_LARGE"
+
+
+class BatchManifestInvalid(SBSAPIException):
+    """Manifest JSON shape or content failed validation.
+
+    Covers: missing required fields, malformed JSON, period start after
+    end, row count out of range. Distinct from BATCH_CHECKSUM_MISMATCH
+    which is a content-vs-claim disagreement.
+    """
+
+    code = "SBS-400-006"
+    status = 400
+    title = "Batch manifest invalid"
+    type_suffix = "BATCH_MANIFEST_INVALID"
+
+
+class BatchChecksumMismatch(SBSAPIException):
+    """Manifest's `checksum_sha256` does not match the actually-received CSV bytes."""
+
+    code = "SBS-400-007"
+    status = 400
+    title = "Batch checksum mismatch"
+    type_suffix = "BATCH_CHECKSUM_MISMATCH"
+
+
+class WebhookUrlRejected(SBSAPIException):
+    """Outbound webhook URL failed validation (HTTPS / FQDN / public-IP).
+
+    Surfaces in webhook_deliveries.failure_reason; not directly raised by
+    a request handler. Defined here so the error catalog has a stable
+    code for ops dashboards that surface delivery failures.
+    """
+
+    code = "SBS-403-020"
+    status = 403
+    title = "Webhook URL rejected by validation"
+    type_suffix = "WEBHOOK_URL_REJECTED"
+
+
 class AuthenticationNotConfigured(SBSAPIException):
     code = "SBS-503-002"
     status = 503

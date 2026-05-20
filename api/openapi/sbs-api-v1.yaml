@@ -283,37 +283,56 @@ paths:
   /batches:
     post:
       tags: [Ingestion (Tier 2)]
-      summary: Submit a batch manifest (Tier 2)
-      operationId: createBatchManifest
+      summary: Submit a Tier 2 batch (manifest + CSV multipart)
+      operationId: createBatch
       security:
         - mtls: []
           oauth2_client_credentials: [batch:upload]
           hmac_signature: []
       description: |
-        Submit a manifest describing a batch file the institution intends to
-        upload. The server responds with a presigned upload URL valid for
-        sixty minutes. The institution uploads the file via PUT to that URL,
-        out-of-band of this API. Tier 2 file processing is asynchronous;
-        poll the batch status endpoint or rely on the webhook callback
-        configured per-institution.
+        Submit a Tier 2 batch as a single multipart request carrying both
+        the JSON manifest and the CSV file. ADR 0034: the API persists the
+        CSV, enqueues an async worker job, and returns 202 with a
+        `Location` header pointing at the status endpoint. Per-row
+        validation uses the same Pydantic models as the Tier 1 endpoint;
+        the proportional-treatment claim is structural, not advisory.
+
+        The HMAC canonical-request body-hash is computed over the CSV
+        file bytes only per ADR 0027 amendment.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
         - $ref: "#/components/parameters/TraceparentHeader"
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/BatchManifest"
-            examples:
-              valid:
-                $ref: "#/components/examples/ValidBatchManifest"
+              type: object
+              required: [manifest, file]
+              properties:
+                manifest:
+                  $ref: "#/components/schemas/BatchManifest"
+                file:
+                  type: string
+                  format: binary
+                  description: |
+                    CSV file. Required. The HMAC canonical request body-
+                    hash is the SHA-256 of these bytes only; the manifest's
+                    `checksum_sha256` is recomputed server-side and
+                    rejected with `SBS-400-007 BATCH_CHECKSUM_MISMATCH`
+                    on disagreement.
+            encoding:
+              manifest: { contentType: application/json }
+              file: { contentType: text/csv }
       responses:
         "202":
-          description: Manifest accepted; ready for upload.
+          description: Batch persisted and queued for processing.
           headers:
             traceparent: { $ref: "#/components/headers/TraceparentResponse" }
             Idempotency-Replayed: { $ref: "#/components/headers/IdempotencyReplayedResponse" }
+            Location:
+              description: URL of the status endpoint for the new batch.
+              schema: { type: string }
           content:
             application/json:
               schema:
@@ -322,6 +341,17 @@ paths:
         "401": { $ref: "#/components/responses/Problem401" }
         "403": { $ref: "#/components/responses/Problem403" }
         "409": { $ref: "#/components/responses/Problem409" }
+        "413":
+          description: |
+            CSV file exceeded the per-endpoint cap (default 50 MiB;
+            tunable via `SBS_API_MAX_BATCH_FILE_BYTES`). Code
+            `SBS-413-002 BATCH_FILE_TOO_LARGE`. Distinct from the
+            general request-body 413 so the integrator can branch.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
         "422": { $ref: "#/components/responses/Problem422" }
         "429": { $ref: "#/components/responses/Problem429" }
         "500": { $ref: "#/components/responses/Problem500" }
@@ -353,7 +383,7 @@ paths:
         "404": { $ref: "#/components/responses/Problem404" }
         "500": { $ref: "#/components/responses/Problem500" }
 
-  /batches/{batch_id}/results:
+  /batches/{batch_id}/rejections:
     parameters:
       - $ref: "#/components/parameters/BatchIdPath"
       - $ref: "#/components/parameters/TraceparentHeader"
@@ -365,35 +395,29 @@ paths:
         schema: { type: string, minLength: 8, maxLength: 256 }
     get:
       tags: [Ingestion (Tier 2)]
-      summary: Retrieve per-row results of a processed batch
-      operationId: getBatchResults
+      summary: Retrieve per-row rejections from a processed batch
+      operationId: getBatchRejections
       security:
         - mtls: []
           oauth2_client_credentials: [batch:upload]
           hmac_signature: []
       description: |
-        Each row of the source file is reported here with its acceptance
-        outcome. Accepted rows carry the assigned `complaint_id`; rejected
-        rows carry an RFC 9457 problem detail with field-level errors.
+        Per-row failure detail for the *rejected* rows of a batch.
+        Accepted rows are not enumerated here — they appear in the
+        Tier 1 `GET /complaints` listing with `source=batch`. Pagination
+        uses the same signed cursor primitive as the Tier 1 list endpoint.
       responses:
         "200":
-          description: Page of result rows.
+          description: Page of rejection rows.
           headers:
             traceparent: { $ref: "#/components/headers/TraceparentResponse" }
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BatchResultsResponse"
+                $ref: "#/components/schemas/BatchRejectionsResponse"
         "401": { $ref: "#/components/responses/Problem401" }
         "403": { $ref: "#/components/responses/Problem403" }
         "404": { $ref: "#/components/responses/Problem404" }
-        "409":
-          description: Batch not yet completed.
-          headers:
-            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
-          content:
-            application/problem+json:
-              schema: { $ref: "#/components/schemas/ProblemDetail" }
         "500": { $ref: "#/components/responses/Problem500" }
 
   /institutions/{institution_id}/status:
@@ -931,50 +955,40 @@ components:
       type: object
       additionalProperties: false
       required:
-        - file_name
-        - institution_id
         - reporting_period_start
         - reporting_period_end
-        - schema_version
-        - row_count
-        - sha256
-        - submitted_at
+        - row_count_submitted
+        - checksum_sha256
       properties:
-        file_name:
-          type: string
-          minLength: 4
-          maxLength: 255
-          pattern: "^[A-Za-z0-9._-]+\\.(csv|jsonl|json)$"
-        institution_id:
-          type: string
-          pattern: "^SBS-\\d{4,6}$"
         reporting_period_start: { type: string, format: date }
         reporting_period_end: { type: string, format: date }
-        schema_version:
-          type: string
-          pattern: "^v\\d+\\.\\d+\\.\\d+$"
-        row_count:
+        row_count_submitted:
           type: integer
           minimum: 1
           maximum: 1000000
-        sha256:
+        checksum_sha256:
           type: string
           pattern: "^[a-f0-9]{64}$"
-        submitted_at: { type: string, format: date-time }
+          description: |
+            Lowercase hex SHA-256 of the CSV file bytes. The server
+            recomputes on receipt and rejects on mismatch.
+        schema_version:
+          type: [string, "null"]
+          pattern: "^v\\d+\\.\\d+\\.\\d+$"
+          description: |
+            Optional. Defaults to the server's current schema_version.
 
     BatchSubmission:
       type: object
       additionalProperties: false
-      required: [batch_id, upload_url, upload_expires_at, status]
+      required: [batch_id, status]
       properties:
         batch_id:
           type: string
           pattern: "^batch_[A-Za-z0-9]{16,32}$"
-        upload_url: { type: string, format: uri }
-        upload_expires_at: { type: string, format: date-time }
         status:
           type: string
-          enum: [pending_upload]
+          enum: [pending]
 
     BatchStatus:
       type: object
@@ -997,11 +1011,9 @@ components:
         status:
           type: string
           enum:
-            - pending_upload
-            - received
+            - pending
             - processing
-            - completed
-            - completed_with_errors
+            - complete
             - failed
         submitted_at: { type: string, format: date-time }
         completed_at:
@@ -1010,32 +1022,38 @@ components:
         row_count_submitted: { type: integer, minimum: 0 }
         row_count_accepted: { type: integer, minimum: 0 }
         row_count_rejected: { type: integer, minimum: 0 }
+        failure_reason:
+          type: [string, "null"]
 
-    BatchResultRow:
+    BatchRowRejectionDetail:
       type: object
       additionalProperties: false
-      required: [row_index, accepted]
+      required: [row_index, rule, message]
       properties:
         row_index: { type: integer, minimum: 0 }
-        accepted: { type: boolean }
-        complaint_id:
+        field:
           type: [string, "null"]
-        problem:
-          oneOf:
-            - $ref: "#/components/schemas/ProblemDetail"
-            - type: "null"
+          maxLength: 200
+        rule:
+          type: string
+          minLength: 1
+          maxLength: 64
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
 
-    BatchResultsResponse:
+    BatchRejectionsResponse:
       type: object
       additionalProperties: false
-      required: [batch_id, rows]
+      required: [batch_id, rejections]
       properties:
         batch_id:
           type: string
           pattern: "^batch_[A-Za-z0-9]{16,32}$"
-        rows:
+        rejections:
           type: array
-          items: { $ref: "#/components/schemas/BatchResultRow" }
+          items: { $ref: "#/components/schemas/BatchRowRejectionDetail" }
         next_cursor:
           type: [string, "null"]
 
@@ -1289,13 +1307,10 @@ components:
             received_at: 2026-05-12T15:42:11Z
         next_cursor: null
     ValidBatchManifest:
-      summary: A valid batch manifest
+      summary: A valid batch manifest (multipart `manifest` part value)
       value:
-        file_name: BCO-2026-05.jsonl
-        institution_id: SBS-001234
         reporting_period_start: 2026-05-01
         reporting_period_end: 2026-05-31
+        row_count_submitted: 412
+        checksum_sha256: cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe
         schema_version: v0.1.0
-        row_count: 412
-        sha256: cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe
-        submitted_at: 2026-06-01T08:30:00Z

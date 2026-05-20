@@ -21,6 +21,19 @@
       "default": null,
       "title": "Completed At"
     },
+    "failure_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Set when status is 'failed'. Short human-readable message; details (e.g. exception type, stack) live in the structlog stream, not in the API response.",
+      "title": "Failure Reason"
+    },
     "institution_id": {
       "pattern": "^SBS-\\d{4,6}$",
       "title": "Institution Id",
@@ -42,13 +55,11 @@
       "type": "integer"
     },
     "status": {
-      "description": "Lifecycle state of the batch.",
+      "description": "Lifecycle state. ADR 0034 §state-machine: pending → processing → complete | failed. Once terminal, the state does not change.",
       "enum": [
-        "pending_upload",
-        "received",
+        "pending",
         "processing",
-        "completed",
-        "completed_with_errors",
+        "complete",
         "failed"
       ],
       "title": "Status",

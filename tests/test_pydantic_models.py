@@ -7,7 +7,7 @@ ComplaintStatusPatch terminal-state reason-required rule.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date
 
 import pytest
 from pydantic import ValidationError
@@ -307,39 +307,30 @@ def test_problem_detail_status_range_enforced():
 
 
 VALID_MANIFEST_KWARGS = dict(
-    file_name="BCO-2026-05.jsonl",
-    institution_id="SBS-001234",
     reporting_period_start="2026-05-01",
     reporting_period_end="2026-05-31",
     schema_version="v0.1.0",
-    row_count=412,
-    sha256="cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe",
-    submitted_at=datetime(2026, 6, 1, 8, 30, 0, tzinfo=timezone.utc),
+    row_count_submitted=412,
+    checksum_sha256="cafebabecafebabecafebabecafebabecafebabecafebabecafebabecafebabe",
 )
 
 
 def test_batch_manifest_happy_path():
     m = BatchManifest(**VALID_MANIFEST_KWARGS)
-    assert m.row_count == 412
+    assert m.row_count_submitted == 412
     assert m.schema_version == "v0.1.0"
 
 
-def test_batch_manifest_rejects_bad_extension():
-    kwargs = dict(VALID_MANIFEST_KWARGS, file_name="BCO-2026-05.xlsx")
+def test_batch_manifest_rejects_short_checksum():
+    kwargs = dict(VALID_MANIFEST_KWARGS, checksum_sha256="deadbeef")
     with pytest.raises(ValidationError):
         BatchManifest(**kwargs)
 
 
-def test_batch_manifest_rejects_short_sha256():
-    kwargs = dict(VALID_MANIFEST_KWARGS, sha256="deadbeef")
-    with pytest.raises(ValidationError):
-        BatchManifest(**kwargs)
-
-
-def test_batch_manifest_rejects_uppercase_sha256():
+def test_batch_manifest_rejects_uppercase_checksum():
     kwargs = dict(
         VALID_MANIFEST_KWARGS,
-        sha256="CAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABE",
+        checksum_sha256="CAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABECAFEBABE",
     )
     with pytest.raises(ValidationError):
         BatchManifest(**kwargs)
@@ -349,6 +340,23 @@ def test_batch_manifest_rejects_bad_schema_version():
     kwargs = dict(VALID_MANIFEST_KWARGS, schema_version="0.1.0")  # missing 'v'
     with pytest.raises(ValidationError):
         BatchManifest(**kwargs)
+
+
+def test_batch_manifest_rejects_inverted_period():
+    kwargs = dict(
+        VALID_MANIFEST_KWARGS,
+        reporting_period_start="2026-12-31",
+        reporting_period_end="2026-01-01",
+    )
+    with pytest.raises(ValidationError):
+        BatchManifest(**kwargs)
+
+
+def test_batch_manifest_schema_version_optional():
+    kwargs = dict(VALID_MANIFEST_KWARGS)
+    kwargs.pop("schema_version")
+    m = BatchManifest(**kwargs)
+    assert m.schema_version is None
 
 
 # ---------------------------------------------------------------------------

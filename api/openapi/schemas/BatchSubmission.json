@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "202 response from ``POST /v1/batches`` (manifest accepted).",
+  "description": "202 response from ``POST /v1/batches`` (multipart upload accepted).\n\nThe Location header on the 202 carries the URL of the status endpoint;\nthe body is intentionally minimal — just the batch_id and the initial\nstate. The institution polls the status endpoint or waits for the\noutbound webhook callback (ADR 0035) on completion.",
   "properties": {
     "batch_id": {
       "description": "Server-assigned batch identifier.",
@@ -10,29 +10,14 @@
       "type": "string"
     },
     "status": {
-      "const": "pending_upload",
-      "description": "Initial status. Transitions to 'processing' on receipt.",
+      "const": "pending",
+      "description": "Initial state. The batch has been persisted and queued; the worker transitions it to `processing` and then `complete` or `failed`.",
       "title": "Status",
-      "type": "string"
-    },
-    "upload_expires_at": {
-      "description": "Expiry of upload_url. Absolute UTC.",
-      "format": "date-time",
-      "title": "Upload Expires At",
-      "type": "string"
-    },
-    "upload_url": {
-      "description": "Presigned URL the institution PUTs the batch file to. Expires 60 minutes after issue.",
-      "format": "uri",
-      "minLength": 1,
-      "title": "Upload Url",
       "type": "string"
     }
   },
   "required": [
     "batch_id",
-    "upload_url",
-    "upload_expires_at",
     "status"
   ],
   "title": "BatchSubmission",

@@ -26,7 +26,10 @@ from sbs_api.middleware import (
 from sbs_api.middleware.mtls_transport import MtlsTransportCaptureMiddleware
 from sbs_api.observability import configure_logging, configure_tracing
 from sbs_api.observability.logging import get_logger
-from sbs_api.scheduler import sweep_expired_idempotency_records
+from sbs_api.scheduler import (
+    prune_batch_storage_job,
+    sweep_expired_idempotency_records,
+)
 
 
 def _build_lifespan(settings: Settings):
@@ -53,10 +56,21 @@ def _build_lifespan(settings: Settings):
                 replace_existing=True,
                 next_run_time=None,  # do not run at startup; first run at +interval
             )
+            # ADR 0034 §sandbox-storage: prune Tier 2 CSV files older
+            # than batch_storage_prune_days. Shares the same
+            # AsyncIOScheduler as the idempotency sweep.
+            scheduler.add_job(
+                prune_batch_storage_job,
+                trigger="interval",
+                hours=6,
+                id="batch_storage_prune",
+                replace_existing=True,
+                next_run_time=None,
+            )
             scheduler.start()
             get_logger(__name__).info(
                 "scheduler.started",
-                jobs=["idempotency_sweep"],
+                jobs=["idempotency_sweep", "batch_storage_prune"],
                 interval_seconds=settings.idempotency_sweep_interval_seconds,
             )
         try:

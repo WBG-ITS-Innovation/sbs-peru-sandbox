@@ -113,6 +113,19 @@ case "$STAGE" in
     echo
     echo "stage-e: PASS"
     ;;
+  stage-f)
+    step "Stage F — hardening: fixture conformance + prune + telemetry"
+    note "  tests/test_fixture_conformance.py — 16 assertions"
+    note "  tests/test_batch_storage_prune.py — 4 assertions"
+    note "  tests/test_webhook_delivery_telemetry.py — 5 assertions"
+    uv run pytest -q --tb=short \
+      tests/test_fixture_conformance.py \
+      tests/test_batch_storage_prune.py \
+      tests/test_webhook_delivery_telemetry.py \
+      || fail "stage-f assertions did not pass"
+    echo
+    echo "stage-f: PASS"
+    ;;
   stage-g-full)
     fail "Stage stage-g-full lands in Workstream G."
     ;;

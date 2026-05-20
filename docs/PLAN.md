@@ -122,15 +122,18 @@ First closed in Prompt 7 (branch `part-03/mtls-hmac-oauth-and-tier-1-hardening`)
 **May 25 scope.** Full. Near-real-time API endpoint accepting complaint submissions mapped to the Annex 1-A taxonomy. mTLS termination, OAuth 2.0 client_credentials, HMAC request signing, idempotency keys, RFC 9457 problem+json error model. No reductions. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 4 — Ingestion Tier 2 + Synthetic Data
-- [ ] POST /v1/batches (signed multipart)
-- [ ] Async batch processing (arq)
-- [ ] Shared validation pipeline (same code as Tier 1)
-- [ ] Webhook callbacks (HMAC signed)
-- [ ] Synthetic data generator: 10k complaints, 3 scenarios
-- [ ] scripts/demo.sh replay-scenario
-- [ ] ADR 0005: Synthetic data strategy
-- [ ] Build spec-drift agent v1
-- [ ] Second opinion: Template 1 (scenarios realism) — Gemini 2.5 Pro
+- [x] POST /v1/batches (signed multipart) — ADR 0034
+- [x] Async batch processing (arq) — ADR 0034
+- [x] Shared validation pipeline (same code as Tier 1) — code-identity test
+- [x] Webhook callbacks (HMAC signed) — ADR 0035
+- [x] Synthetic data generator: ~10k complaints, deterministic seed — ADR 0036
+- [ ] scripts/demo.sh replay-scenario — deferred to Prompt 9 (developer-portal)
+- [x] ADR 0036: Synthetic data fidelity tiers (renumbered from the
+      original ADR 0005 placeholder; precedent: CFPB Consumer Complaint
+      Database)
+- [ ] Build spec-drift agent v1 — deferred to Part 8 (admin tooling)
+- [ ] Second opinion: Template 1 (scenarios realism) — Gemini 2.5 Pro —
+      deferred to Prompt 11 (Tier 3 statistically-realistic patterns)
 
 **Exit:** VERTICAL SLICE — Tier 1 + Tier 2 end-to-end. Loom recording for safekeeping.
 

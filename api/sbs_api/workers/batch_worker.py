@@ -30,7 +30,7 @@ from typing import Any
 from arq.connections import RedisSettings
 from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from sbs_api.config import get_settings
 from sbs_api.db.models.batch import BatchRecord
@@ -201,6 +201,7 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
     try:
         accepted = 0
         rejected = 0
+        _pending_rejections: list[BatchRowRejection] = []
         raw_bytes = csv_path.read_bytes()
         reader = csv.DictReader(
             io.StringIO(raw_bytes.decode("utf-8"))
@@ -211,37 +212,55 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
                 for row_index, row in enumerate(reader):
                     complaint, errors = _validate_row(row)
                     if complaint is not None:
-                        record = ComplaintRecord(
-                            complaint_id=complaint.complaint_id,
-                            institution_id=complaint.institution_id,
-                            received_date=complaint.received_date,
-                            complainant_doc_type=complaint.complainant_doc_type,
-                            product_category=complaint.product_category,
-                            channel=complaint.channel,
-                            motivo_code=complaint.motivo_code,
-                            severity=complaint.severity,
-                            description_text=complaint.description_text,
-                            description_language=complaint.description_language,
-                            complainant_age_range=complaint.complainant_age_range,
-                            complainant_district=complaint.complainant_district,
-                            submission_method=complaint.submission_method,
-                            original_reference_id=complaint.original_reference_id,
-                            resolution_status=complaint.resolution_status,
-                            source="batch",
-                        )
-                        session.add(record)
+                        # SAVEPOINT per row so a duplicate complaint_id
+                        # rolls back only the row, not the whole batch.
+                        # begin_nested() opens a SAVEPOINT; re-raising
+                        # the IntegrityError inside the context manager
+                        # auto-rolls back just the SAVEPOINT — calling
+                        # session.rollback() explicitly would discard
+                        # the *outer* transaction too.
+                        flush_failure: IntegrityError | None = None
                         try:
-                            await session.flush()
+                            async with session.begin_nested():
+                                record = ComplaintRecord(
+                                    complaint_id=complaint.complaint_id,
+                                    institution_id=complaint.institution_id,
+                                    received_date=complaint.received_date,
+                                    complainant_doc_type=complaint.complainant_doc_type,
+                                    product_category=complaint.product_category,
+                                    channel=complaint.channel,
+                                    motivo_code=complaint.motivo_code,
+                                    severity=complaint.severity,
+                                    description_text=complaint.description_text,
+                                    description_language=complaint.description_language,
+                                    complainant_age_range=complaint.complainant_age_range,
+                                    complainant_district=complaint.complainant_district,
+                                    submission_method=complaint.submission_method,
+                                    original_reference_id=complaint.original_reference_id,
+                                    resolution_status=complaint.resolution_status,
+                                    source="batch",
+                                )
+                                session.add(record)
+                                await session.flush()
                             accepted += 1
-                        except Exception as flush_exc:  # noqa: BLE001
-                            # Likely a duplicate complaint_id (UNIQUE
-                            # constraint) — treated as a row rejection
-                            # so the cross-batch dedup gap named in the
-                            # spec §2 NOT-in-scope item is gracefully
-                            # handled. Roll back this row and continue.
-                            await session.rollback()
-                            await session.begin()
-                            session.add(
+                        except IntegrityError as exc:
+                            # Narrowed per Prompt 8 cross-review: only
+                            # DB constraint violations (typically
+                            # complaint_id PK clash) are converted to
+                            # row rejections. OperationalError /
+                            # connection failure / encoding errors
+                            # raise out and fail the whole batch, which
+                            # is what the regulator expects — a misclassified
+                            # infrastructure fault as "duplicate" would
+                            # silently corrupt the count.
+                            flush_failure = exc
+
+                        if flush_failure is not None:
+                            # The SAVEPOINT auto-rolled-back; the outer
+                            # transaction is still healthy. Record the
+                            # rejection (deferred so we don't add it
+                            # while the savepoint is still releasing).
+                            _pending_rejections.append(
                                 BatchRowRejection(
                                     batch_id=batch_id,
                                     row_index=row_index,
@@ -249,8 +268,8 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
                                     rule="duplicate",
                                     message=(
                                         "complaint_id already exists; "
-                                        f"{type(flush_exc).__name__}: "
-                                        f"{flush_exc}"
+                                        f"{type(flush_failure).__name__}: "
+                                        f"{flush_failure}"
                                     ),
                                     raw_row_excerpt=_row_to_excerpt(row),
                                 )
@@ -258,7 +277,7 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
                             rejected += 1
                     else:
                         for err in errors:
-                            session.add(
+                            _pending_rejections.append(
                                 BatchRowRejection(
                                     batch_id=batch_id,
                                     row_index=row_index,
@@ -269,6 +288,10 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
                                 )
                             )
                         rejected += 1
+
+                # Apply rejections in the outer transaction.
+                for rej in _pending_rejections:
+                    session.add(rej)
 
                 # Update batch counts + terminal state.
                 stmt = select(BatchRecord).where(

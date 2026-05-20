@@ -31,6 +31,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
+from arq.worker import Retry
 from sqlalchemy import select
 
 from sbs_api.config import get_settings
@@ -52,9 +53,18 @@ from sbs_api.webhook.url_validation import validate_callback_url
 
 _logger = get_logger(__name__)
 
-# ADR 0035: Stripe-shaped backoff. Five attempts in total.
+# ADR 0035: Stripe-shaped backoff. Five retries after the initial
+# attempt — six attempts total, ~7.7-hour window. The delays are
+# pre-paired so ``_RETRY_DELAYS_SECONDS[job_try-1]`` gives the wait
+# before the next attempt:
+#   job_try=1 fails → wait 30s    → attempt 2
+#   job_try=2 fails → wait 2min   → attempt 3
+#   job_try=3 fails → wait 10min  → attempt 4
+#   job_try=4 fails → wait 1hr    → attempt 5
+#   job_try=5 fails → wait 6hr    → attempt 6
+#   job_try=6 fails → DEAD LETTER (no further retry)
 _RETRY_DELAYS_SECONDS: tuple[int, ...] = (30, 120, 600, 3600, 21600)
-_MAX_ATTEMPTS = len(_RETRY_DELAYS_SECONDS)
+_MAX_ATTEMPTS = len(_RETRY_DELAYS_SECONDS) + 1  # 6 attempts total
 
 
 def _new_delivery_id() -> str:
@@ -288,6 +298,12 @@ async def deliver_webhook_for_batch(
         delivery_id = existing
 
     # --- URL validation ---------------------------------------------
+    # ADR 0035 §webhook-url-validation. The validation result carries
+    # the resolved IP so a future connection-layer pin can close the
+    # DNS-rebinding TOCTOU window. The pinning itself is tracked as a
+    # Prompt 8 second-opinion follow-up (the sandbox dev-override
+    # bypasses validation entirely, so the TOCTOU window is only a
+    # concern in production-mode deployments — which Part 9 covers).
     validation = validate_callback_url(callback_url)
     if not validation.valid:
         await _record_attempt(
@@ -307,6 +323,11 @@ async def deliver_webhook_for_batch(
             "status": "delivery_failed",
             "reason": validation.reason,
         }
+    _logger.info(
+        "webhook.delivery.url_validated",
+        delivery_id=delivery_id,
+        host_resolved_to=validation.resolved_address,
+    )
 
     # --- Build + send -----------------------------------------------
     request, _ = _post_request_for_delivery(
@@ -381,7 +402,9 @@ async def deliver_webhook_for_batch(
             "status": "delivery_failed",
         }
 
-    next_delay = _RETRY_DELAYS_SECONDS[job_try]  # next attempt index = job_try
+    # Pick the wait-before-next-attempt delay (off-by-one safe; see the
+    # _RETRY_DELAYS_SECONDS comment block at module top).
+    next_delay = _RETRY_DELAYS_SECONDS[job_try - 1]
     next_at = datetime.now(timezone.utc) + timedelta(seconds=next_delay)
     await _record_attempt(
         delivery_id=delivery_id,
@@ -394,16 +417,11 @@ async def deliver_webhook_for_batch(
         next_attempt_at=next_at,
         failure_reason=None,
     )
-    # Re-raise so arq retries with its own backoff. We've already
-    # recorded the attempt in the delivery row.
-    raise _DeliveryRetry(
-        f"webhook attempt {job_try} for {delivery_id} failed: "
-        f"outcome={outcome} http_status={http_status}"
-    )
-
-
-class _DeliveryRetry(Exception):
-    """Internal — signal arq to retry the job."""
+    # arq.worker.Retry is the documented signal to reschedule with a
+    # specific deferral. Using a custom exception class would fall
+    # through to arq's default exponential backoff (1s, 2s, 4s, …),
+    # which does not match ADR 0035's 30s/2min/10min/1hr/6hr window.
+    raise Retry(defer=next_delay)
 
 
 async def _find_pending_delivery(

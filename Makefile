@@ -4,7 +4,7 @@
 # new contributors can discover the workflow via `make help` instead
 # of reading README + DEPLOY + the scripts/ directory.
 
-.PHONY: help dev-up dev-down test smoke corpus corpus-golden serve-devportal
+.PHONY: help dev-up dev-down test smoke corpus corpus-golden serve-devportal standards-pack
 
 help:
 	@echo "Targets:"
@@ -15,6 +15,7 @@ help:
 	@echo "  corpus         — regenerate the full ~10k synthetic corpus"
 	@echo "  corpus-golden  — regenerate the 200-row golden sample (committed)"
 	@echo "  serve-devportal — render the OpenAPI spec via Stoplight Elements"
+	@echo "  standards-pack — build dist/standards-pack-v0.1.0.tar.gz (ADR 0039)"
 
 dev-up:
 	bash scripts/dev-up.sh
@@ -39,3 +40,6 @@ corpus-golden:
 
 serve-devportal:
 	bash scripts/serve-devportal.sh
+
+standards-pack:
+	bash scripts/build-standards-pack.sh

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/sbs/standards-pack/manifest.schema.json",
+  "title": "SBS SupTech Standards Pack Manifest",
+  "description": "Provenance and compatibility metadata for the SBS SupTech standards pack. Lives at the top of every standards-pack tarball as manifest.json. See ADR 0039.",
+  "type": "object",
+  "required": [
+    "manifest_schema_version",
+    "name",
+    "version",
+    "status",
+    "publisher",
+    "license",
+    "git_commit",
+    "generated_at",
+    "portal_url",
+    "webhook_signature_version",
+    "api_server_compatibility",
+    "contains"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_schema_version": {
+      "description": "Version of this manifest schema. Semver.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "name": {
+      "description": "Pack name. Stable across versions.",
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "description": "Pack version. Semver.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$"
+    },
+    "status": {
+      "description": "Maturity. Sandbox at v0.1; production once the conformance suite lands.",
+      "type": "string",
+      "enum": ["sandbox", "stable", "deprecated"]
+    },
+    "publisher": {
+      "description": "Human-readable publisher identifier.",
+      "type": "string",
+      "minLength": 1
+    },
+    "license": {
+      "description": "SPDX identifier or LicenseRef placeholder. Final license pending WBG legal review at v0.1.",
+      "type": "string",
+      "minLength": 1
+    },
+    "git_commit": {
+      "description": "Full SHA-1 of the build-time git commit.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "generated_at": {
+      "description": "RFC 3339 UTC build timestamp.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "portal_url": {
+      "description": "Canonical URL of the live developer portal. Lets institutions rediscover updated documentation from the offline pack.",
+      "type": "string",
+      "format": "uri"
+    },
+    "webhook_signature_version": {
+      "description": "Which version of the signature canonical-request shape this pack documents. Carried in the signature header itself; this field is a pack-level documentation aid.",
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "api_server_compatibility": {
+      "description": "Server-version range this pack supports.",
+      "type": "object",
+      "required": ["min_version", "exclusive_max_version"],
+      "additionalProperties": false,
+      "properties": {
+        "min_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "exclusive_max_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "contains": {
+      "description": "Top-level directories present in the pack.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["openapi", "schemas", "catalogs", "sdk-helpers", "examples", "recipes"]
+      }
+    }
+  }
+}

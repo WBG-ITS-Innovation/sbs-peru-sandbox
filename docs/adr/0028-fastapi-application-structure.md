@@ -264,3 +264,42 @@ verbatim. SBS divergence: the cursor signature is bound to a fixed
 master key rather than rotated per-request (rotation is unnecessary
 when the cursor payload is short-lived and the master key is held
 server-side).
+
+### 2026-05-20 — portal route registration (Prompt 9)
+
+Prompt 9 adds two new routes to the v1 surface for the developer
+portal: `GET /v1/portal/` returns the portal HTML and
+`GET /v1/portal/assets/{filename}` returns one of the vendored
+Stoplight Elements asset files. Both routes are public — no auth
+dependency, no scope check, no rate-limiting tier assignment. The
+OpenAPI spec declares them with `security: []` so the no-auth
+contract is part of the published documentation.
+
+**Amendment.** The original §6 declared that the only contract
+artifact reachable from a running app is the hand-curated YAML at
+`/v1/openapi.yaml`. This is amended to read: the contract artifacts
+reachable from a running app are the hand-curated YAML at
+`/v1/openapi.yaml` (the canonical contract) and the rendered
+developer portal at `/v1/portal/` plus its vendored assets at
+`/v1/portal/assets/{filename}`. The portal is a view onto the
+canonical YAML; the YAML remains the source of truth.
+
+The portal-asset route is implemented as a path-parameter route
+with an explicit filename allowlist (`VENDOR_ASSET_ALLOWLIST`), not
+as a `StaticFiles` mount. The allowlist mechanism and rationale —
+including the six-form path-traversal test matrix — live in
+[ADR 0037](0037-developer-portal-serving-mechanism.md). This
+amendment covers only the new routes' security declaration and HTTP
+behavior, not the asset-serving implementation.
+
+Allowlist misses return 404 (not 403), consistent with the
+institution-binding defensive 404 posture from Prompt 6 (§13). The
+404 makes the missing-from-allowlist case indistinguishable from
+"file does not exist", which is the defensive default.
+
+**Precedent.** Open Banking UK's developer portal is served from
+OBIE-controlled infrastructure rather than a third-party CDN; the
+self-hosted-portal posture is the regulator-domain default cited at
+[docs/research/market-comparators.md §5.A.P](../research/market-comparators.md#5ap-developer-portal-serving-choices-added-prompt-9-for-adr-0037).
+The allowlist-over-StaticFiles posture follows OWASP's path-
+traversal prevention cheat sheet.

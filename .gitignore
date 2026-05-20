@@ -77,6 +77,9 @@ webhook-state/
 # Committing them would create churn on every build. Sources of truth
 # that the build pipeline reads stay committed; outputs do not.
 # See ADR 0039 and standards-pack/README.md.
+#
+# Recipes (standards-pack/recipes/) are HAND-AUTHORED source content,
+# not regenerated. They stay committed.
 standards-pack/manifest.json
 standards-pack/checksums.sha256
 standards-pack/openapi/

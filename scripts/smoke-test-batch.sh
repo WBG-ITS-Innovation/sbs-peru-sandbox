@@ -127,7 +127,53 @@ case "$STAGE" in
     echo "stage-f: PASS"
     ;;
   stage-g-full)
-    fail "Stage stage-g-full lands in Workstream G."
+    step "Stage G — full Prompt 8 acceptance run (union of A-F)"
+    note "Runs every workstream's pytest assertions against the live"
+    note "testcontainer Postgres, plus the Spectral lint check and the"
+    note "golden-sample byte-stability check."
+    note ""
+    note "Out of scope for this stage runner (lands with the developer-"
+    note "portal in Prompt 9 + smoke-test-auth-batch.sh in a follow-up):"
+    note "  - docker-compose webhook-listener service for end-to-end"
+    note "    HMAC-signed callback verification against the running"
+    note "    mTLS API. The in-process httpx.MockTransport tests in"
+    note "    stage-d already cover the signing + retry contract; the"
+    note "    listener container is the demo-day visualisation."
+    note "  - PASS/FAIL log-tail assertions against the listener."
+    note ""
+    note "If the user wants a live-mTLS smoke test today, the existing"
+    note "scripts/smoke-test-auth.sh exercises the auth chain against"
+    note "the running API."
+    uv run pytest -q --tb=short \
+      tests/test_batch_endpoint.py \
+      tests/test_complaints_source_backfill.py \
+      tests/test_alembic_migration.py \
+      tests/test_batch_worker.py \
+      tests/test_batch_validation_uses_tier_1_models.py \
+      tests/test_batch_status_endpoint.py \
+      tests/test_batch_rejections_pagination.py \
+      tests/test_webhook_signing.py \
+      tests/test_webhook_url_validation.py \
+      tests/test_webhook_delivery.py \
+      tests/test_synthetic_corpus_generator.py \
+      tests/test_fixture_conformance.py \
+      tests/test_batch_storage_prune.py \
+      tests/test_webhook_delivery_telemetry.py \
+      || fail "stage-g-full pytest assertions did not pass"
+
+    note "Spectral lint 0 errors on api/openapi/sbs-api-v1.yaml"
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+      | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
+      || fail "Spectral reports errors"
+
+    note "Golden sample reproduces byte-stable from --seed 2026 --today 2026-05-20"
+    uv run python scripts/generate-synthetic-corpus.py --golden > /tmp/sbs-prompt08-corpus-summary.json
+    if ! git diff --quiet data/synthetic-corpus-golden/ 2>/dev/null; then
+      fail "Golden sample regeneration produced a diff — commit the new bytes"
+    fi
+
+    echo
+    echo "stage-g-full: PASS"
     ;;
   *)
     fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-g-full"

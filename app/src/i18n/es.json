@@ -1,0 +1,97 @@
+{
+  "common": {
+    "app_name": "SBS SupTech",
+    "lockup": "Superintendencia de Banca, Seguros y AFP · República del Perú",
+    "delivered_by": "Entregado por Grupo Banco Mundial · Oficina de Innovación Tecnológica",
+    "actions": {
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "edit": "Editar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "search": "Buscar",
+      "filter": "Filtrar",
+      "signout": "Cerrar sesión",
+      "send_back": "Devolver",
+      "retry": "Reintentar"
+    },
+    "severity": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "in_review": "En revisión",
+      "resolved": "Resuelto",
+      "escalated": "Escalado"
+    },
+    "locale": {
+      "label": "Idioma",
+      "es-PE": "Español",
+      "en-US": "Inglés"
+    }
+  },
+  "nav": {
+    "cockpit": "Cabina",
+    "queue": "Cola de riesgo",
+    "findings": "Hallazgos",
+    "approvals": "Aprobaciones",
+    "audit": "Auditoría",
+    "components_index": "Sistema de diseño"
+  },
+  "auth": {
+    "signin": "Iniciar sesión",
+    "signing_in": "Iniciando sesión…",
+    "signin_failed": "No se pudo iniciar sesión.",
+    "session_expired": "Sesión expirada. Inicie sesión de nuevo.",
+    "callback_title": "Iniciando sesión…",
+    "callback_body": "Validando credenciales con el proveedor de identidad."
+  },
+  "cockpit": {
+    "title": "Cabina",
+    "placeholder": {
+      "body": "WS3 — Vista lado a lado Tier 1 / Tier 2 con señales cruzadas."
+    }
+  },
+  "findings": {
+    "title": "Hallazgos",
+    "placeholder": {
+      "list_body": "WS4 — Tabla filtrable de hallazgos con valores por defecto por rol.",
+      "detail_body": "WS4 — Paneles BERT / XGBoost / razonamiento del agente."
+    }
+  },
+  "approvals": {
+    "title": "Aprobaciones",
+    "placeholder": {
+      "queue_body": "WS5 — Hallazgos pendientes de aprobación, ordenados por severidad.",
+      "detail_body": "WS5 — Razonamiento del agente, evidencia, control HITL de cuatro acciones."
+    }
+  },
+  "queue": {
+    "title": "Cola de riesgo",
+    "placeholder": {
+      "body": "WS6 — Cola filtrable y ordenable con valores por defecto por rol."
+    }
+  },
+  "audit": {
+    "title": "Auditoría",
+    "placeholder": {
+      "body": "WS6 — Registro cronológico de auditoría leyendo desde audit_events."
+    }
+  },
+  "components_index": {
+    "title": "Índice del sistema de diseño",
+    "placeholder": {
+      "body": "WS1 — Cada variante de componente se renderiza aquí en la paleta SBS."
+    }
+  },
+  "errors": {
+    "generic": "Algo salió mal.",
+    "network": "Error de conexión.",
+    "permission_denied": "Acción no permitida.",
+    "not_found": "No se encontró el recurso.",
+    "validation": "La solicitud no es válida."
+  }
+}

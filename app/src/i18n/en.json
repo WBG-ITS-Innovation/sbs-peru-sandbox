@@ -1,0 +1,97 @@
+{
+  "common": {
+    "app_name": "SBS SupTech",
+    "lockup": "Superintendency of Banking, Insurance and Private Pension Funds · Republic of Peru",
+    "delivered_by": "Delivered by World Bank Group · Technology Innovation Office",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "save": "Save",
+      "search": "Search",
+      "filter": "Filter",
+      "signout": "Sign out",
+      "send_back": "Send back",
+      "retry": "Retry"
+    },
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_review": "In review",
+      "resolved": "Resolved",
+      "escalated": "Escalated"
+    },
+    "locale": {
+      "label": "Language",
+      "es-PE": "Spanish",
+      "en-US": "English"
+    }
+  },
+  "nav": {
+    "cockpit": "Cockpit",
+    "queue": "Risk queue",
+    "findings": "Findings",
+    "approvals": "Approvals",
+    "audit": "Audit",
+    "components_index": "Design system"
+  },
+  "auth": {
+    "signin": "Sign in",
+    "signing_in": "Signing in…",
+    "signin_failed": "Could not sign in.",
+    "session_expired": "Session expired. Sign in again.",
+    "callback_title": "Signing you in…",
+    "callback_body": "Verifying credentials with the identity provider."
+  },
+  "cockpit": {
+    "title": "Cockpit",
+    "placeholder": {
+      "body": "WS3 — Tier 1 / Tier 2 side-by-side view with cross-source signals."
+    }
+  },
+  "findings": {
+    "title": "Findings",
+    "placeholder": {
+      "list_body": "WS4 — Filterable findings table with role-scoped defaults.",
+      "detail_body": "WS4 — BERT / XGBoost / agent-reasoning panels."
+    }
+  },
+  "approvals": {
+    "title": "Approvals",
+    "placeholder": {
+      "queue_body": "WS5 — Pending findings awaiting approval, severity-sorted.",
+      "detail_body": "WS5 — Agent reasoning, evidence, four-action HITL gate."
+    }
+  },
+  "queue": {
+    "title": "Risk queue",
+    "placeholder": {
+      "body": "WS6 — Filterable, sortable queue with role-scoped defaults."
+    }
+  },
+  "audit": {
+    "title": "Audit",
+    "placeholder": {
+      "body": "WS6 — Chronological audit log reading from audit_events."
+    }
+  },
+  "components_index": {
+    "title": "Design system index",
+    "placeholder": {
+      "body": "WS1 — Every component variant renders here in the SBS palette."
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "network": "Connection error.",
+    "permission_denied": "Action not allowed.",
+    "not_found": "Resource not found.",
+    "validation": "Invalid request."
+  }
+}

@@ -37,8 +37,8 @@ jobs:
       - name: setup Python (uv-managed)
         run: uv sync --all-groups
 
-      - name: install jsonschema for manifest validation
-        run: uv pip install jsonschema
+      - name: install extra deps for CI
+        run: uv pip install jsonschema pytest pytest-asyncio
 
       - name: setup Node.js (for the TypeScript helper smoke check)
         uses: actions/setup-node@v4

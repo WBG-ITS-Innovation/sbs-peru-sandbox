@@ -79,10 +79,15 @@ allowlist constant in a path-parameter route is more conservative.
    explicit empty security array so the no-auth contract is part of
    the published documentation.
 
-7. **Orphaned `ValidBatchManifest` example removed from the spec in
-   the same workstream** so the spec the portal renders is Spectral-
-   clean. The cleanup is not new behaviour; the example was unused
-   from inception and Spectral has been warning on it since Prompt 8.
+7. **`ValidBatchManifest` example kept in the spec; Spectral's
+   `oas3-unused-component` rule scoped off for this one component**
+   via `.spectral.yaml#overrides`. The example is exercised by
+   [tests/test_openapi_examples_validate.py](../../tests/test_openapi_examples_validate.py)
+   as a Pydantic-validation drift catcher, which Spectral cannot
+   see. An earlier draft of this ADR proposed removing the
+   "orphan" example; the drift-catcher test made the example
+   load-bearing, so the targeted Spectral override is the conservative
+   alternative.
 
 ## Precedent
 
@@ -161,10 +166,12 @@ is the contract: the canonical path includes the trailing slash.
   want to actually invoke an endpoint use the SDK helpers and curl
   flows the portal documents.
 
-- The `ValidBatchManifest` example removal is invisible to
-  integrators (it was orphan content) and visible to Spectral
-  (the lint warning is gone). The OpenAPI spec the portal renders
-  is Spectral-clean as of this prompt.
+- The OpenAPI spec the portal renders is Spectral-clean at
+  `--fail-severity warn` after the targeted `.spectral.yaml`
+  overrides: `path-keys-no-trailing-slash` off (the `/portal/`
+  trailing slash is intentional per the Divergence section) and
+  `oas3-unused-component` off scoped to the
+  `ValidBatchManifest` example only.
 
 - Path-traversal test coverage is explicit: six form attempts
   (`../etag.py`, `..%2Fetag.py`, `..%252Fetag.py`,

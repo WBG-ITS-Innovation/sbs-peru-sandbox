@@ -172,7 +172,7 @@ key management, and the verification documentation for institutions
 
 We diverge from a separate `event_type` or `webhook_event_schema`
 field in the manifest. The pack ships one event type (batch
-completion); the field is YAGNI. Reintroduce when agent events
+completion); the field is not needed yet. Reintroduce when agent events
 diversify the event-type set (Prompt 12+).
 
 ## Consequences

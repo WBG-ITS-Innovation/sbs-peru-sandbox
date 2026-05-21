@@ -19,7 +19,7 @@ whitespace handling, body-hash encoding (lowercase hex vs uppercase),
 header-case sensitivity. The Open Banking UK implementer community
 has documented this verification-failure pattern at length:
 "translate the Python example to Java by eye" produces subtly wrong
-implementations at depressing rates.
+implementations at high rates.
 
 The institutional audience spans languages: Python and TypeScript
 dominate at COOPACs and modern-stack banks; Java and Go are the

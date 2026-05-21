@@ -53,8 +53,8 @@ Usage: bash scripts/demo.sh [options]
 
 Options:
   --scenario tier2-batch  (currently the only supported scenario)
-  --scale {small|full}    small: 50 rows total / 30s / max-wait 60s
-                          full:  200 rows total / 30s / max-wait 90s
+  --scale {small|full}    small: 17 rows × 3 institutions = 51 rows / max-wait 60s
+                          full:  67 rows × 3 institutions = 201 rows / max-wait 90s
                           full requires hour-5 status clean per Prompt 9 §3
   --seed N                deterministic seed (default 20260520)
   --window NN             wall-clock budget (default 30s)
@@ -122,7 +122,7 @@ else
 fi
 
 # 3. demo institutions seeded
-note "demo institutions seeded — SBS-001234, SBS-005678, SBS-009101"
+note "demo institutions: ${INSTITUTIONS[*]}"
 
 # --- Output directory --------------------------------------------------------
 

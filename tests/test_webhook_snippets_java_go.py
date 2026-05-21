@@ -190,6 +190,73 @@ def test_java_snippet_compiles_and_verifies_a_good_signature(
     not _java_toolchain_works(),
     reason="Java toolchain not actually runnable (macOS provides stubs that fail)",
 )
+def test_java_snippet_rejects_stale_timestamp(tmp_path, signed_fixture):
+    """Sign with a 10-minute-old timestamp — snippet must reject (SignatureExpired).
+
+    second-opinion §weakness: omitting the skew check would let an
+    attacker replay an old PASS for the skew window's duration. The
+    snippet must reject outside ±300s.
+    """
+
+    snippet = _extract_first_code_block(
+        RECIPES_DIR / "webhook-verification-java.md", "java"
+    )
+    src = tmp_path / "SbsWebhookVerifier.java"
+    src.write_text(snippet, encoding="utf-8")
+    subprocess.run(["javac", str(src)], check=True, cwd=tmp_path, capture_output=True)
+
+    # Re-sign with a 10-minute-stale timestamp so the canonical
+    # request matches the snippet's compute, but the skew check
+    # should still reject.
+    from sbs_api.webhook.signing import (
+        build_outbound_canonical_request,
+        compute_outbound_signature,
+        signature_header,
+    )
+
+    stale_ts = (
+        datetime.now(timezone.utc) - __import__("datetime").timedelta(seconds=600)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    canonical = build_outbound_canonical_request(
+        method=signed_fixture["method"],
+        callback_path=signed_fixture["callback_path"],
+        timestamp=stale_ts,
+        body=signed_fixture["body"],
+        institution_id=signed_fixture["institution_id"],
+    )
+    stale_sig = signature_header(
+        compute_outbound_signature(signed_fixture["secret"], canonical)
+    )
+
+    run_result = subprocess.run(
+        [
+            "java",
+            "-cp",
+            str(tmp_path),
+            "SbsWebhookVerifier",
+            signed_fixture["secret"].decode("utf-8"),
+            stale_ts,
+            signed_fixture["body"].decode("utf-8"),
+            signed_fixture["institution_id"],
+            stale_sig,
+            signed_fixture["method"],
+            signed_fixture["callback_path"],
+        ],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+    assert run_result.returncode != 0, (
+        "java snippet must reject a 10-minute-stale timestamp "
+        f"(±5-minute skew window); stdout: {run_result.stdout}, "
+        f"stderr: {run_result.stderr}"
+    )
+
+
+@pytest.mark.skipif(
+    not _java_toolchain_works(),
+    reason="Java toolchain not actually runnable (macOS provides stubs that fail)",
+)
 def test_java_snippet_rejects_tampered_signature(tmp_path, signed_fixture):
     """Flip one byte of the signature header — snippet must non-zero exit."""
 
@@ -275,6 +342,67 @@ def test_go_snippet_compiles_and_verifies_a_good_signature(
         f"go verify failed:\nstdout: {run_result.stdout}\nstderr: {run_result.stderr}"
     )
     assert "VERIFY_OK" in run_result.stdout
+
+
+@pytest.mark.skipif(
+    not _go_toolchain_works(),
+    reason="Go toolchain not actually runnable",
+)
+def test_go_snippet_rejects_stale_timestamp(tmp_path, signed_fixture):
+    """Sign with a 10-minute-old timestamp — snippet must reject (SignatureExpired)."""
+
+    snippet = _extract_first_code_block(
+        RECIPES_DIR / "webhook-verification-go.md", "go"
+    )
+    src = tmp_path / "sbs_webhook_verifier.go"
+    src.write_text(snippet, encoding="utf-8")
+    binary = tmp_path / "sbs_webhook_verifier"
+    subprocess.run(
+        ["go", "build", "-o", str(binary), str(src)],
+        check=True,
+        cwd=tmp_path,
+        env={"GOCACHE": str(tmp_path / "gocache"), **__import__("os").environ},
+        capture_output=True,
+    )
+
+    from sbs_api.webhook.signing import (
+        build_outbound_canonical_request,
+        compute_outbound_signature,
+        signature_header,
+    )
+
+    stale_ts = (
+        datetime.now(timezone.utc) - __import__("datetime").timedelta(seconds=600)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    canonical = build_outbound_canonical_request(
+        method=signed_fixture["method"],
+        callback_path=signed_fixture["callback_path"],
+        timestamp=stale_ts,
+        body=signed_fixture["body"],
+        institution_id=signed_fixture["institution_id"],
+    )
+    stale_sig = signature_header(
+        compute_outbound_signature(signed_fixture["secret"], canonical)
+    )
+
+    run_result = subprocess.run(
+        [
+            str(binary),
+            signed_fixture["secret"].decode("utf-8"),
+            stale_ts,
+            signed_fixture["body"].decode("utf-8"),
+            signed_fixture["institution_id"],
+            stale_sig,
+            signed_fixture["method"],
+            signed_fixture["callback_path"],
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert run_result.returncode != 0, (
+        "go snippet must reject a 10-minute-stale timestamp; "
+        f"stdout: {run_result.stdout}, stderr: {run_result.stderr}"
+    )
 
 
 @pytest.mark.skipif(

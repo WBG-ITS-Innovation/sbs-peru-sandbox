@@ -186,20 +186,20 @@ This is a re-scoping, not a de-scoping. Nothing is abandoned; the framing shifts
 
 Goal: an institution's integration team can self-onboard against a sandbox using documentation, generated SDKs, and a conformance test suite — without a kick-off call.
 
-- [ ] Documentation portal (rendered from `docs/`; Scalar or equivalent for the OpenAPI surface).
+- [x] Documentation portal (Stoplight Elements vendored locally to `vendor/stoplight-elements/`; served by FastAPI at `/v1/portal/` and `/v1/portal/assets/{filename}`) — Prompt 9. See [ADR 0037](adr/0037-developer-portal-serving-mechanism.md).
 - [ ] Sandbox environment formalised (config-driven, isolated from the regulator's prod surface).
-- [ ] SDK generation via `openapi-generator` for **.NET**, **Java**, **Python**, **TypeScript**. Published packages with semantic versioning.
-- [ ] Conformance test suite — a third party can run the suite against any deployment to prove their integration is correct.
-- [ ] Postman + Bruno collections committed and kept in sync with the OpenAPI spec.
-- [ ] Getting-started guide: zero-to-first-signed-request in ≤30 minutes from cold.
-- [ ] Onboarding runbook for SBS staff: how to issue a sandbox credential, rotate it, revoke it.
-- [ ] ADR for SDK distribution and versioning policy.
-- [ ] Plain-language onboarding overview readable by Veronica.
-- [ ] Second-opinion review: onboarding flow vs CFPB and FCA developer portal precedents.
+- [~] SDK generation via `openapi-generator` for **csharp-netcore**, **Java**, **Python**, **TypeScript** — Prompt 9 ships hand-maintained Python (pure stdlib) + TypeScript (dual ESM+CJS) helpers (`sdk-helpers/`) plus OpenAPI Generator recipes for Java / csharp-netcore / Go (`standards-pack/recipes/`) plus tested Java + Go webhook-verification reference snippets. Per [ADR 0038](adr/0038-sdk-helper-scope-and-distribution.md). Public-registry (PyPI / npm) publication deferred to v0.2.
+- [ ] Conformance test suite — a third party can run the suite against any deployment to prove their integration is correct (deferred to post-sprint v0.2).
+- [ ] Postman + Bruno collections committed and kept in sync with the OpenAPI spec (deferred to post-sprint v0.2).
+- [x] Getting-started guide — Prompt 9 ships `scripts/demo.sh --scale small` as the deterministic zero-to-three-batches replay. Standards pack `README.md` documents the integration path.
+- [ ] Onboarding runbook for SBS staff: how to issue a sandbox credential, rotate it, revoke it (deferred to Part 8 admin).
+- [x] ADRs for SDK distribution and versioning policy — [ADR 0038](adr/0038-sdk-helper-scope-and-distribution.md), [ADR 0039](adr/0039-standards-pack-v0-1-distribution-and-manifest.md).
+- [ ] Plain-language onboarding overview readable by Veronica (deferred to post-sprint v0.2).
+- [ ] Second-opinion review: onboarding flow vs CFPB and FCA developer portal precedents (deferred to post-sprint v0.2; the §5.A.P comparator work informs the v0.1 portal serving decision).
 
 **Exit:** A fresh integration team can read the docs, generate an SDK, sign a request, hit the sandbox, and pass the conformance suite — without contacting SBS. Verified end-to-end on a clean machine.
 
-**May 25 scope.** Minimal. Stoplight or Redoc rendering of the OpenAPI spec; OpenAPI + JSON Schema generated and version-stamped as the v0.1 standards pack (paired with Part 11 work). **Deferred to post-sprint (June/July):** SDK generation for .NET, Java, Python, TypeScript via `openapi-generator`; conformance test suite; getting-started guide; full onboarding portal. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
+**May 25 scope.** Reduced — closed by Prompt 9 (2026-05-20). Stoplight Elements vendored locally at `vendor/stoplight-elements/` and served by the FastAPI process at `/v1/portal/`. Python + TypeScript hand-maintained webhook-verification helpers under `sdk-helpers/` (pure stdlib Python, dual ESM+CJS TypeScript). Java + Go reference webhook-verification snippets at `standards-pack/recipes/`, CI-tested against a fixture signed payload. OpenAPI Generator recipes for Java / csharp-netcore / Go at `standards-pack/recipes/`, pinned to `v7.10.0`. Standards pack v0.1 build pipeline at `scripts/build-standards-pack.sh` (`make standards-pack`) produces `dist/standards-pack-v0.1.0.tar.gz` with `.sha256` companion and a manifest validating against `standards-pack/manifest.schema.json`. `scripts/demo.sh --scale small --seed 20260520` is the deterministic three-institution batch-upload replay. **Deferred to post-sprint (v0.2):** Bruno/Postman collections, public-registry SDK publication (PyPI/npm), full hand-written client SDKs in Java / .NET / Go, conformance test suite, sandbox onboarding self-service, SLSA attestation + cosign signing, OCI artifact distribution, WBG-legal-cleared license selection (currently the SPDX `LicenseRef-sandbox-pending-legal-review` placeholder). See [ADRs 0037 / 0038 / 0039](adr/) and [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
 ### Part 8 — Self-Service Onboarding + Per-Institution Ops (Tier B)
 

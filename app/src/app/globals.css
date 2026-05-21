@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* WS1 (design system) defines the typography variables, palette tokens,
+   and density rules. This file stays a thin shell until then. */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}

@@ -1,6 +1,14 @@
 {
-  "extends": ["next/core-web-vitals"],
+  "extends": ["next/core-web-vitals", "plugin:i18next/recommended"],
   "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error"] }]
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "i18next/no-literal-string": [
+      "error",
+      {
+        "markupOnly": true,
+        "onlyAttribute": ["aria-label", "title", "placeholder"],
+        "ignoreAttribute": ["data-testid", "data-test", "className", "src", "href", "type", "name", "id", "lang", "key"]
+      }
+    ]
   }
 }

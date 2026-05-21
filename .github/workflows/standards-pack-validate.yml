@@ -34,12 +34,11 @@ jobs:
         with:
           version: 'latest'
 
-      - name: setup Python (uv-managed)
-        run: uv sync --all-groups
-
-      - name: install extra deps for CI
-        run: uv pip install jsonschema pytest pytest-asyncio
-
+      - name: setup Python and install api workspace
+        run: |
+          uv sync --all-groups
+          uv pip install -e ./api
+          uv pip install jsonschema
       - name: setup Node.js (for the TypeScript helper smoke check)
         uses: actions/setup-node@v4
         with:

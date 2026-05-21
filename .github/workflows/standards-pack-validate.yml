@@ -34,11 +34,12 @@ jobs:
         with:
           version: 'latest'
 
-      - name: setup Python and install api workspace
-        run: |
-          uv sync --all-groups
-          uv pip install -e ./api
-          uv pip install jsonschema
+      - name: setup Python (uv-managed)
+        run: uv sync --all-groups
+
+      - name: install jsonschema for manifest validation
+        run: uv pip install jsonschema
+
       - name: setup Node.js (for the TypeScript helper smoke check)
         uses: actions/setup-node@v4
         with:
@@ -71,10 +72,14 @@ jobs:
         run: bash scripts/build-standards-pack.sh
 
       - name: run pack-build verification tests
-        run: uv run pytest tests/test_standards_pack_build.py -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/api
+        run: uv run --with pytest-asyncio --with pydantic-settings --with cryptography --with sqlalchemy --with asyncpg --with arq --with uuid-utils pytest tests/test_standards_pack_build.py -v
 
       - name: run Java + Go webhook-snippet fixture tests
-        run: uv run pytest tests/test_webhook_snippets_java_go.py -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/api
+        run: uv run --with pytest-asyncio --with pydantic-settings --with cryptography --with sqlalchemy --with asyncpg --with arq --with uuid-utils pytest tests/test_webhook_snippets_java_go.py -v
 
       - name: lint the OpenAPI spec
         run: npx --yes @stoplight/spectral-cli lint --fail-severity warn api/openapi/sbs-api-v1.yaml

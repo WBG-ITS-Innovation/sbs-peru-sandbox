@@ -76,6 +76,14 @@ ajv validate -s manifest.schema.json -d manifest.json  # if you have ajv
    helper from `sdk-helpers/`. Each helper has a README with usage
    examples and CI-verified canonical-request agreement.
 
+**Note on the in-pack TypeScript helper:** The `sdk-helpers/typescript/`
+directory inside this pack is source reference. The full standalone
+package tree (tests, build scripts, jest config) lives at
+`sdk-helpers/typescript/` in the [project repository](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox).
+Institutions who want the complete test harness should clone or
+download the repo source rather than relying on the pack's contents
+alone.
+
 4. If you integrate in Java, .NET (csharp-netcore), or Go:
    - Use the OpenAPI Generator recipe at `recipes/openapi-generator-
      <lang>.md` to generate client code from `openapi/sbs-complaints-

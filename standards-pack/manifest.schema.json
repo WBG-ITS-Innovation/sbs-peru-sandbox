@@ -15,6 +15,7 @@
     "generated_at",
     "portal_url",
     "webhook_signature_version",
+    "attestation",
     "api_server_compatibility",
     "contains"
   ],

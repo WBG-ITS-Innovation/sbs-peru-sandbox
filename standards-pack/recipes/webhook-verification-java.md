@@ -28,6 +28,8 @@ signer produced.
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import javax.crypto.Mac;
@@ -36,6 +38,7 @@ import javax.crypto.spec.SecretKeySpec;
 public final class SbsWebhookVerifier {
     public static final String ALGORITHM_PREFIX = "hmac-sha256-v1=";
     public static final String KEY_ID_SANDBOX_V1 = "sandbox-v1";
+    public static final long MAX_CLOCK_SKEW_SECONDS = 300L;
 
     public static void verify(byte[] secret, String keyId, String timestamp,
                               byte[] rawBody, String signatureHeader,
@@ -44,6 +47,12 @@ public final class SbsWebhookVerifier {
             throws NoSuchAlgorithmException {
         if (!KEY_ID_SANDBOX_V1.equals(keyId))
             throw new RuntimeException("KeyIdUnknown: " + keyId);
+        // Timestamp skew check — reject anything outside ±5 minutes.
+        Instant ts;
+        try { ts = Instant.parse(timestamp); }
+        catch (Exception e) { throw new RuntimeException("SignatureExpired: bad timestamp"); }
+        if (Math.abs(Duration.between(ts, Instant.now()).getSeconds()) > MAX_CLOCK_SKEW_SECONDS)
+            throw new RuntimeException("SignatureExpired: outside skew window");
         if (!signatureHeader.startsWith(ALGORITHM_PREFIX))
             throw new RuntimeException("SignatureInvalid: missing prefix");
         MessageDigest sha = MessageDigest.getInstance("SHA-256");
@@ -58,6 +67,8 @@ public final class SbsWebhookVerifier {
             if (!MessageDigest.isEqual(expectedHeader.getBytes(StandardCharsets.UTF_8),
                                        signatureHeader.getBytes(StandardCharsets.UTF_8)))
                 throw new RuntimeException("SignatureInvalid: mismatch");
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception exc) {
             throw new RuntimeException("verify failed: " + exc.getMessage(), exc);
         }
@@ -90,9 +101,10 @@ must track recently-seen `(timestamp, signature)` pairs within the
 ## Timestamp skew
 
 The skew tolerance is ±300 seconds (5 minutes either direction).
-Implement the check after parsing `X-SBS-Timestamp` as an RFC 3339
-UTC instant. The snippet above omits the skew check for brevity; in
-production, reject timestamps outside the window.
+The snippet above includes the skew check via
+`Instant.parse(timestamp)` + `Duration.between(...)`. A stale
+timestamp throws `SignatureExpired: outside skew window`; a
+malformed timestamp throws `SignatureExpired: bad timestamp`.
 
 ## Don't translate this by eye
 

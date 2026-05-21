@@ -210,6 +210,21 @@ def test_license_placeholder_is_spdx_licenseref_form(built_pack):
     assert built_pack["manifest"]["license"].startswith("LicenseRef-")
 
 
+def test_manifest_carries_explicit_attestation_field(built_pack):
+    """The attestation gap is named in the manifest, not only in the ADR.
+
+    second-opinion §weakness: an attacker who can publish a tarball
+    with matching checksums to a mirror site can imitate the pack.
+    Naming the attestation type='none' in the manifest itself makes
+    the gap visible at the artifact boundary.
+    """
+
+    attestation = built_pack["manifest"].get("attestation")
+    assert attestation is not None, "manifest must declare attestation"
+    assert attestation["type"] == "none"
+    assert "v0.2" in attestation["rationale"] or "OCI" in attestation["rationale"]
+
+
 # ---- Example payloads -------------------------------------------------------
 
 

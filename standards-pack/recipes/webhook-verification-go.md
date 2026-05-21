@@ -32,19 +32,30 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
-	algorithmPrefix = "hmac-sha256-v1="
-	keyIDSandboxV1  = "sandbox-v1"
+	algorithmPrefix       = "hmac-sha256-v1="
+	keyIDSandboxV1        = "sandbox-v1"
+	maxClockSkewSeconds   = 300.0
 )
 
 func verify(secret []byte, keyID, timestamp string, rawBody []byte,
 	signatureHeader, method, callbackPath, institutionID string) error {
 	if keyID != keyIDSandboxV1 {
 		return fmt.Errorf("KeyIdUnknown: %s", keyID)
+	}
+	// Timestamp skew check — reject anything outside ±5 minutes.
+	ts, err := time.Parse(time.RFC3339, timestamp)
+	if err != nil {
+		return fmt.Errorf("SignatureExpired: bad timestamp: %w", err)
+	}
+	if math.Abs(time.Since(ts).Seconds()) > maxClockSkewSeconds {
+		return fmt.Errorf("SignatureExpired: outside skew window")
 	}
 	if !strings.HasPrefix(signatureHeader, algorithmPrefix) {
 		return fmt.Errorf("SignatureInvalid: missing prefix")
@@ -86,9 +97,10 @@ skew window and reject duplicates.
 ## Timestamp skew
 
 The skew tolerance is ±300 seconds (5 minutes either direction).
-Implement the check after parsing `X-SBS-Timestamp` as an RFC 3339
-UTC instant. The snippet above omits the skew check for brevity; in
-production, reject timestamps outside the window.
+The snippet above includes the check via `time.Parse(time.RFC3339,
+...)` and `time.Since(...)`. A stale timestamp returns
+`SignatureExpired: outside skew window`; a malformed timestamp
+returns `SignatureExpired: bad timestamp`.
 
 ## Known issue with the OpenAPI Generator Go template
 

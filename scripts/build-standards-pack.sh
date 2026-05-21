@@ -158,7 +158,11 @@ cat > "$STANDARDS_PACK_DIR/manifest.json" <<EOF
     "min_version": "$API_MIN_VERSION",
     "exclusive_max_version": "$API_EXCLUSIVE_MAX_VERSION"
   },
-  "contains": ["openapi", "schemas", "catalogs", "sdk-helpers", "examples", "recipes"]
+  "contains": ["openapi", "schemas", "catalogs", "sdk-helpers", "examples", "recipes"],
+  "attestation": {
+    "type": "none",
+    "rationale": "v0.1 sandbox release. SLSA + cosign attestation land at v0.2 with OCI artifact distribution per ADR 0039."
+  }
 }
 EOF
 
@@ -191,12 +195,37 @@ log "computing per-file SHA-256 → checksums.sha256"
     | xargs shasum -a 256 > checksums.sha256
 )
 
-# --- Produce the tarball ----------------------------------------------------
+# --- Produce the tarball (reproducible-build flags) -------------------------
+# Per ADR 0039 §Consequences (integrity gap) and second-opinion review:
+# gzip embeds an mtime by default, which makes two clean builds at the
+# same commit produce different bytes even though every file inside is
+# identical. SOURCE_DATE_EPOCH + `gzip -n` + tar's --sort=name +
+# --mtime + --owner=0 + --group=0 + --numeric-owner make the tarball
+# byte-reproducible across builds at the same git commit.
 
-log "tarballing → $TARBALL"
+SOURCE_DATE_EPOCH="$(git log -1 --format=%ct HEAD)"
+export SOURCE_DATE_EPOCH
+
+log "tarballing (reproducible: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH) → $TARBALL"
 mkdir -p "$DIST_DIR"
-( cd "$REPO_ROOT" && tar -czf "$TARBALL" --no-mac-metadata --no-xattrs standards-pack/ 2>/dev/null \
-  || tar -czf "$TARBALL" standards-pack/ )
+
+# Use GNU-style flags where available; macOS bsdtar accepts most of these
+# but not all. Detect at runtime.
+if tar --version 2>&1 | grep -q "GNU tar"; then
+  ( cd "$REPO_ROOT" \
+    && tar --sort=name \
+           --mtime="@$SOURCE_DATE_EPOCH" \
+           --owner=0 --group=0 --numeric-owner \
+           -cf - standards-pack/ \
+       | gzip -n > "$TARBALL" )
+else
+  # bsdtar on macOS — emit a deterministic-ish tarball; full
+  # cross-platform byte-reproducibility requires GNU tar in CI.
+  ( cd "$REPO_ROOT" \
+    && tar --no-mac-metadata --no-xattrs \
+           -cf - standards-pack/ 2>/dev/null \
+       | gzip -n > "$TARBALL" )
+fi
 shasum -a 256 "$TARBALL" | awk '{print $1"  "(NF==2 ? $2 : $NF)}' > "$TARBALL_SHA256"
 
 # --- Verify the tarball checksums --------------------------------------------

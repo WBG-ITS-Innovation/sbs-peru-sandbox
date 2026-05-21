@@ -95,6 +95,24 @@
         "type": "string",
         "enum": ["openapi", "schemas", "catalogs", "sdk-helpers", "examples", "recipes"]
       }
+    },
+    "attestation": {
+      "description": "Provenance attestation status. ADR 0039 §6 acknowledges the SLSA + cosign authenticity gap at v0.1; the field is required so a downloader reading manifest.json sees the gap explicitly, not only readers of the ADR.",
+      "type": "object",
+      "required": ["type", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "description": "Attestation type. v0.1 ships as 'none'; v0.2 introduces 'slsa-v1' alongside the OCI distribution decision.",
+          "type": "string",
+          "enum": ["none", "slsa-v1"]
+        },
+        "rationale": {
+          "description": "Human-readable explanation; required when type='none'.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }

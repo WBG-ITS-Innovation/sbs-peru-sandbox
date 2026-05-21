@@ -5,12 +5,20 @@ at the same ``--seed``. Webhook signature timestamps are NOT
 deterministic (timestamps are current-time per request), but the
 synthetic CSVs that feed the upload step must be.
 
+**Known limitation (Prompt 9 carry-forward to v0.2):** the corpus
+generator's determinism is **intraday only** — `received_date`
+defaults are wall-clock-derived, so two runs at the same seed on
+different UTC dates produce different bytes. The test below catches
+the intraday case; cross-day determinism requires the generator to
+accept ``--window-start``/``--window-end`` flags and use them in
+place of ``date.today()``. Tracked for v0.2.
+
 Two-run check: generate the corpus twice into separate tmp dirs at
 the same seed, compare the SHA-256 of every produced CSV. A
 mismatch means the corpus generator has a hidden source of
 non-determinism (a wall-clock-derived field, a missing seed of a
 sub-generator, etc.) that would break the demo's "byte-identical
-on any reviewer's machine" claim.
+on any reviewer's machine" claim within a single day.
 
 The test does not require docker, the dev stack, or any live
 compose service — it only exercises the corpus generator. The full
@@ -70,7 +78,11 @@ def _sha256(path: pathlib.Path) -> str:
 
 
 def test_demo_corpus_is_byte_identical_across_runs_at_same_seed(tmp_path):
-    """Two corpus generations at the same seed produce byte-identical CSVs."""
+    """Two corpus generations at the same seed produce byte-identical CSVs.
+
+    NOTE: intraday determinism only — see module docstring. The
+    cross-day case is a known limitation tracked for v0.2.
+    """
 
     run_a = tmp_path / "run-a"
     run_b = tmp_path / "run-b"

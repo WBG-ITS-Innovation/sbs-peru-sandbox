@@ -145,12 +145,26 @@ async def _poll_batch_until_terminal(batch_id: str, timeout_s: int) -> dict:
     )
 
 
-def _tail_listener_for_pass(batch_id: str, timeout_s: int = 30) -> bool:
+def _tail_listener_for_pass(
+    batch_id: str, since: str | None = None, timeout_s: int = 30
+) -> bool:
+    """Poll the webhook-listener log for ``PASS delivery_id={batch_id}``.
+
+    ``since`` is an RFC 3339 timestamp; we pass ``--since`` to docker
+    compose logs so the tail window never rolls off even at full
+    scale (201 rows). The earlier implementation used ``--tail 200``,
+    which silently dropped PASS lines once log volume exceeded that
+    buffer — a real bug at ``--scale full``.
+    """
+
     deadline = time.time() + timeout_s
     expected = f"PASS delivery_id={batch_id}"
+    cmd = ["docker", "compose", "logs", "webhook-listener"]
+    if since:
+        cmd.extend(["--since", since])
     while time.time() < deadline:
         result = subprocess.run(
-            ["docker", "compose", "logs", "--tail", "200", "webhook-listener"],
+            cmd,
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
@@ -182,6 +196,7 @@ async def _replay_one_institution(
     institution_id: str,
     csv_path: pathlib.Path,
     max_wait: int,
+    since: str,
 ) -> dict:
     batch_id = _new_batch_id()
     payload = csv_path.read_bytes()
@@ -208,7 +223,7 @@ async def _replay_one_institution(
     await _enqueue_process_batch(batch_id)
 
     row = await _poll_batch_until_terminal(batch_id, timeout_s=max_wait)
-    listener_pass = _tail_listener_for_pass(batch_id, timeout_s=30)
+    listener_pass = _tail_listener_for_pass(batch_id, since=since, timeout_s=30)
 
     # Clean up the on-disk CSV (the worker still has the DB record).
     try:
@@ -252,6 +267,7 @@ async def amain() -> int:
             institution_id=inst_id,
             csv_path=csv_path,
             max_wait=args.max_wait,
+            since=started_at,
         )
         results.append(result)
 

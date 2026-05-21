@@ -54,10 +54,11 @@ allowlist set exactly; the startup-time sanity check below enforces
 this.
 """
 
-assert set(VENDOR_ASSET_MEDIA_TYPES.keys()) == set(VENDOR_ASSET_ALLOWLIST), (
-    "VENDOR_ASSET_MEDIA_TYPES must cover exactly the allowlist; "
-    "update both when re-vendoring."
-)
+if set(VENDOR_ASSET_MEDIA_TYPES) != set(VENDOR_ASSET_ALLOWLIST):
+    raise RuntimeError(
+        "VENDOR_ASSET_MEDIA_TYPES keys must match VENDOR_ASSET_ALLOWLIST exactly. "
+        "When re-vendoring Stoplight Elements, update both constants together."
+    )
 
 _IMMUTABLE_CACHE_HEADER = "public, max-age=31536000, immutable"
 

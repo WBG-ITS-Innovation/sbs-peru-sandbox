@@ -86,10 +86,10 @@ If you are an institution integrating with the SBS sandbox:
    docker compose up -d worker webhook-listener
    bash scripts/demo.sh --scale small --seed 20260520
    ```
-   Generates 50 deterministic synthetic complaints across the three
-   demo institutions, uploads them as Tier 2 batches, polls until
-   each completes, and tails the webhook-listener for the three
-   PASS lines. Output lands in `tmp/demo-run/<timestamp>/`.
+   Generates 51 deterministic synthetic complaints (17 per institution
+   × 3 demo institutions), uploads them as Tier 2 batches, polls until
+   each completes, and tails the webhook-listener for the three PASS
+   lines. Output lands in `tmp/demo-run/<timestamp>/`.
 
 ADRs that document the v0.1 institutional-integrator surface:
 [ADR 0037 portal serving](docs/adr/0037-developer-portal-serving-mechanism.md) /

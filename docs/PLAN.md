@@ -7,7 +7,7 @@
 ## North Star
 
 A reference implementation that:
-- Ingests complaints via regulator-grade API (Tier 1 real-time + Tier 2 batch)
+- Ingests complaints via regulator-grade API (Tier 1 near-real-time + Tier 2 batch)
 - Routes through multi-agent analytics (5 specialist agents)
 - Surfaces findings via dual-lens dashboards + agent workspace
 - Deployable by vendor onto SBS on-prem via Helm

@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.sbs.gob.pe/suptech/agent_run/v1.json",
+  "title": "agent_run",
+  "description": "Durable execution trace for a single agent run against a complaint. See docs/schemas/agent_run.md for narrative semantics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "complaint_id",
+    "agent_name",
+    "agent_version",
+    "started_at",
+    "ended_at",
+    "status",
+    "tool_calls",
+    "final_output",
+    "error"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "complaint_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$",
+      "description": "SBS complaint identifier. Matches the API-edge pattern enforced in api/sbs_api/routes/complaints.py."
+    },
+    "agent_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "description": "kebab-case stable identifier (e.g., triage, classifier, narrative-drafter, cross-source-correlator, query-author)."
+    },
+    "agent_version": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]-\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z-.]+)?$",
+      "description": "Format: <agent_name>-<semver>. Example: triage-0.3.1."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "T.*(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "ISO 8601 with explicit timezone (Z or +HH:MM / -HH:MM). UTC at storage."
+    },
+    "ended_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "pattern": "T.*(Z|[+-]\\d{2}:\\d{2})$",
+      "description": "Null only while the run is in flight. Set on timeout."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial", "failed", "timeout"]
+    },
+    "tool_calls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tool_call" },
+      "description": "Ordered by started_at. May be empty."
+    },
+    "final_output": {
+      "type": ["object", "null"],
+      "description": "Agent's structured output. Shape depends on agent_name (see docs/schemas/agent_run.md §final_output shape by agent name). Null when status='failed' or when partial run produced no usable output."
+    },
+    "error": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/run_error" }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "success" } }
+      },
+      "then": {
+        "properties": {
+          "error": { "type": "null" },
+          "final_output": { "type": "object" }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "failed" } }
+      },
+      "then": {
+        "properties": {
+          "error": { "$ref": "#/$defs/run_error" },
+          "final_output": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "partial" } }
+      },
+      "then": {
+        "properties": {
+          "error": { "$ref": "#/$defs/run_error" }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "timeout" } }
+      },
+      "then": {
+        "properties": {
+          "ended_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "T.*(Z|[+-]\\d{2}:\\d{2})$"
+          },
+          "error": { "$ref": "#/$defs/run_error" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "run_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "Stable SCREAMING_SNAKE_CASE error code."
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "tool_name": { "$ref": "#/$defs/tool_name" }
+      }
+    },
+    "tool_name": {
+      "type": "string",
+      "enum": [
+        "bert_classifier",
+        "xgboost_ranker",
+        "regex_taxonomy",
+        "anonymizer",
+        "qlik_lookup"
+      ]
+    },
+    "iso_datetime_tz": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "T.*(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "tool_call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool_name",
+        "tool_version",
+        "started_at",
+        "ended_at",
+        "input",
+        "output",
+        "status",
+        "error"
+      ],
+      "properties": {
+        "tool_name": { "$ref": "#/$defs/tool_name" },
+        "tool_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "started_at": { "$ref": "#/$defs/iso_datetime_tz" },
+        "ended_at": { "$ref": "#/$defs/iso_datetime_tz" },
+        "input": { "type": "object" },
+        "output": { "type": ["object", "null"] },
+        "status": {
+          "type": "string",
+          "enum": ["success", "failed", "timeout"]
+        },
+        "error": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/tool_error" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["tool_name"],
+            "properties": { "tool_name": { "const": "bert_classifier" } }
+          },
+          "then": { "$ref": "#/$defs/bert_classifier_call" }
+        },
+        {
+          "if": {
+            "required": ["tool_name"],
+            "properties": { "tool_name": { "const": "xgboost_ranker" } }
+          },
+          "then": { "$ref": "#/$defs/xgboost_ranker_call" }
+        },
+        {
+          "if": {
+            "required": ["tool_name"],
+            "properties": { "tool_name": { "const": "regex_taxonomy" } }
+          },
+          "then": { "$ref": "#/$defs/regex_taxonomy_call" }
+        },
+        {
+          "if": {
+            "required": ["tool_name"],
+            "properties": { "tool_name": { "const": "anonymizer" } }
+          },
+          "then": { "$ref": "#/$defs/anonymizer_call" }
+        },
+        {
+          "if": {
+            "required": ["tool_name"],
+            "properties": { "tool_name": { "const": "qlik_lookup" } }
+          },
+          "then": { "$ref": "#/$defs/qlik_lookup_call" }
+        },
+        {
+          "if": {
+            "required": ["status"],
+            "properties": { "status": { "const": "success" } }
+          },
+          "then": {
+            "properties": {
+              "error": { "type": "null" },
+              "output": { "type": "object" }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["status"],
+            "properties": { "status": { "enum": ["failed", "timeout"] } }
+          },
+          "then": {
+            "properties": {
+              "error": { "$ref": "#/$defs/tool_error" }
+            }
+          }
+        }
+      ]
+    },
+    "tool_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "bert_classifier_call": {
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "locale", "max_tokens"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1 },
+            "locale": { "type": "string", "const": "es-PE" },
+            "max_tokens": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "output": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["label", "confidence", "top_k", "model_version"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1 },
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "top_k": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 5,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["label", "confidence"],
+                    "properties": {
+                      "label": { "type": "string", "minLength": 1 },
+                      "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+                    }
+                  }
+                },
+                "model_version": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "xgboost_ranker_call": {
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["complaint_id", "features"],
+          "properties": {
+            "complaint_id": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,4}-\\d{4}-\\d{6,10}$"
+            },
+            "features": { "type": "object" }
+          }
+        },
+        "output": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["score", "rank_band", "feature_contributions", "model_version"],
+              "properties": {
+                "score": { "type": "number", "minimum": 0, "maximum": 1 },
+                "rank_band": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+                "feature_contributions": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["feature_name", "contribution", "direction"],
+                    "properties": {
+                      "feature_name": { "type": "string", "minLength": 1 },
+                      "contribution": { "type": "number" },
+                      "direction": { "type": "string", "enum": ["positive", "negative"] }
+                    }
+                  }
+                },
+                "model_version": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "regex_taxonomy_call": {
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "taxonomy_version"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1 },
+            "taxonomy_version": { "type": "string", "minLength": 1 }
+          }
+        },
+        "output": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["matches", "taxonomy_version"],
+              "properties": {
+                "matches": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["pattern_id", "label", "span", "matched_text"],
+                    "properties": {
+                      "pattern_id": { "type": "string", "minLength": 1 },
+                      "label": { "type": "string", "minLength": 1 },
+                      "span": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": { "type": "integer", "minimum": 0 }
+                      },
+                      "matched_text": { "type": "string", "minLength": 1 }
+                    }
+                  }
+                },
+                "taxonomy_version": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "anonymizer_call": {
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "policy_version"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1 },
+            "policy_version": { "type": "string", "minLength": 1 }
+          }
+        },
+        "output": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["anonymized_text", "redactions", "policy_version"],
+              "properties": {
+                "anonymized_text": { "type": "string" },
+                "redactions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["kind", "span"],
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "pii_name",
+                          "pii_id",
+                          "pii_account",
+                          "pii_phone",
+                          "pii_email",
+                          "pii_address"
+                        ]
+                      },
+                      "span": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": { "type": "integer", "minimum": 0 }
+                      }
+                    }
+                  }
+                },
+                "policy_version": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "qlik_lookup_call": {
+      "properties": {
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["institution_id", "lookup_keys"],
+          "properties": {
+            "institution_id": { "type": "string", "minLength": 1 },
+            "lookup_keys": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "output": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["results", "source_version", "fetched_at"],
+              "properties": {
+                "results": { "type": "object" },
+                "source_version": { "type": "string", "minLength": 1 },
+                "fetched_at": { "$ref": "#/$defs/iso_datetime_tz" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

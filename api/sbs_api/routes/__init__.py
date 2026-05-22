@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from sbs_api.routes.batches import router as batches_router
 from sbs_api.routes.cockpit import router as cockpit_router
 from sbs_api.routes.complaints import router as complaints_router
+from sbs_api.routes.findings import router as findings_router
 from sbs_api.routes.institutions import router as institutions_router
 from sbs_api.routes.internal import router as internal_router
 from sbs_api.routes.meta import router as meta_router
@@ -29,6 +30,7 @@ v1_router.include_router(openapi_router)
 v1_router.include_router(portal_router)
 v1_router.include_router(internal_router)
 v1_router.include_router(cockpit_router)
+v1_router.include_router(findings_router)
 v1_router.include_router(sse_router)
 
 __all__ = ["v1_router"]

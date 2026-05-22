@@ -97,8 +97,28 @@
   },
   "components_index": {
     "title": "Índice del sistema de diseño",
-    "placeholder": {
-      "body": "WS1 — Cada variante de componente se renderiza aquí en la paleta SBS."
+    "subtitle": "Cada primitivo y cada variante en una página. Vea ADR 0041 para las decisiones.",
+    "shipped": "Primitivos disponibles",
+    "reserved": "Primitivos reservados",
+    "reserved_body": "Disponibles bajo demanda cuando un workstream los requiera. Hasta entonces, ningún componente debe ser reinventado en otro lugar.",
+    "sections": {
+      "buttons": "Botones",
+      "inputs": "Entradas",
+      "selects": "Selección",
+      "checkboxes": "Casillas",
+      "cards": "Tarjetas",
+      "badges": "Insignias",
+      "tables": "Tablas",
+      "dialogs": "Diálogos modales",
+      "sheets": "Paneles laterales",
+      "toasts": "Avisos",
+      "tooltips": "Pistas contextuales",
+      "skeletons": "Esqueletos de carga",
+      "empty_states": "Estados vacíos",
+      "error_boundaries": "Capturas de error"
+    },
+    "demo": {
+      "table_caption": "Tabla de ejemplo con números tabulares y franjas alternas sutiles."
     }
   },
   "errors": {

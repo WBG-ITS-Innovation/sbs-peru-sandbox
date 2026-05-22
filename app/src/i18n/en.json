@@ -97,8 +97,28 @@
   },
   "components_index": {
     "title": "Design system index",
-    "placeholder": {
-      "body": "WS1 — Every component variant renders here in the SBS palette."
+    "subtitle": "Every primitive and every variant on one page. See ADR 0041 for the decisions.",
+    "shipped": "Shipped primitives",
+    "reserved": "Reserved primitives",
+    "reserved_body": "Available on demand when a workstream needs them. Until then, no component is reinvented elsewhere.",
+    "sections": {
+      "buttons": "Buttons",
+      "inputs": "Inputs",
+      "selects": "Selects",
+      "checkboxes": "Checkboxes",
+      "cards": "Cards",
+      "badges": "Badges",
+      "tables": "Tables",
+      "dialogs": "Modal dialogs",
+      "sheets": "Side sheets",
+      "toasts": "Toasts",
+      "tooltips": "Tooltips",
+      "skeletons": "Skeletons",
+      "empty_states": "Empty states",
+      "error_boundaries": "Error boundaries"
+    },
+    "demo": {
+      "table_caption": "Sample table with tabular numerals and subtle zebra stripes."
     }
   },
   "errors": {

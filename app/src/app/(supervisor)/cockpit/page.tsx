@@ -31,11 +31,6 @@ export default async function CockpitPage() {
 
   const labels = {
     locale,
-    connectionLabel: {
-      connecting: t(locale, 'cockpit.connection.connecting'),
-      connected: t(locale, 'cockpit.connection.connected'),
-      disconnected: t(locale, 'cockpit.connection.disconnected'),
-    },
     kpis: {
       complaints_24h: t(locale, 'cockpit.kpis.complaints_24h'),
       anomalies_active: t(locale, 'cockpit.kpis.anomalies_active'),

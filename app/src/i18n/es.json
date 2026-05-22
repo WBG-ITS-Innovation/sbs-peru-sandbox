@@ -39,7 +39,13 @@
     "findings": "Hallazgos",
     "approvals": "Aprobaciones",
     "audit": "Auditoría",
-    "components_index": "Sistema de diseño"
+    "components_index": "Sistema de diseño",
+    "primary_label": "Navegación principal",
+    "user_menu_label": "Cuenta",
+    "role_indicator": "Rol activo",
+    "language_toggle": "Idioma",
+    "switch_persona": "Cambiar persona",
+    "active_persona": "Persona activa"
   },
   "auth": {
     "signin": "Iniciar sesión",

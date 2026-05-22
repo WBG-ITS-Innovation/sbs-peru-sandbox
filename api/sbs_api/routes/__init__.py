@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from sbs_api.routes.batches import router as batches_router
 from sbs_api.routes.complaints import router as complaints_router
 from sbs_api.routes.institutions import router as institutions_router
+from sbs_api.routes.internal import router as internal_router
 from sbs_api.routes.meta import router as meta_router
 from sbs_api.routes.oauth import router as oauth_router
 from sbs_api.routes.openapi import router as openapi_router
@@ -24,5 +25,6 @@ v1_router.include_router(meta_router)
 v1_router.include_router(oauth_router)
 v1_router.include_router(openapi_router)
 v1_router.include_router(portal_router)
+v1_router.include_router(internal_router)
 
 __all__ = ["v1_router"]

@@ -1,10 +1,24 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// The root of the supervisor app (/app/) redirects to /app/cockpit by
-// default. Role-based landing (supervisor → cockpit, analyst → findings,
-// head → approvals) lands in the OAuth commit alongside the session
-// inspection — until then, everyone reaches the cockpit. See ADR 0042
-// (role-based default landing).
+import { landingRouteForRoles } from '@/auth/landing';
+import { activePersona, getSession } from '@/auth/session';
+import { SESSION_COOKIE } from '@/auth/cookies';
+
+// /app/ — the entry point of the supervisor UI.
+// - Unauthenticated → redirect to /app/login.
+// - Authenticated → role-based landing per ADR 0042 D1.
+//
+// The redirect happens server-side, so the user never sees a flash of
+// an intermediate page.
 export default function RootPage() {
-  redirect('/cockpit');
+  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const session = getSession(sessionId);
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  const persona = activePersona(session);
+  redirect(landingRouteForRoles(persona.roles));
 }

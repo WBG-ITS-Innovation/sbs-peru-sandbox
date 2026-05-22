@@ -125,8 +125,8 @@
       "baseUrl": "/app",
       "adminUrl": "",
       "redirectUris": [
-        "http://localhost:3000/app/auth/callback",
-        "http://localhost:8000/app/auth/callback"
+        "http://localhost:3000/app/api/auth/callback",
+        "http://localhost:8000/app/api/auth/callback"
       ],
       "webOrigins": [
         "http://localhost:3000",

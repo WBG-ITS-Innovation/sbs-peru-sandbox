@@ -47,7 +47,10 @@
     "signin_failed": "Could not sign in.",
     "session_expired": "Session expired. Sign in again.",
     "callback_title": "Signing you in…",
-    "callback_body": "Verifying credentials with the identity provider."
+    "callback_body": "Verifying credentials with the identity provider.",
+    "state_mismatch": "Invalid sign-in state.",
+    "missing_code_or_state": "Missing information from identity provider.",
+    "token_exchange_failed": "Identity provider rejected the code."
   },
   "cockpit": {
     "title": "Cockpit",

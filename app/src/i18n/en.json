@@ -39,7 +39,13 @@
     "findings": "Findings",
     "approvals": "Approvals",
     "audit": "Audit",
-    "components_index": "Design system"
+    "components_index": "Design system",
+    "primary_label": "Primary navigation",
+    "user_menu_label": "Account",
+    "role_indicator": "Active role",
+    "language_toggle": "Language",
+    "switch_persona": "Switch persona",
+    "active_persona": "Active persona"
   },
   "auth": {
     "signin": "Sign in",

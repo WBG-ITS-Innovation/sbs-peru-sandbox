@@ -12,7 +12,6 @@ import { useSSE, type SSEMessage } from '@/hooks/useSSE';
 import type { CockpitSnapshot, ComplaintCardData } from '@/types/cockpit';
 
 import { AnomalyCard } from './AnomalyCard';
-import { ConnectionStateDot } from './ConnectionStateDot';
 import { CrossSourceStrip } from './CrossSourceStrip';
 import { KpiStrip } from './KpiStrip';
 import { TierPanel } from './TierPanel';
@@ -23,11 +22,6 @@ import {
 
 interface Labels {
   locale: string;
-  connectionLabel: {
-    connecting: string;
-    connected: string;
-    disconnected: string;
-  };
   kpis: {
     complaints_24h: string;
     anomalies_active: string;
@@ -98,7 +92,7 @@ function reduceCockpit(state: CockpitSnapshot, message: SSEMessage<unknown>): Co
 
 export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
   const reduce = useCallback(reduceCockpit, []);
-  const { state, connectionState } = useSSE<CockpitSnapshot>({
+  const { state } = useSSE<CockpitSnapshot>({
     url: '/app/api/sse/cockpit',
     initialState: initialSnapshot,
     reduce,
@@ -106,11 +100,6 @@ export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-fg">{labels.kpis.complaints_24h}</h1>
-        <ConnectionStateDot state={connectionState} label={labels.connectionLabel} />
-      </div>
-
       <KpiStrip kpis={state.kpis} locale={labels.locale} labels={labels.kpis} />
 
       {state.anomalies.length > 0 ? (

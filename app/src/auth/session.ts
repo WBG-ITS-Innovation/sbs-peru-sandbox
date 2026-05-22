@@ -34,6 +34,13 @@ export interface ServerSession {
   readonly createdAt: number;             // epoch seconds
   lastActivityAt: number;
   readonly demoMode: boolean;
+  // Operator name carried for audit attribution in demo mode. In a real
+  // sign-in the operator IS the active persona; in demo mode the
+  // operator (e.g., "Antoine") is the human at the keyboard switching
+  // between personas, and the audit chain needs that name so a row
+  // reads "Antoine switched from María to Jorge", not the meaningless
+  // "María switched from María to Jorge".
+  operator: string | null;
   // Locale preference can also live in a cookie; the session copy is
   // authoritative when both are present, so a server-action language
   // switch survives a cookie wipe.

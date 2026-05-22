@@ -50,7 +50,18 @@
     "callback_body": "Verifying credentials with the identity provider.",
     "state_mismatch": "Invalid sign-in state.",
     "missing_code_or_state": "Missing information from identity provider.",
-    "token_exchange_failed": "Identity provider rejected the code."
+    "token_exchange_failed": "Identity provider rejected the code.",
+    "demo_section_title": "Demo mode",
+    "demo_section_body": "Loads all three identities (María, Lucía, Jorge) into one session. Sandbox environment only.",
+    "demo_enter": "Enter demo mode",
+    "demo_login_failed": "Could not start demo mode. Check that Keycloak is running."
+  },
+  "personas": {
+    "switch_to": "Switch to",
+    "active": "Active",
+    "maria": "María (Supervisor)",
+    "lucia": "Lucía (Analyst)",
+    "jorge": "Jorge (Head)"
   },
   "cockpit": {
     "title": "Cockpit",

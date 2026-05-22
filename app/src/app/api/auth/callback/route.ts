@@ -96,6 +96,7 @@ export async function GET(request: Request) {
     createdAt: now,
     lastActivityAt: now,
     demoMode: false,
+    operator: null,
     locale: null,
     personas: {
       [userKey]: {

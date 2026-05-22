@@ -73,6 +73,7 @@ def test_pinned_namespaces_present_in_both_dictionaries() -> None:
         "approvals",
         "queue",
         "audit",
+        "personas",
         "errors",
     }
     for path in (ES_PATH, EN_PATH):

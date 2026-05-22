@@ -50,7 +50,18 @@
     "callback_body": "Validando credenciales con el proveedor de identidad.",
     "state_mismatch": "Estado de inicio de sesión inválido.",
     "missing_code_or_state": "Falta información del proveedor de identidad.",
-    "token_exchange_failed": "El proveedor de identidad rechazó el código."
+    "token_exchange_failed": "El proveedor de identidad rechazó el código.",
+    "demo_section_title": "Modo demostración",
+    "demo_section_body": "Carga las tres identidades (María, Lucía, Jorge) en una sola sesión. Solo entorno de sandbox.",
+    "demo_enter": "Ingresar en modo demostración",
+    "demo_login_failed": "No se pudo iniciar el modo demostración. Verifique que Keycloak esté corriendo."
+  },
+  "personas": {
+    "switch_to": "Cambiar a",
+    "active": "Activa",
+    "maria": "María (Supervisora)",
+    "lucia": "Lucía (Analista)",
+    "jorge": "Jorge (Jefe)"
   },
   "cockpit": {
     "title": "Cabina",

@@ -160,6 +160,11 @@ def _regex_fallback(narrative: str, start: datetime) -> dict:
 
 
 def _xgboost_success(complaint_id: str, start: datetime) -> dict:
+    """Eight named features per the WS4 directive. The highest positive
+    contributor is ``narrative_mentions_fee_undisclosed`` so the SHAP
+    panel tells the demo story — the model latched onto the
+    comisión-por-mantenimiento sub-pattern."""
+
     return {
         "tool_name": "xgboost_ranker",
         "tool_version": "xgboost_ranker-0.9.2",
@@ -168,36 +173,58 @@ def _xgboost_success(complaint_id: str, start: datetime) -> dict:
         "input": {
             "complaint_id": complaint_id,
             "features": {
-                "institution_size_band": 3,
                 "vulnerable_consumer_flag": 1,
                 "prior_findings_180d": 2,
-                "narrative_length": 412,
-                "channel_app_movil": 1,
-                "amount_disputed_band": 2,
+                "narrative_mentions_fee_undisclosed": 1,
+                "institution_size_band": 3,
+                "complaint_velocity_28d": 412,
+                "narrative_length": 612,
+                "cross_source_signal_count": 3,
+                "regex_taxonomy_hit_count": 2,
             },
         },
         "output": {
-            "score": 0.72,
+            "score": 0.78,
             "rank_band": "high",
             "feature_contributions": [
                 {
+                    "feature_name": "narrative_mentions_fee_undisclosed",
+                    "contribution": 0.27,
+                    "direction": "positive",
+                },
+                {
                     "feature_name": "vulnerable_consumer_flag",
-                    "contribution": 0.21,
+                    "contribution": 0.19,
                     "direction": "positive",
                 },
                 {
                     "feature_name": "prior_findings_180d",
-                    "contribution": 0.18,
+                    "contribution": 0.16,
                     "direction": "positive",
                 },
                 {
-                    "feature_name": "amount_disputed_band",
-                    "contribution": 0.14,
+                    "feature_name": "cross_source_signal_count",
+                    "contribution": 0.12,
+                    "direction": "positive",
+                },
+                {
+                    "feature_name": "complaint_velocity_28d",
+                    "contribution": 0.08,
+                    "direction": "positive",
+                },
+                {
+                    "feature_name": "regex_taxonomy_hit_count",
+                    "contribution": 0.05,
                     "direction": "positive",
                 },
                 {
                     "feature_name": "institution_size_band",
-                    "contribution": -0.05,
+                    "contribution": -0.04,
+                    "direction": "negative",
+                },
+                {
+                    "feature_name": "narrative_length",
+                    "contribution": -0.06,
                     "direction": "negative",
                 },
             ],
@@ -441,7 +468,14 @@ def _cross_source_correlator_success(
 
 
 def _narrative_drafter_success(complaint_id: str, anchor: datetime) -> dict:
-    """Narrative-drafter run — the analyst-editable draft on Findings."""
+    """Narrative-drafter run — the analyst-editable draft on Findings.
+
+    The drafted text deliberately omits the "comisión por mantenimiento"
+    mention from paragraph two of the narrative — that is the scripted
+    edit gap Lucía fills during the demo. After her edit, the saved
+    draft includes the maintenance-fee reference; the audit row carries
+    before/after excerpts.
+    """
 
     return {
         "id": _run_id(),
@@ -454,9 +488,7 @@ def _narrative_drafter_success(complaint_id: str, anchor: datetime) -> dict:
         "tool_calls": [],
         "final_output": {
             "draft_text": (
-                "Disputa de cliente sobre comisiones de cuenta, incluida una "
-                "comisión por mantenimiento no informada referida en el "
-                "párrafo dos de la narrativa."
+                "Disputa de cliente sobre comisiones de cuenta."
             ),
             "language": "es-PE",
             "evidence_refs": [],
@@ -472,15 +504,25 @@ def build_demo_runs(
 ) -> list[dict]:
     """Return demo ``agent_run`` rows for the given complaint IDs.
 
-    Requires at least three complaint IDs so the three partial-failure
-    invariants can each anchor on a distinct complaint. Returns six rows:
+    Six rows total, distributed so the headline complaint (cid0) is
+    the demo's "clean classifier success" example with the full agent
+    chain — what Lucía drills into on the Findings page. The two
+    partial-failure traces (BERT timeout, XGBoost unavailable) and the
+    anonymizer-failure live on the other two complaints so the
+    headline's agent-reasoning timeline reads as "everything worked":
 
-    * complaint 0 — classifier partial (BERT timeout + regex fallback),
-      narrative-drafter success, cross-source-correlator success
-    * complaint 1 — classifier partial (XGBoost unavailable)
-    * complaint 2 — classifier failed (anonymizer error), classifier success
-      (a later retry on the same complaint succeeded — proves the row
-      sequencing in the UI)
+    * complaint 0 (HEADLINE) — classifier success (with named XGBoost
+      features), narrative-drafter success (missing the maintenance-
+      fee mention — the scripted edit gap), cross-source-correlator
+      success (anomaly_flag=true).
+    * complaint 1 — classifier partial (BERT timeout + regex fallback)
+      and classifier partial (XGBoost unavailable). Two illustrative
+      partial-failure traces on one complaint.
+    * complaint 2 — classifier failed (anonymizer error). The third
+      required partial-failure shape per the JSON Schema contract.
+
+    Status counts: 3 success + 2 partial + 1 failed = 6. The
+    integration test asserts this exact distribution.
     """
 
     if len(complaint_ids) < 3:
@@ -494,18 +536,21 @@ def build_demo_runs(
     cid0, cid1, cid2 = complaint_ids[0], complaint_ids[1], complaint_ids[2]
 
     return [
-        _classifier_partial_bert_timeout(cid0, anchor - timedelta(hours=3)),
+        # Headline complaint — clean agent chain, narrative drafted by
+        # the agent but MISSING the comisión-por-mantenimiento mention.
+        _classifier_success(cid0, anchor - timedelta(hours=3)),
         _narrative_drafter_success(cid0, anchor - timedelta(hours=2)),
         _cross_source_correlator_success(
             cid0, anchor - timedelta(hours=1), institution_id
         ),
+        # Second complaint — two illustrative partial-failure traces.
+        _classifier_partial_bert_timeout(cid1, anchor - timedelta(hours=4)),
         _classifier_partial_xgboost_unavailable(
             cid1, anchor - timedelta(hours=2, minutes=30)
         ),
-        _classifier_failed_anonymizer(
-            cid2, anchor - timedelta(hours=4)
-        ),
-        _classifier_success(cid2, anchor - timedelta(hours=1, minutes=15)),
+        # Third complaint — anonymizer failure, the JSON Schema
+        # contract's third required partial-failure shape.
+        _classifier_failed_anonymizer(cid2, anchor - timedelta(hours=4)),
     ]
 
 

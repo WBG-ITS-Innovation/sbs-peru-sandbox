@@ -116,9 +116,75 @@
   },
   "findings": {
     "title": "Findings",
-    "placeholder": {
-      "list_body": "WS4 — Filterable findings table with role-scoped defaults.",
-      "detail_body": "WS4 — BERT / XGBoost / agent-reasoning panels."
+    "subtitle": "Cases classified by the agent chain; filterable by institution, severity, source, and confidence band.",
+    "empty": {
+      "title": "No findings match these filters",
+      "body": "No complaints match the current criteria. Reset the filters or widen the time window.",
+      "primary": "Reset filters"
+    },
+    "filters": {
+      "label": "Filters",
+      "institution": "Institution",
+      "severity": "Severity",
+      "source": "Source",
+      "classification": "Classification",
+      "confidence_band": "Confidence band",
+      "from": "From",
+      "to": "To",
+      "any": "Any",
+      "apply": "Apply",
+      "reset": "Reset",
+      "source_tier1": "Tier 1 (API)",
+      "source_tier2": "Tier 2 (Batch)",
+      "band_low": "Low (<0.5)",
+      "band_medium": "Medium (0.5–0.8)",
+      "band_high": "High (>0.8)"
+    },
+    "columns": {
+      "complaint_id": "Complaint",
+      "institution": "Institution",
+      "classification": "Classification",
+      "confidence": "Confidence",
+      "severity": "Severity",
+      "source": "Source",
+      "drafted_by_agent": "AI draft",
+      "received_at": "Received"
+    },
+    "panels": {
+      "header": "Complaint details",
+      "narrative": "Customer narrative",
+      "classification": "BERT classification",
+      "feature_importance": "Feature importance (XGBoost)",
+      "agent_reasoning": "Agent reasoning",
+      "draft_narrative": "Draft summary",
+      "actions": "Actions",
+      "narrative_anonymization": "Anonymization policy",
+      "narrative_length": "Length",
+      "classification_top_k": "Top 3 classes",
+      "classification_model": "Model",
+      "feature_model": "Ranker model",
+      "rank_band": "Rank band"
+    },
+    "agent_status": {
+      "success": "Success",
+      "partial": "Partial",
+      "failed": "Failed",
+      "timeout": "Timeout"
+    },
+    "actions": {
+      "send_to_approvals": "Send to Approvals",
+      "mark_false_positive": "Mark false positive",
+      "assign": "Assign to colleague",
+      "save_draft": "Save draft",
+      "cancel_edit": "Cancel edit",
+      "edit": "Edit draft",
+      "send_to_approvals_already_pending": "Already in approvals queue",
+      "assignment_via_api": "Assignment via API in this prompt"
+    },
+    "draft_helper": {
+      "agent_drafted": "Agent-drafted",
+      "edited_by": "Edited by",
+      "no_edits_yet": "No edits yet"
     }
   },
   "approvals": {

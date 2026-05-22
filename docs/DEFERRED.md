@@ -244,3 +244,18 @@ during the squash conflict resolution. Switch the repo's default merge
 style for large multi-file PRs from squash to merge-commit or
 rebase-merge. Squash works for small fix-it PRs; it does not scale to
 architectural multi-workstream deliveries that span 12+ days.
+
+## From Prompt 9 close (2026-05-21)
+
+- Spectral lint crashes with "Cannot read 'enum' of null" across versions 6.11.1, 6.13.0, 6.14.2. Pydantic-OpenAPI match test covers the load-bearing case; Spectral is currently `continue-on-error: true` in standards-pack-validate.yml. Diagnose by bisecting either spec paths or .spectral.yaml rules.
+- `uv pip install -e ./api` fails in CI because `api/pyproject.toml` doesn't configure setuptools package discovery (four top-level dirs: openapi, sbs_api, devportal, migrations). CI uses `uv run --with <pkg>` workaround. Proper fix: add `[tool.setuptools.packages.find]` with explicit include/exclude, or migrate to src-layout.
+- All `npx --yes <package>` calls in workflows should pin versions (currently only Spectral is pinned).
+- Cross-day determinism in synthetic corpus generator: CSV bytes change across UTC date boundaries because `received_date` is wall-clock. Add `--window-start` / `--window-end` flags so demo.sh runs are byte-identical across days.
+- Browser-render check via Playwright (exit gate (f) for portal route is currently manual).
+- ADR 0023 workspace layout: revisit sdk-helpers/ inclusion as a workspace member.
+
+## From Prompt 10 / WS1 (2026-05-22)
+
+- **Sprint retro note — fabricated comparators in ## Precedent.** During the WS1 ADR draft I cited "OPRM (Open Regulator Project on Risk Markings)" and "OECD's supervisory-data style guide" as severity-token comparators in market-comparators.md §5.A.V. Neither is a publicly-verifiable named reference. Caught on re-read before the commit landed; replaced with IBM Carbon (Notification / Tag kinds), USWDS Alert variants, Salesforce Lightning notification themes — all real and publicly documented. The benchmark-checker rule is *specificity of section and comparator*; fabricated comparators undermine the gate by appearing to satisfy it while actually carrying no precedent weight. Going forward: every named comparator in a ## Precedent section must be either (a) directly URL-cited or (b) something the author has read recent first-hand documentation of. Names like "X Standards Body" without a URL are the failure mode. The `benchmark-checker` subagent does not currently verify URL reachability or that the named standard exists — that's the gap this entry names.
+- **Action when triggered:** if benchmark-checker is upgraded to validate comparator existence (URL HEAD check + spot-check against the linked page's title), this entry can be marked Resolved. Until then, the safeguard is reviewer attention to specifically-named bodies in the ## Precedent section of any new ADR.
+- **Trail:** ADR 0041 second draft (before commit), market-comparators.md §5.A.V revision.

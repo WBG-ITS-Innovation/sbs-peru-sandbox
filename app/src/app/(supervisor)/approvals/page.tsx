@@ -1,13 +1,76 @@
+import { Inbox } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+import { SESSION_COOKIE } from '@/auth/cookies';
+import { activePersona, getSession } from '@/auth/session';
+import { ApprovalKpisStrip } from '@/components/approvals/ApprovalKpis';
+import { ApprovalsTable } from '@/components/approvals/ApprovalsTable';
+import { EmptyState } from '@/components/ui';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
+import { internalGet } from '@/lib/api';
+import type { ApprovalsQueueResponse } from '@/types/approvals';
 
-// Placeholder. WS5 lands the approvals queue + decision KPIs.
-export default function ApprovalsPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function ApprovalsQueuePage() {
+  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const session = getSession(sessionId);
+  if (!session) {
+    redirect('/login');
+  }
+  const persona = activePersona(session);
   const locale = currentLocale();
+
+  const queue = await internalGet<ApprovalsQueueResponse>(
+    '/v1/internal/approvals',
+    { roles: persona.roles },
+  );
+
   return (
-    <main>
-      <h1>{t(locale, 'approvals.title')}</h1>
-      <p>{t(locale, 'approvals.placeholder.queue_body')}</p>
+    <main className="mx-auto max-w-7xl space-y-4 p-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-fg">
+          {t(locale, 'approvals.title')}
+        </h1>
+        <p className="text-sm text-fg-muted">{t(locale, 'approvals.subtitle')}</p>
+      </header>
+
+      <ApprovalKpisStrip
+        kpis={queue.kpis}
+        locale={locale}
+        labels={{
+          pending: t(locale, 'approvals.kpis.pending'),
+          approved_today: t(locale, 'approvals.kpis.approved_today'),
+          rejected_today: t(locale, 'approvals.kpis.rejected_today'),
+          median_ttd: t(locale, 'approvals.kpis.median_ttd'),
+        }}
+      />
+
+      {queue.items.length === 0 ? (
+        <EmptyState
+          icon={<Inbox className="h-6 w-6" aria-hidden="true" />}
+          title={t(locale, 'approvals.empty.title')}
+          body={t(locale, 'approvals.empty.body')}
+          primaryAction={{
+            label: t(locale, 'approvals.empty.primary'),
+            href: '/queue',
+          }}
+        />
+      ) : (
+        <ApprovalsTable
+          items={queue.items}
+          locale={locale}
+          labels={{
+            complaint_id: t(locale, 'approvals.columns.complaint_id'),
+            institution: t(locale, 'approvals.columns.institution'),
+            severity: t(locale, 'approvals.columns.severity'),
+            time_pending: t(locale, 'approvals.columns.time_pending'),
+            created_by: t(locale, 'approvals.columns.created_by'),
+          }}
+        />
+      )}
     </main>
   );
 }

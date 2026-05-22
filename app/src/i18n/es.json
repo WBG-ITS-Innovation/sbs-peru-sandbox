@@ -189,10 +189,56 @@
   },
   "approvals": {
     "title": "Aprobaciones",
-    "placeholder": {
-      "queue_body": "WS5 — Hallazgos pendientes de aprobación, ordenados por severidad.",
-      "detail_body": "WS5 — Razonamiento del agente, evidencia, control HITL de cuatro acciones."
-    }
+    "subtitle": "Hallazgos pendientes de aprobación, ordenados por severidad (oldest-first dentro de la banda).",
+    "empty": {
+      "title": "Sin aprobaciones pendientes",
+      "body": "La cola está vacía. Los hallazgos enviados por los analistas aparecerán aquí.",
+      "primary": "Abrir cola de riesgo"
+    },
+    "kpis": {
+      "pending": "Pendientes",
+      "approved_today": "Aprobadas hoy",
+      "rejected_today": "Rechazadas hoy",
+      "median_ttd": "Mediana T2D"
+    },
+    "columns": {
+      "complaint_id": "Reclamo",
+      "institution": "Institución",
+      "severity": "Severidad",
+      "time_pending": "En cola",
+      "created_by": "Enviado por"
+    },
+    "panels": {
+      "pinned_evidence": "Evidencia destacada",
+      "decision_history": "Historial de decisiones",
+      "regex_hits": "Coincidencias de taxonomía",
+      "top_features": "Principales características",
+      "cross_source": "Contribuciones por canal"
+    },
+    "actions": {
+      "approve": "Aprobar",
+      "approve_with_edits": "Aprobar con ediciones",
+      "reject": "Rechazar",
+      "send_back": "Devolver al analista",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar"
+    },
+    "rationale_modal": {
+      "title_reject": "Justificación del rechazo",
+      "title_send_back": "Nota para el analista",
+      "label": "Justificación",
+      "placeholder": "Explique brevemente por qué…",
+      "min_chars_helper": "Mínimo 20 caracteres",
+      "char_count": "{count} de mínimo 20"
+    },
+    "edit_modal": {
+      "title": "Aprobar con ediciones",
+      "narrative_label": "Narrativa final",
+      "rationale_label": "Justificación de la edición",
+      "min_chars_helper": "Mínimo 20 caracteres"
+    },
+    "decision_already_made": "Esta aprobación ya fue decidida.",
+    "decision_recorded": "Decisión registrada"
   },
   "queue": {
     "title": "Cola de riesgo",

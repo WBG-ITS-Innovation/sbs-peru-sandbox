@@ -8,6 +8,7 @@ Each router file corresponds to a section of the canonical OpenAPI spec.
 
 from fastapi import APIRouter
 
+from sbs_api.routes.approvals import router as approvals_router
 from sbs_api.routes.batches import router as batches_router
 from sbs_api.routes.cockpit import router as cockpit_router
 from sbs_api.routes.complaints import router as complaints_router
@@ -31,6 +32,7 @@ v1_router.include_router(portal_router)
 v1_router.include_router(internal_router)
 v1_router.include_router(cockpit_router)
 v1_router.include_router(findings_router)
+v1_router.include_router(approvals_router)
 v1_router.include_router(sse_router)
 
 __all__ = ["v1_router"]

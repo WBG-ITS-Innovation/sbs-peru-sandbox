@@ -39,15 +39,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sbs_api.cockpit import build_cockpit_snapshot
 from sbs_api.dependencies.db import get_session
-from sbs_api.routes._internal_auth import verify_internal_secret
+from sbs_api.routes._internal_auth import (
+    parse_roles_header,
+    verify_internal_secret,
+)
 from sbs_api.sse import get_bus
 
 router = APIRouter(prefix="/internal", tags=["Internal"])
 
-# Topics the supervisor UI subscribes to. WS3 ships only "cockpit";
-# WS7 + ADR 0043 land the role-scoping table and the additional
-# findings / approvals topics.
-_ALLOWED_TOPICS = frozenset({"cockpit"})
+# Topics the supervisor UI subscribes to. Role-scoping per topic is
+# inline below until WS7 + ADR 0043 lifts it to a declarative table.
+_ALLOWED_TOPICS = frozenset({"cockpit", "findings", "approvals"})
+
+# Per-topic minimum-required-role set — the caller must hold at least
+# one of the listed roles on the X-SBS-Role header.
+_TOPIC_ROLES: dict[str, frozenset[str]] = {
+    "cockpit": frozenset(
+        {"sbs:conduct:supervisor", "sbs:conduct:analyst", "sbs:conduct:head"}
+    ),
+    "findings": frozenset(
+        {"sbs:conduct:supervisor", "sbs:conduct:analyst", "sbs:conduct:head"}
+    ),
+    # Approvals topic restricted to head + analyst — supervisor (María)
+    # does not subscribe per ADR 0040 §D7's demo-scope outline.
+    "approvals": frozenset({"sbs:conduct:analyst", "sbs:conduct:head"}),
+}
 _HEARTBEAT_SECONDS = 25.0
 
 
@@ -59,10 +75,16 @@ async def sse_stream(
     topic: str,
     request: Request,
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+    x_sbs_role: str | None = Header(default=None, alias="X-SBS-Role"),
     session: AsyncSession = Depends(get_session),
 ) -> StreamingResponse:
     if topic not in _ALLOWED_TOPICS:
         raise HTTPException(status_code=404, detail=f"Unknown topic: {topic}")
+
+    granted_roles = parse_roles_header(x_sbs_role)
+    required_roles = _TOPIC_ROLES.get(topic, frozenset())
+    if granted_roles.isdisjoint(required_roles):
+        raise HTTPException(status_code=403, detail="Forbidden")
 
     try:
         parsed_last = int(last_event_id) if last_event_id else None

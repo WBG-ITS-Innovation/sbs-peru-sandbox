@@ -6,8 +6,45 @@
       "error",
       {
         "markupOnly": true,
-        "onlyAttribute": ["aria-label", "title", "placeholder"],
-        "ignoreAttribute": ["data-testid", "data-test", "className", "src", "href", "type", "name", "id", "lang", "key"]
+        "onlyAttribute": ["aria-label", "title", "placeholder", "alt"],
+        "ignoreAttribute": [
+          "data-testid",
+          "data-test",
+          "className",
+          "src",
+          "href",
+          "type",
+          "name",
+          "id",
+          "lang",
+          "dir",
+          "key",
+          "role",
+          "tabIndex",
+          "for",
+          "htmlFor",
+          "method",
+          "action",
+          "accept",
+          "encType",
+          "target",
+          "rel",
+          "style",
+          "aria-controls",
+          "aria-describedby",
+          "aria-labelledby",
+          "aria-hidden",
+          "aria-expanded",
+          "aria-selected",
+          "aria-current",
+          "aria-haspopup",
+          "aria-live",
+          "aria-atomic",
+          "aria-relevant",
+          "aria-busy",
+          "aria-owns",
+          "aria-roledescription"
+        ]
       }
     ]
   }

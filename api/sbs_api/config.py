@@ -241,6 +241,24 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- internal API (Next.js supervisor UI → FastAPI) -----------------
+    internal_api_secret: str | None = Field(
+        default=None,
+        description=(
+            "Shared secret used to authenticate server-to-server calls "
+            "from the Next.js supervisor UI to the FastAPI process at "
+            "/v1/internal/*. The Next.js server sends "
+            "`Authorization: Bearer <secret>` on every internal call; the "
+            "/v1/internal/audit endpoint rejects requests without a "
+            "matching value. Required at runtime when the supervisor UI "
+            "is deployed; None (the default) disables the endpoint "
+            "entirely so the institution-facing surface is unaffected "
+            "when the supervisor UI is not in use. Env var: "
+            "SBS_API_INTERNAL_API_SECRET. Generate with `openssl rand "
+            "-hex 32`."
+        ),
+    )
+
     # --- outbound webhook delivery (ADR 0035) ---------------------------
     allow_insecure_webhook_urls: bool = Field(
         default=False,

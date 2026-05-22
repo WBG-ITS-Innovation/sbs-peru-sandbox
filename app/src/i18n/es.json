@@ -47,7 +47,10 @@
     "signin_failed": "No se pudo iniciar sesión.",
     "session_expired": "Sesión expirada. Inicie sesión de nuevo.",
     "callback_title": "Iniciando sesión…",
-    "callback_body": "Validando credenciales con el proveedor de identidad."
+    "callback_body": "Validando credenciales con el proveedor de identidad.",
+    "state_mismatch": "Estado de inicio de sesión inválido.",
+    "missing_code_or_state": "Falta información del proveedor de identidad.",
+    "token_exchange_failed": "El proveedor de identidad rechazó el código."
   },
   "cockpit": {
     "title": "Cabina",

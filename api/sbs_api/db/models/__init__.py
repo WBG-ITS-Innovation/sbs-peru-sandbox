@@ -4,6 +4,7 @@ Importing this package eagerly imports every model so Alembic's autogenerate
 sees the full metadata graph.
 """
 
+from sbs_api.db.models.agent_feedback import AgentFeedback
 from sbs_api.db.models.agent_run import AgentRun
 from sbs_api.db.models.audit_event import AuditEvent
 from sbs_api.db.models.batch import BatchRecord
@@ -20,9 +21,11 @@ from sbs_api.db.models.institution_webhook_config import (
 from sbs_api.db.models.oauth_client import OAuthClient
 from sbs_api.db.models.outbound_webhook_secret import OutboundWebhookSecret
 from sbs_api.db.models.pending_approval import PendingApproval
+from sbs_api.db.models.supervisory_observation import SupervisoryObservation
 from sbs_api.db.models.webhook_delivery import WebhookDelivery
 
 __all__ = [
+    "AgentFeedback",
     "AgentRun",
     "AuditEvent",
     "BatchRecord",
@@ -37,5 +40,6 @@ __all__ = [
     "OAuthClient",
     "OutboundWebhookSecret",
     "PendingApproval",
+    "SupervisoryObservation",
     "WebhookDelivery",
 ]

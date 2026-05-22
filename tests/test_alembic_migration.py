@@ -31,6 +31,8 @@ async def _drop_schema(test_database_url: str) -> None:
         # their parents. CASCADE handles indirect dependents.
         for table in (
             "alembic_version",
+            "agent_feedback",
+            "supervisory_observations",
             "pending_approvals",
             "complaint_narrative_drafts",
             "audit_events",
@@ -129,8 +131,10 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
         "audit_events",
         "complaint_narrative_drafts",
         "pending_approvals",
+        "supervisory_observations",
+        "agent_feedback",
         "alembic_version",
     }
     missing = expected - tables
     assert not missing, f"missing tables: {missing}"
-    assert version_num == "20260522_0003"
+    assert version_num == "20260522_0004"

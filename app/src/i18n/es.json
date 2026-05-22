@@ -242,15 +242,46 @@
   },
   "queue": {
     "title": "Cola de riesgo",
-    "placeholder": {
-      "body": "WS6 — Cola filtrable y ordenable con valores por defecto por rol."
+    "deferred": {
+      "title": "Vista de cola disponible en una iteración posterior",
+      "body": "Por ahora, los hallazgos se filtran desde la pantalla Hallazgos.",
+      "primary": "Abrir Hallazgos"
     }
   },
   "audit": {
     "title": "Auditoría",
-    "placeholder": {
-      "body": "WS6 — Registro cronológico de auditoría leyendo desde audit_events."
-    }
+    "subtitle": "Toda acción que cambia estado queda registrada aquí: inicio de sesión, cambio de persona, edición de borrador, envío a aprobaciones y cada decisión.",
+    "empty": {
+      "title": "Sin entradas para estos filtros",
+      "body": "Reinicie los filtros o amplíe la ventana temporal.",
+      "primary": "Reiniciar filtros"
+    },
+    "filters": {
+      "label": "Filtros",
+      "actor": "Actor",
+      "action": "Acción",
+      "object_type": "Tipo de objeto",
+      "object_id": "ID de objeto",
+      "from": "Desde",
+      "to": "Hasta",
+      "apply": "Aplicar",
+      "reset": "Reiniciar"
+    },
+    "columns": {
+      "created_at": "Marca temporal",
+      "actor": "Actor",
+      "action": "Acción",
+      "object": "Objeto",
+      "details": "Detalles"
+    },
+    "pagination": {
+      "page_of": "Página {page} de {total}",
+      "prev": "Anterior",
+      "next": "Siguiente"
+    },
+    "details_label": "Ver detalles",
+    "actor_type_user": "Usuario",
+    "actor_type_agent": "Agente"
   },
   "components_index": {
     "title": "Índice del sistema de diseño",

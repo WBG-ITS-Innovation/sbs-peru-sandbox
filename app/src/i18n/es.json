@@ -65,8 +65,47 @@
   },
   "cockpit": {
     "title": "Cabina",
-    "placeholder": {
-      "body": "WS3 — Vista lado a lado Tier 1 / Tier 2 con señales cruzadas."
+    "connection": {
+      "connecting": "Conectando…",
+      "connected": "En vivo",
+      "disconnected": "Reconectando…"
+    },
+    "kpis": {
+      "complaints_24h": "Reclamos 24h",
+      "anomalies_active": "Anomalías activas",
+      "top_institutions": "Principales instituciones"
+    },
+    "cross_source": {
+      "title": "Señales cruzadas",
+      "illustrative": "Ilustrativo",
+      "channels": {
+        "complaints": "Reclamos",
+        "social": "Redes sociales",
+        "indecopi": "INDECOPI",
+        "plavia": "Plavia",
+        "internal": "Interno"
+      }
+    },
+    "anomaly": {
+      "threshold": "Umbral",
+      "composite": "Compuesto",
+      "why_fired": "Por qué se activó",
+      "channels": "Contribuciones por canal",
+      "open_findings": "Abrir hallazgos relacionados"
+    },
+    "tier1_empty": {
+      "title": "Sin actividad reciente Tier 1",
+      "body": "No hay reclamos recibidos por la API en la ventana actual.",
+      "primary": "Abrir hallazgos"
+    },
+    "tier2_empty": {
+      "title": "Sin lotes recientes Tier 2",
+      "body": "No hay lotes procesados en la ventana de 28 días.",
+      "primary": "Abrir hallazgos"
+    },
+    "anomalies_empty": {
+      "title": "Sin anomalías activas",
+      "body": "Las señales cruzadas están dentro de umbrales normales."
     }
   },
   "findings": {

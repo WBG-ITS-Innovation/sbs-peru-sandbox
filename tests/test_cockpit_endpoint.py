@@ -27,11 +27,16 @@ async def app_with_secret(app_settings, monkeypatch, internal_secret, db_schema)
 
     get_settings.cache_clear()
     from sbs_api.app import create_app
+    from sbs_api.db.session import reset_engine_for_test
 
+    await reset_engine_for_test()
     fresh = get_settings()
     application = create_app(settings=fresh)
-    yield application
-    get_settings.cache_clear()
+    try:
+        yield application
+    finally:
+        await reset_engine_for_test()
+        get_settings.cache_clear()
 
 
 @pytest.mark.asyncio

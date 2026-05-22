@@ -26,6 +26,7 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 # Tests live at repo root and need to discover the sbs_api package and the
 # scripts/ helpers without those being installed. conftest.py inserts the
 # paths; pytest just needs to find tests/.

@@ -1,0 +1,178 @@
+{
+  "id": "sbs-demo",
+  "realm": "sbs-demo",
+  "enabled": true,
+  "displayName": "SBS SupTech (Demo)",
+  "displayNameHtml": "SBS SupTech <i>(Demo)</i>",
+  "notBefore": 0,
+  "defaultSignatureAlgorithm": "RS256",
+  "revokeRefreshToken": false,
+  "refreshTokenMaxReuse": 0,
+  "accessTokenLifespan": 900,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 10,
+  "sslRequired": "external",
+  "roles": {
+    "realm": [
+      {
+        "name": "sbs:conduct:supervisor",
+        "description": "María-equivalent. Institution-level conduct supervision views.",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "sbs:conduct:analyst",
+        "description": "Lucía-equivalent. Adds analytical drilldown, model internals, corpus search.",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "sbs:conduct:head",
+        "description": "Jorge-equivalent. CAD / CSD / Market Conduct unit head; approvals authority.",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "maria@sbs.gob.pe",
+      "email": "maria@sbs.gob.pe",
+      "firstName": "María",
+      "lastName": "Lazo",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "maria-demo-2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["sbs:conduct:supervisor", "default-roles-sbs-demo"]
+    },
+    {
+      "username": "lucia@sbs.gob.pe",
+      "email": "lucia@sbs.gob.pe",
+      "firstName": "Lucía",
+      "lastName": "Ramos",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "lucia-demo-2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["sbs:conduct:analyst", "default-roles-sbs-demo"]
+    },
+    {
+      "username": "jorge@sbs.gob.pe",
+      "email": "jorge@sbs.gob.pe",
+      "firstName": "Jorge",
+      "lastName": "Caballero",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "jorge-demo-2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["sbs:conduct:head", "default-roles-sbs-demo"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "sbs-supervisor-ui",
+      "name": "SBS SupTech Supervisor UI",
+      "description": "Public client (PKCE-required) for the supervisor UI. Direct Access Grants enabled for the demo-mode persona switcher only (ADR 0040 §D8); production overlay disables it.",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "publicClient": true,
+      "clientAuthenticatorType": "client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "http://localhost:3000/app",
+      "baseUrl": "/app",
+      "adminUrl": "",
+      "redirectUris": [
+        "http://localhost:3000/app/auth/callback",
+        "http://localhost:8000/app/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/app/login##http://localhost:8000/app/login",
+        "client.session.idle.timeout": "1800",
+        "client.session.max.lifespan": "28800"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ],
+      "fullScopeAllowed": true,
+      "consentRequired": false
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "role_list",
+    "profile",
+    "email",
+    "web-origins"
+  ],
+  "defaultOptionalClientScopes": [
+    "offline_access"
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "referrerPolicy": "no-referrer",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "smtpServer": {},
+  "internationalizationEnabled": true,
+  "supportedLocales": ["es", "en"],
+  "defaultLocale": "es"
+}

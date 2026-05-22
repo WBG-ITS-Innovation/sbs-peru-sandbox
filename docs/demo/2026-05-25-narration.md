@@ -72,9 +72,53 @@ side-by-side + anomaly card. The 90-second beat is unchanged.)
 
 ## §Approvals moment (WS5 — to be authored)
 
-When WS5 lands, this section grows. Jorge opens Approvals, sees the
-pending row from the Findings edit, reviews Lucía's draft, approves
-with edits. The decision flows into Audit within 1s.
+Antoine switches persona to **Jorge** via the top-bar switcher. The
+nav rail's role indicator flips from Analista to Jefe; the URL stays
+on Findings; Antoine clicks Approvals in the nav rail. The audit row
+recording the persona switch lands silently in `audit_events`
+(`actor_id=antoine`, `meta.from_persona=lucia`, `to_persona=jorge`).
+
+The queue shows one pending item — the one Lucía sent up. KPIs at the
+top: pending 1, approved today 0, rejected today 0, median T2D —.
+Click the row. Detail opens.
+
+Pinned evidence shows three columns:
+- **Taxonomy hits**: `ANX1A-FEE-MAINT-001` matching "comisión por
+  mantenimiento" in paragraph two.
+- **Top features**: `narrative_mentions_fee_undisclosed` +0.27,
+  `vulnerable_consumer_flag` +0.19, `prior_findings_180d` +0.16.
+- **Channel contributions**: indecopi +0.30, social +0.20,
+  complaints +0.18.
+
+Below it, the same panels Lucía saw — Narrative + Classification +
+Feature importance + Agent reasoning — render exactly as before.
+Decision-history is empty (this is the first time Jorge has opened
+this approval).
+
+Jorge clicks **Approve with edits**. The Edit modal opens with the
+narrative pre-filled to Lucía's saved draft (which now includes the
+maintenance-fee mention). Jorge adjusts the closing sentence to add
+"institutional notification recommended within 5 business days." and
+fills the rationale: *"Edit clarifies the recommended remediation
+window for institutional response."* (82 chars; well above the 20-
+char minimum the modal's helper text shows until threshold.)
+
+Save. The modal closes. The decision row flips to "Approved ·
+approve-with-edits". Behind the scenes the four-write effect lands:
+
+- `supervisory_observations` gets a row with Jorge's edited narrative.
+- `agent_feedback` gets a row with `decision='approve-with-edits'`
+  and `edit_diff={before, after}` for the AI-eval pipeline.
+- `pending_approvals.status` flips from 'pending' to 'approved' with
+  the decision_action, decided_by, decided_at, decision_rationale.
+- One `audit_events` row lands with action='approve-with-edits-
+  finding' and the nine-key meta the decision-audit contract test
+  pins (pending_approval_id, complaint_id, agent_run_id,
+  decision_action, observation_id, feedback_id, severity,
+  rationale_excerpt, edit_diff).
+
+If the narration drifts from the code in a future revision, fix one
+or the other in the same PR — they are the contract.
 
 ## §Audit (WS6 — to be authored)
 

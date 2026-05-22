@@ -35,6 +35,7 @@ this README in the same PR.
 | `approvals` | WS5 — queue and detail, the four decision actions, rationale field. |
 | `queue` | WS6 — risk queue table and filters. |
 | `audit` | WS6 — audit log table, diff modal, search. |
+| `personas` | WS2 — demo-mode persona switcher labels (María / Lucía / Jorge). Only renders when `SBS_DEMO_MODE=true`; the namespace must stay populated so production builds with the flag off still parity-check. |
 | `errors` | RFC 9457 problem-type renderings and inline error messages. |
 
 ### Where action verbs go

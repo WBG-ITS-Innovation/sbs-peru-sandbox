@@ -189,10 +189,56 @@
   },
   "approvals": {
     "title": "Approvals",
-    "placeholder": {
-      "queue_body": "WS5 — Pending findings awaiting approval, severity-sorted.",
-      "detail_body": "WS5 — Agent reasoning, evidence, four-action HITL gate."
-    }
+    "subtitle": "Findings awaiting approval, severity-sorted (oldest-first within band).",
+    "empty": {
+      "title": "No pending approvals",
+      "body": "The queue is clear. Findings sent up by analysts will appear here.",
+      "primary": "Open risk queue"
+    },
+    "kpis": {
+      "pending": "Pending",
+      "approved_today": "Approved today",
+      "rejected_today": "Rejected today",
+      "median_ttd": "Median T2D"
+    },
+    "columns": {
+      "complaint_id": "Complaint",
+      "institution": "Institution",
+      "severity": "Severity",
+      "time_pending": "In queue",
+      "created_by": "Sent by"
+    },
+    "panels": {
+      "pinned_evidence": "Pinned evidence",
+      "decision_history": "Decision history",
+      "regex_hits": "Taxonomy hits",
+      "top_features": "Top features",
+      "cross_source": "Channel contributions"
+    },
+    "actions": {
+      "approve": "Approve",
+      "approve_with_edits": "Approve with edits",
+      "reject": "Reject",
+      "send_back": "Send back to analyst",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "rationale_modal": {
+      "title_reject": "Rejection rationale",
+      "title_send_back": "Note to analyst",
+      "label": "Rationale",
+      "placeholder": "Briefly explain why…",
+      "min_chars_helper": "Minimum 20 characters",
+      "char_count": "{count} of minimum 20"
+    },
+    "edit_modal": {
+      "title": "Approve with edits",
+      "narrative_label": "Final narrative",
+      "rationale_label": "Rationale for the edit",
+      "min_chars_helper": "Minimum 20 characters"
+    },
+    "decision_already_made": "This approval has already been decided.",
+    "decision_recorded": "Decision recorded"
   },
   "queue": {
     "title": "Risk queue",

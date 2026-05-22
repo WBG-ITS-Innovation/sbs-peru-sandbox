@@ -124,8 +124,56 @@ services:
         UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev --package sbs-api && \
         uv run --no-sync --package sbs-api python scripts/webhook-listener.py
 
+  # Keycloak sandbox IdP for the supervisor UI (Prompt 10 / WS2, ADR 0040).
+  # Pinned image (not :latest, not a floating major) so the demo is
+  # reproducible. The realm is seeded from a committed JSON export via
+  # the --import-realm flag (Keycloak 22+); see infra/keycloak/README.md
+  # for re-export and production-overlay notes.
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: sbs-keycloak
+    restart: unless-stopped
+    environment:
+      # Sandbox admin only. Production secrets come from Helm values.
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin  # pragma: allowlist secret
+      # dev-file = in-memory H2 + on-disk persistence under /opt/keycloak/data;
+      # sufficient for the demo. Production overlay uses Postgres.
+      KC_DB: dev-file
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: INFO
+    ports:
+      # Keycloak listens on 8080 inside the container; 8081 on the host
+      # avoids collision with the webhook-listener service.
+      - "8081:8080"
+    volumes:
+      # Mount the realm export directory read-only; Keycloak imports
+      # every JSON file in here on start. The export-realm.sh helper
+      # writes back into infra/keycloak/ — not into this mount point —
+      # so the container's view of the import dir stays read-only.
+      - ./infra/keycloak:/opt/keycloak/data/import:ro
+      - sbs_keycloak_data:/opt/keycloak/data
+    command:
+      - start-dev
+      - --import-realm
+    healthcheck:
+      # Keycloak 25's /health/ready is on port 9000 (management port) by
+      # default; in start-dev it's served on the same 8080. Use bash's
+      # /dev/tcp because the official Keycloak image doesn't ship curl.
+      test:
+        - "CMD-SHELL"
+        - "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
 volumes:
   sbs_postgres_data: {}
   sbs_redis_data: {}
   sbs_worker_venv: {}
   sbs_webhook_listener_venv: {}
+  sbs_keycloak_data: {}

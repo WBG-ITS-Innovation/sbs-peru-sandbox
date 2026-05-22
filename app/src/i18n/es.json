@@ -116,9 +116,75 @@
   },
   "findings": {
     "title": "Hallazgos",
-    "placeholder": {
-      "list_body": "WS4 — Tabla filtrable de hallazgos con valores por defecto por rol.",
-      "detail_body": "WS4 — Paneles BERT / XGBoost / razonamiento del agente."
+    "subtitle": "Casos clasificados por la cadena de agentes; filtrables por institución, severidad, fuente y banda de confianza.",
+    "empty": {
+      "title": "Sin hallazgos para estos filtros",
+      "body": "Ningún reclamo cumple los criterios actuales. Reinicie los filtros o amplíe la ventana temporal.",
+      "primary": "Reiniciar filtros"
+    },
+    "filters": {
+      "label": "Filtros",
+      "institution": "Institución",
+      "severity": "Severidad",
+      "source": "Fuente",
+      "classification": "Clasificación",
+      "confidence_band": "Banda de confianza",
+      "from": "Desde",
+      "to": "Hasta",
+      "any": "Cualquiera",
+      "apply": "Aplicar",
+      "reset": "Reiniciar",
+      "source_tier1": "Tier 1 (API)",
+      "source_tier2": "Tier 2 (Lote)",
+      "band_low": "Baja (<0.5)",
+      "band_medium": "Media (0.5–0.8)",
+      "band_high": "Alta (>0.8)"
+    },
+    "columns": {
+      "complaint_id": "Reclamo",
+      "institution": "Institución",
+      "classification": "Clasificación",
+      "confidence": "Confianza",
+      "severity": "Severidad",
+      "source": "Fuente",
+      "drafted_by_agent": "Borrador IA",
+      "received_at": "Recibido"
+    },
+    "panels": {
+      "header": "Detalles del reclamo",
+      "narrative": "Narrativa del cliente",
+      "classification": "Clasificación BERT",
+      "feature_importance": "Importancia de características (XGBoost)",
+      "agent_reasoning": "Razonamiento del agente",
+      "draft_narrative": "Borrador de resumen",
+      "actions": "Acciones",
+      "narrative_anonymization": "Política de anonimización",
+      "narrative_length": "Longitud",
+      "classification_top_k": "Top 3 clases",
+      "classification_model": "Modelo",
+      "feature_model": "Modelo de ranker",
+      "rank_band": "Banda de ranking"
+    },
+    "agent_status": {
+      "success": "Éxito",
+      "partial": "Parcial",
+      "failed": "Falló",
+      "timeout": "Tiempo agotado"
+    },
+    "actions": {
+      "send_to_approvals": "Enviar a Aprobaciones",
+      "mark_false_positive": "Marcar falso positivo",
+      "assign": "Asignar a colega",
+      "save_draft": "Guardar borrador",
+      "cancel_edit": "Cancelar edición",
+      "edit": "Editar borrador",
+      "send_to_approvals_already_pending": "Ya está en cola de aprobaciones",
+      "assignment_via_api": "Asignación vía API en este prompt"
+    },
+    "draft_helper": {
+      "agent_drafted": "Borrador del agente",
+      "edited_by": "Editado por",
+      "no_edits_yet": "Sin ediciones aún"
     }
   },
   "approvals": {

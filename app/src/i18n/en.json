@@ -242,15 +242,46 @@
   },
   "queue": {
     "title": "Risk queue",
-    "placeholder": {
-      "body": "WS6 — Filterable, sortable queue with role-scoped defaults."
+    "deferred": {
+      "title": "Risk Queue lands in a follow-up",
+      "body": "For now, findings filter from the Findings screen.",
+      "primary": "Open Findings"
     }
   },
   "audit": {
     "title": "Audit",
-    "placeholder": {
-      "body": "WS6 — Chronological audit log reading from audit_events."
-    }
+    "subtitle": "Every state-changing action is recorded here: login, persona switch, draft edit, send to approvals, and each decision.",
+    "empty": {
+      "title": "No entries match these filters",
+      "body": "Reset the filters or widen the time window.",
+      "primary": "Reset filters"
+    },
+    "filters": {
+      "label": "Filters",
+      "actor": "Actor",
+      "action": "Action",
+      "object_type": "Object type",
+      "object_id": "Object ID",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "columns": {
+      "created_at": "Timestamp",
+      "actor": "Actor",
+      "action": "Action",
+      "object": "Object",
+      "details": "Details"
+    },
+    "pagination": {
+      "page_of": "Page {page} of {total}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "details_label": "Show details",
+    "actor_type_user": "User",
+    "actor_type_agent": "Agent"
   },
   "components_index": {
     "title": "Design system index",

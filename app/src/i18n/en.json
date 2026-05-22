@@ -65,8 +65,47 @@
   },
   "cockpit": {
     "title": "Cockpit",
-    "placeholder": {
-      "body": "WS3 — Tier 1 / Tier 2 side-by-side view with cross-source signals."
+    "connection": {
+      "connecting": "Connecting…",
+      "connected": "Live",
+      "disconnected": "Reconnecting…"
+    },
+    "kpis": {
+      "complaints_24h": "Complaints 24h",
+      "anomalies_active": "Active anomalies",
+      "top_institutions": "Top institutions"
+    },
+    "cross_source": {
+      "title": "Cross-source signals",
+      "illustrative": "Illustrative",
+      "channels": {
+        "complaints": "Complaints",
+        "social": "Social",
+        "indecopi": "INDECOPI",
+        "plavia": "Plavia",
+        "internal": "Internal"
+      }
+    },
+    "anomaly": {
+      "threshold": "Threshold",
+      "composite": "Composite",
+      "why_fired": "Why this fired",
+      "channels": "Channel contributions",
+      "open_findings": "Open related findings"
+    },
+    "tier1_empty": {
+      "title": "No recent Tier 1 activity",
+      "body": "No complaints received via the API in the current window.",
+      "primary": "Open findings"
+    },
+    "tier2_empty": {
+      "title": "No recent Tier 2 batches",
+      "body": "No batches processed in the 28-day window.",
+      "primary": "Open findings"
+    },
+    "anomalies_empty": {
+      "title": "No active anomalies",
+      "body": "Cross-source signals are within normal thresholds."
     }
   },
   "findings": {

@@ -183,7 +183,7 @@ async def db_schema(test_database_url):
         )
         await conn.execute(
             text(
-                "INSERT INTO alembic_version (version_num) VALUES ('20260522_0002')"
+                "INSERT INTO alembic_version (version_num) VALUES ('20260522_0003')"
             )
         )
 

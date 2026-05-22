@@ -102,3 +102,93 @@ INSERT INTO institution_webhook_configs (
     ('SBS-005678', 'http://webhook-listener:8080/sbs-callback', true, now()),
     ('SBS-009012', 'http://webhook-listener:8080/sbs-callback', true, now())
 ON CONFLICT (institution_id) DO NOTHING;
+
+-- Demo complaints for the supervisor UI narrative (Prompt 10).
+--
+-- scripts/seed_demo_narrative.py inserts agent_runs rows referencing
+-- these three complaint_ids and was originally written assuming they
+-- existed (either from the db_schema test fixture or from real Tier 1
+-- ingestion). Neither path runs at dev-up time, so the narrative seed
+-- failed against a fresh dev DB. These rows close that gap.
+--
+-- BCO-2026-000001 is the demo headline: Lucía's narration edit adds
+-- "comisión por mantenimiento" — the description_text below
+-- deliberately omits that phrase from paragraph 2 so the scripted edit
+-- has somewhere to land.
+--
+-- BCO-2026-000002 is the partial-failure target (BERT timeout + XGBoost
+-- unavailable agent_run traces hang off it).
+--
+-- BCO-2026-000003 is the failed-run target (anonymizer error).
+--
+-- All three carry source='api_realtime' so they look like Tier 1
+-- submissions in the cockpit, on SBS-001234 (BANCO_DEMO_001).
+INSERT INTO complaints (
+    complaint_id,
+    institution_id,
+    received_date,
+    complainant_doc_type,
+    product_category,
+    channel,
+    motivo_code,
+    severity,
+    description_text,
+    description_language,
+    complainant_age_range,
+    complainant_district,
+    submission_method,
+    resolution_status,
+    source
+) VALUES
+    (
+        'BCO-2026-000001',
+        'SBS-001234',
+        '2026-05-20',
+        'DNI',
+        'TARJETA_CREDITO',
+        'APP_MOVIL',
+        'COBRO_INDEBIDO',
+        'HIGH',
+        E'Reclamo por cargos no informados en mi tarjeta de crédito.\n\nDurante los últimos tres meses he visto débitos recurrentes que no aparecen en el contrato original ni en la cartilla de información que firmé al momento de la apertura. Solicité explicación al canal de atención y no me dieron una respuesta clara sobre el origen del cargo.\n\nPido la devolución íntegra y la rectificación del cronograma.',
+        'es',
+        '35_44',
+        '150100',
+        'APP_MOVIL',
+        'pendiente',
+        'api_realtime'
+    ),
+    (
+        'BCO-2026-000002',
+        'SBS-001234',
+        '2026-05-20',
+        'DNI',
+        'CUENTA_AHORRO',
+        'AGENCIA',
+        'COBRO_INDEBIDO',
+        'HIGH',
+        E'Cargos en mi cuenta de ahorros que no reconozco. La agencia indicó que se trata de una comisión por mantenimiento que nunca fue informada al momento de abrir la cuenta. Solicito devolución y aclaración.',
+        'es',
+        '45_54',
+        '150100',
+        'AGENCIA',
+        'pendiente',
+        'api_realtime'
+    ),
+    (
+        'BCO-2026-000003',
+        'SBS-001234',
+        '2026-05-20',
+        'DNI',
+        'CREDITO_CONSUMO',
+        'CALL_CENTER',
+        'COBRO_INDEBIDO',
+        'HIGH',
+        E'Cobros indebidos en mi crédito de consumo. El monto de la cuota mensual aumentó sin previa notificación. Solicito explicación y devolución de las diferencias.',
+        'es',
+        '25_34',
+        '150100',
+        'CALL_CENTER',
+        'pendiente',
+        'api_realtime'
+    )
+ON CONFLICT (complaint_id) DO NOTHING;

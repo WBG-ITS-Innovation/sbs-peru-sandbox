@@ -15,17 +15,16 @@ the route shape stays the same.
 
 from __future__ import annotations
 
-import secrets
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sbs_api.audit import record_audit_event
-from sbs_api.config import Settings, get_settings
 from sbs_api.dependencies.db import get_session
+from sbs_api.routes._internal_auth import verify_internal_secret
 
 router = APIRouter(prefix="/internal", tags=["Internal"])
 
@@ -55,35 +54,11 @@ class AuditWriteResponse(BaseModel):
     created_at: str
 
 
-def _verify_internal_secret(
-    authorization: str | None = Header(default=None),
-    settings: Settings = Depends(get_settings),
-) -> None:
-    """FastAPI dependency: rejects calls without a matching shared secret.
-
-    Constant-time compare; constant 401 on missing header AND on
-    mismatched header so a probe cannot distinguish 'no secret
-    configured' from 'wrong secret'. If the secret is not configured at
-    all (None), the endpoint is unreachable — defends against a
-    misconfigured deployment exposing the audit write path to anyone.
-    """
-
-    expected = settings.internal_api_secret
-    if not expected:
-        raise HTTPException(status_code=404, detail="Not Found")
-
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    presented = authorization[len("Bearer ") :]
-    if not secrets.compare_digest(presented, expected):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-
 @router.post(
     "/audit",
     response_model=AuditWriteResponse,
     status_code=201,
-    dependencies=[Depends(_verify_internal_secret)],
+    dependencies=[Depends(verify_internal_secret)],
 )
 async def write_audit(
     body: AuditWriteRequest,

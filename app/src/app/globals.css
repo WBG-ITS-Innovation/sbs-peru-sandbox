@@ -2,14 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
-/* WS1 (design system) defines the typography variables, palette tokens,
-   and density rules. This file stays a thin shell until then. */
+/*
+ * SBS visual design system — ADR 0041 D2 (semantic tokens, not literal
+ * hex). Every component reads from these custom properties; a palette
+ * tweak after Luis's review touches this file only.
+ *
+ * Light theme is canonical for May 25. Dark theme is reserved — every
+ * token below has a future-mappable companion under a `.dark` ancestor,
+ * landing in Part 8.
+ */
 
 :root {
+  /* Brand palette literals (the ONLY place hex values live) */
+  --color-brand-navy: #002244;
+  --color-brand-cyan: #009fda;
+  --color-brand-gold: #f5bd24;
+
+  /* Neutral scale — slate-tinted per the spec */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* Surfaces */
+  --color-surface: var(--color-neutral-0);
+  --color-surface-subtle: var(--color-neutral-50);
+  --color-surface-elevated: var(--color-neutral-0);
+  --color-surface-inverted: var(--color-brand-navy);
+
+  /* Foreground */
+  --color-fg: var(--color-neutral-900);
+  --color-fg-muted: var(--color-neutral-600);
+  --color-fg-subtle: var(--color-neutral-500);
+  --color-fg-inverted: var(--color-neutral-0);
+  --color-fg-link: var(--color-brand-cyan);
+
+  /* Borders */
+  --color-border: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
+  --color-border-subtle: var(--color-neutral-100);
+
+  /* Severity — bound to semantic names, not consumed by hex elsewhere.
+     Foreground / background / border per band. Tuned for WCAG 2.1 AA
+     contrast against the corresponding background.                  */
+  --severity-low-bg: #ecfdf5;
+  --severity-low-fg: #065f46;
+  --severity-low-border: #6ee7b7;
+
+  --severity-medium-bg: #fefce8;
+  --severity-medium-fg: #854d0e;
+  --severity-medium-border: #fde047;
+
+  --severity-high-bg: #fef2f2;
+  --severity-high-fg: #991b1b;
+  --severity-high-border: #fca5a5;
+
+  --severity-critical-bg: #fdf2f8;
+  --severity-critical-fg: #6b21a8;
+  --severity-critical-border: #d8b4fe;
+
+  /* Status (complaint resolution) */
+  --status-pending-bg: var(--color-neutral-100);
+  --status-pending-fg: var(--color-neutral-700);
+  --status-in-review-bg: #eff6ff;
+  --status-in-review-fg: #1e40af;
+  --status-resolved-bg: #f0fdf4;
+  --status-resolved-fg: #166534;
+  --status-escalated-bg: #fff7ed;
+  --status-escalated-fg: #9a3412;
+
+  /* Interaction */
+  --color-accent: var(--color-brand-cyan);
+  --color-accent-fg: var(--color-neutral-0);
+  --color-accent-hover: #0284c7;
+  --color-danger: #dc2626;
+  --color-danger-fg: var(--color-neutral-0);
+
+  /* Focus ring — ADR 0041 D5. Gold against navy is high-contrast;
+     against neutral surfaces it's accessible without being noisy. */
+  --focus-ring: var(--color-brand-gold);
+
   color-scheme: light;
 }
 
-html,
-body {
-  height: 100%;
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-fg);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    /* ADR 0041 D5 — Inter font-features for small-size legibility.
+       cv11 is the double-storey `a`; ss01-03 sharpen `1`, `l`, `i`
+       so they don't collide in 12px column widths. */
+    font-feature-settings:
+      'cv11' on,
+      'ss01' on,
+      'ss02' on,
+      'ss03' on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    /* Knock out the default browser outline so ours is what shows. */
+    outline-style: solid;
+  }
+}
+
+@layer utilities {
+  /* ADR 0041 D5 — tabular-nums on every numeric column / KPI / score.
+     Without this, SSE-driven value updates make table rows jiggle as
+     digits change. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }

@@ -55,10 +55,12 @@ export default function SupervisorLayout({
 
   const navLabels = {
     cockpit: t(locale, 'nav.cockpit'),
-    queue: t(locale, 'nav.queue'),
     findings: t(locale, 'nav.findings'),
     approvals: t(locale, 'nav.approvals'),
     audit: t(locale, 'nav.audit'),
+    analytics: t(locale, 'nav.analytics'),
+    assistant: t(locale, 'nav.assistant'),
+    pilot_phase: t(locale, 'nav.pilot_phase'),
     primary_label: t(locale, 'nav.primary_label'),
     role_indicator: t(locale, 'nav.role_indicator'),
   };

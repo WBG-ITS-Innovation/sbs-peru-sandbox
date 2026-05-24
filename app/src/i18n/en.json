@@ -39,6 +39,9 @@
     "findings": "Findings",
     "approvals": "Approvals",
     "audit": "Audit",
+    "analytics": "Reports",
+    "assistant": "Assistant",
+    "pilot_phase": "Pilot phase",
     "components_index": "Design system",
     "primary_label": "Primary navigation",
     "user_menu_label": "Account",
@@ -46,6 +49,10 @@
     "language_toggle": "Language",
     "switch_persona": "Switch persona",
     "active_persona": "Active persona"
+  },
+  "pilot": {
+    "badge": "PILOT PHASE · Q3 2026",
+    "preview_disclaimer": "Preview · not wired into the operational flow yet"
   },
   "auth": {
     "signin": "Sign in",
@@ -71,6 +78,14 @@
   },
   "cockpit": {
     "title": "Cockpit",
+    "page": {
+      "title": "Supervisor cockpit · Market conduct",
+      "subtitle": "Complaints, anomalies and cross-source signals across a 7-day rolling window.",
+      "breadcrumb_supervision": "Supervision",
+      "breadcrumb_conduct": "Market conduct",
+      "breadcrumb_current": "Cockpit",
+      "meta": "7-day rolling window · synthetic sandbox"
+    },
     "connection": {
       "connecting": "Connecting…",
       "connected": "Live",
@@ -320,5 +335,219 @@
     "permission_denied": "Action not allowed.",
     "not_found": "Resource not found.",
     "validation": "Invalid request."
+  },
+  "login": {
+    "title": "Conduct supervision sign-in",
+    "subtitle": "Superintendency of Banking, Insurance and Private Pension Funds · Peru",
+    "sso_button": "Sign in with SBS institutional SSO",
+    "demo_button": "Enter evaluation sandbox",
+    "demo_subline": "Loads the three pilot-phase identities (María, Lucía, Jorge) into one session. Synthetic sandbox only.",
+    "integrator_link": "Integrator access · developer portal",
+    "footer_version": "Sandbox build · support: gcmif@sbs.gob.pe",
+    "footer_location": "Lima, Peru",
+    "mfa_notice": "Authorized personnel only · session recorded · MFA required when enabled",
+    "secure_session": "secure session"
+  },
+  "live_ingestion": {
+    "title": "Live ingestion · preview",
+    "subtitle": "How a Tier 1 submission would look once canonical anonymization is enabled.",
+    "live_toggle": "Live",
+    "paused_toggle": "Paused",
+    "mtls_label": "mTLS · simulated session",
+    "simulate_button": "Simulate institution submission",
+    "simulate_toast_title": "Simulated submission",
+    "simulate_toast_body": "Local preview · no backend call, no audit row.",
+    "timeline_title": "Event timeline · simulated",
+    "diff_title": "Diff · before / after anonymization",
+    "diff_tag_before": "BEFORE",
+    "diff_tag_after": "AFTER",
+    "diff_before_text": "Customer Juan Pérez (DNI 12345678, phone 999 123 456, email juan.perez@example.pe) reports unrecognized charges.",
+    "diff_after_text": "Customer [NAME] (DNI [DNI], phone [PHONE], email [EMAIL]) reports unrecognized charges.",
+    "policy_footer": "Policy pii-2026.03 · regex + NER · 4 entities redacted",
+    "events": {
+      "received": "submission received at gateway",
+      "validated": "schema validated · Annex 1-A",
+      "redacted": "PII anonymized · 4 entities",
+      "persisted": "complaint persisted · provisional id",
+      "broadcast": "broadcast to cockpit"
+    }
+  },
+  "analytics": {
+    "title": "Statistical reports · transition from SUCAVE",
+    "subtitle": "Automatic statistical reports built from the granular complaint stream, contrasted against reference SUCAVE reports during the pilot.",
+    "compare_label": "Compare against reference SUCAVE report",
+    "export_report": "Export statistical report",
+    "download_csv": "Download CSV / XLSX",
+    "subtabs": {
+      "rr1": "RR1 · volumes by reason and channel",
+      "rr2": "RR2 · free text · code 999",
+      "rr3": "RR3 · operations by product"
+    },
+    "filters": {
+      "institution": "Institution",
+      "period": "Period",
+      "frequency": "Frequency",
+      "generate": "Generate report"
+    },
+    "kpis": {
+      "total_complaints": "Total complaints",
+      "resolved_on_time": "% resolved on time",
+      "active_institutions": "Active institutions",
+      "sucave_match": "SUCAVE concordance"
+    },
+    "cadence": {
+      "title": "Coverage by submission cadence",
+      "subtitle": "Profile assigned by SBS based on volume and institutional profile",
+      "api_nrt": {
+        "label": "API NRT",
+        "detail": "≤ 15 min · high volume / high risk (Tier 1)"
+      },
+      "daily": {
+        "label": "Daily",
+        "detail": "23:59 PET cutoff · medium volume"
+      },
+      "weekly_monthly": {
+        "label": "Weekly / monthly",
+        "detail": "Fri 18:00 PET or business day 5 · supervised transition"
+      },
+      "quarterly": {
+        "label": "Quarterly",
+        "detail": "day 10 of the following month · proportional regime / low volume"
+      }
+    },
+    "preview_only": "Preview · synthetic data · not wired into the operational flow yet",
+    "matrix": {
+      "title": "Matrix · reasons × channels",
+      "subtitle": "values: complaints · % resolved on time · illustrative",
+      "motivo_col": "Reason · Annex 1-A",
+      "total_row": "TOTAL",
+      "motivo_304": "Unrecognised charges on account",
+      "motivo_211": "Improper maintenance fee",
+      "motivo_502": "Effective annual rate mismatch",
+      "motivo_118": "Incorrect contribution deducted",
+      "motivo_402": "Late refund of credit balance",
+      "motivo_999": "Free text · no code"
+    },
+    "motivos": {
+      "title": "Top reasons reported",
+      "subtitle": "May 2026 · illustrative",
+      "rank_col": "#",
+      "code_col": "Code",
+      "label_col": "Reason",
+      "count_col": "Complaints",
+      "delta_col": "vs prior month"
+    },
+    "products": {
+      "title": "Top products reported",
+      "subtitle": "May 2026 · illustrative"
+    }
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "subtitle": "Expanded view · normally available as a side panel inside Cockpit and Findings.",
+    "model_label": "Configured model",
+    "beta": "BETA",
+    "input_placeholder": "Ask the assistant about what you are looking at…",
+    "send": "Send",
+    "disclaimer": "Responses may contain errors. Verify cited sources. No access to raw PII.",
+    "suggestions_title": "Suggested queries",
+    "suggestions": {
+      "compare_months": "Compare May 2026 vs April 2026",
+      "explain_anomaly": "Why did the open anomaly fire today?",
+      "free_text": "What reasons fell into free text (999)?"
+    },
+    "preview_only": "Preview · illustrative responses · not wired to an LLM provider",
+    "exchanges": {
+      "user_label": "María Velásquez",
+      "bot_label": "assistant",
+      "anomaly_q": "How many active anomalies are there today on BANCO_DEMO_001?",
+      "anomaly_a": "There is 1 active anomaly on BANCO_DEMO_001 with composite 0.74 (threshold 0.70), detected today at 09:14 PET. Pattern: recurring complaints across 3 channels (API NRT, INDECOPI, Internal), reason 304 on the savings product.",
+      "draft_q": "Draft a supervisory observation letter for this anomaly.",
+      "draft_a": "Draft prepared from the 3 complaints linked to the anomaly and Annex 1-A codes. Review before any official outbound.",
+      "draft_disclaimer": "AI-generated draft — review before official outbound.",
+      "fee_q": "Which complaints in the last 7 days mention 'maintenance fee'?",
+      "fee_a": "Found 4 complaints mentioning 'maintenance fee' in the last 7 days, across 2 institutions. Illustrative results."
+    }
+  },
+  "developers": {
+    "header_title": "Integration portal for financial institutions",
+    "header_subtitle": "Sandbox · documentation and credentials for authorized integrators",
+    "session_label": "institutional session",
+    "subnav": {
+      "portal": "Documentation",
+      "credentials": "Credentials",
+      "status": "System status",
+      "changelog": "Changelog"
+    },
+    "portal": {
+      "hero_title": "Tier 1 API · near-real-time complaint ingestion",
+      "hero_subtitle": "Annex 1-A · SBS Resolution 04036-2022 · public documentation for authorized integrators.",
+      "start_integration": "Start integrating",
+      "try_sandbox": "Try in sandbox",
+      "capabilities": {
+        "quickstart_title": "Quickstart",
+        "quickstart_body": "Start in 15 minutes: sandbox mTLS cert, first POST, payload validation.",
+        "auth_title": "Authentication",
+        "auth_body": "mTLS + HMAC-SHA256 + OAuth 2.0 client_credentials. Two factors at the transport.",
+        "schemas_title": "Schemas",
+        "schemas_body": "OpenAPI 3.1 + JSON Schema validated against Annex 1-A. Official codegen.",
+        "webhooks_title": "Webhooks",
+        "webhooks_body": "HMAC-signed callbacks for acknowledgements, state changes, and supervisory notes."
+      },
+      "cadence_title": "Submission cadences",
+      "cadence_subtitle": "Frequency assigned by SBS based on institutional profile and volume",
+      "cadence": {
+        "nrt_title": "API NRT",
+        "nrt_audience": "Tier 1 institutions · high-volume and/or high-risk.",
+        "nrt_sla": "Arrival SLA · ≤ 15 min",
+        "nrt_endpoint": "POST /v1/complaints",
+        "daily_title": "Daily",
+        "daily_audience": "Medium-volume institutions · banks, finance companies, AFP.",
+        "daily_sla": "Window · 23:59 PET cutoff",
+        "daily_endpoint": "POST /v1/batch-daily",
+        "weekly_monthly_title": "Weekly / Monthly",
+        "weekly_monthly_audience": "Institutions in supervised transition · mid-size cooperatives.",
+        "weekly_monthly_sla": "Window · Fri 18:00 PET or business day 5",
+        "weekly_monthly_endpoint": "POST /v1/batch-upload",
+        "quarterly_title": "Quarterly · manual",
+        "quarterly_audience": "Low volume · small COOPACs · proportional regime.",
+        "quarterly_sla": "Window · day 10 of the following month",
+        "quarterly_endpoint": "Web portal · manual upload"
+      },
+      "resources_title": "Resources",
+      "resources": {
+        "guide": "Integration guide",
+        "catalog": "Annex 1-A catalog",
+        "pii": "PII anonymization policy",
+        "errors": "Error catalog"
+      },
+      "status_title": "System status",
+      "status_subtitle": "Last check will refresh once the health probe is wired in",
+      "status_disclaimer": "Preview · not wired into the operational flow yet"
+    },
+    "credentials": {
+      "title": "Institution credentials",
+      "subtitle": "Issuance, rotation and revocation of mTLS client certificates and OAuth client_id for authorized institutions.",
+      "request_button": "Request new credential",
+      "history_button": "Full history",
+      "table": {
+        "institution": "Institution",
+        "cadence": "Authorized cadence",
+        "cert": "mTLS certificate",
+        "client_id": "OAuth client_id",
+        "scopes": "Scopes",
+        "status": "Status",
+        "actions": "Actions",
+        "rotate": "Rotate",
+        "edit": "Edit",
+        "revoke": "Revoke",
+        "status_active": "ACTIVE",
+        "status_pending": "PENDING APPROVAL",
+        "sla_label": "SLA",
+        "endpoint_label": "Endpoint",
+        "tier1_chip": "Tier 1 · API NRT"
+      },
+      "preview_only": "Preview · not wired into the operational flow yet"
+    }
   }
 }

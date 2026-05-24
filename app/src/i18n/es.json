@@ -39,6 +39,9 @@
     "findings": "Hallazgos",
     "approvals": "Aprobaciones",
     "audit": "Auditoría",
+    "analytics": "Reportes",
+    "assistant": "Asistente",
+    "pilot_phase": "Fase piloto",
     "components_index": "Sistema de diseño",
     "primary_label": "Navegación principal",
     "user_menu_label": "Cuenta",
@@ -46,6 +49,10 @@
     "language_toggle": "Idioma",
     "switch_persona": "Cambiar persona",
     "active_persona": "Persona activa"
+  },
+  "pilot": {
+    "badge": "FASE PILOTO · Q3 2026",
+    "preview_disclaimer": "Vista previa · no conectado al flujo operativo actual"
   },
   "auth": {
     "signin": "Iniciar sesión",
@@ -71,6 +78,14 @@
   },
   "cockpit": {
     "title": "Cabina",
+    "page": {
+      "title": "Cabina del supervisor · Conducta de mercado",
+      "subtitle": "Reclamos, anomalías y señales cruzadas en ventana móvil de 7 días.",
+      "breadcrumb_supervision": "Supervisión",
+      "breadcrumb_conduct": "Conducta de mercado",
+      "breadcrumb_current": "Cabina",
+      "meta": "Ventana móvil 7 días · sandbox sintético"
+    },
     "connection": {
       "connecting": "Conectando…",
       "connected": "En vivo",
@@ -320,5 +335,219 @@
     "permission_denied": "Acción no permitida.",
     "not_found": "No se encontró el recurso.",
     "validation": "La solicitud no es válida."
+  },
+  "login": {
+    "title": "Acceso supervisión de conducta",
+    "subtitle": "Superintendencia de Banca, Seguros y AFP · República del Perú",
+    "sso_button": "Ingresar con SSO institucional SBS",
+    "demo_button": "Ingresar al sandbox de evaluación",
+    "demo_subline": "Carga las tres identidades de la fase piloto (María, Lucía, Jorge) en una sola sesión. Sólo sandbox sintético.",
+    "integrator_link": "Acceso para integradores · portal de desarrollo",
+    "footer_version": "Versión sandbox · soporte: gcmif@sbs.gob.pe",
+    "footer_location": "Lima, Perú",
+    "mfa_notice": "Sólo personal autorizado · sesión registrada · MFA requerido cuando esté habilitado",
+    "secure_session": "sesión segura"
+  },
+  "live_ingestion": {
+    "title": "Ingesta en vivo · vista previa",
+    "subtitle": "Cómo se vería un envío Tier 1 cuando la anonimización canónica esté activa.",
+    "live_toggle": "En vivo",
+    "paused_toggle": "Pausado",
+    "mtls_label": "mTLS · sesión simulada",
+    "simulate_button": "Simular envío de institución",
+    "simulate_toast_title": "Simulación de envío",
+    "simulate_toast_body": "Vista previa local · no se llamó al backend ni se registró en auditoría.",
+    "timeline_title": "Línea de eventos · simulada",
+    "diff_title": "Diferencia · antes / después de anonimización",
+    "diff_tag_before": "ANTES",
+    "diff_tag_after": "DESPUÉS",
+    "diff_before_text": "Cliente Juan Pérez (DNI 12345678, tel. 999 123 456, correo juan.perez@ejemplo.pe) reporta cargos no reconocidos.",
+    "diff_after_text": "Cliente [NOMBRE] (DNI [DNI], tel. [TELEFONO], correo [EMAIL]) reporta cargos no reconocidos.",
+    "policy_footer": "Política pii-2026.03 · regex + NER · 4 entidades redactadas",
+    "events": {
+      "received": "envío recibido por gateway",
+      "validated": "esquema validado · Annex 1-A",
+      "redacted": "PII anonimizada · 4 entidades",
+      "persisted": "reclamo persistido · id provisional",
+      "broadcast": "broadcast a cabina"
+    }
+  },
+  "analytics": {
+    "title": "Reportes estadísticos · transición desde SUCAVE",
+    "subtitle": "Generación automática de reportes a partir del flujo granular de reclamos, con comparación contra reportes SUCAVE de referencia durante la fase piloto.",
+    "compare_label": "Comparar contra reporte SUCAVE de referencia",
+    "export_report": "Exportar reporte estadístico",
+    "download_csv": "Descargar CSV / XLSX",
+    "subtabs": {
+      "rr1": "RR1 · volúmenes por motivo y canal",
+      "rr2": "RR2 · texto libre · código 999",
+      "rr3": "RR3 · operaciones por producto"
+    },
+    "filters": {
+      "institution": "Institución",
+      "period": "Periodo",
+      "frequency": "Frecuencia",
+      "generate": "Generar reporte"
+    },
+    "kpis": {
+      "total_complaints": "Total reclamos",
+      "resolved_on_time": "% resueltos en plazo",
+      "active_institutions": "Instituciones activas",
+      "sucave_match": "Concordancia SUCAVE"
+    },
+    "cadence": {
+      "title": "Cobertura por cadencia de remisión",
+      "subtitle": "perfil configurado por SBS según volumen y perfil institucional",
+      "api_nrt": {
+        "label": "API NRT",
+        "detail": "≤ 15 min · alto volumen / alto riesgo (Tier 1)"
+      },
+      "daily": {
+        "label": "Diaria",
+        "detail": "cierre 23:59 PET · volumen medio"
+      },
+      "weekly_monthly": {
+        "label": "Semanal / mensual",
+        "detail": "vie 18:00 PET o día 5 hábil · transición supervisada"
+      },
+      "quarterly": {
+        "label": "Trimestral",
+        "detail": "día 10 del mes siguiente · régimen proporcional / bajo volumen"
+      }
+    },
+    "preview_only": "Vista previa · datos sintéticos · no conectado al flujo operativo actual",
+    "matrix": {
+      "title": "Matriz · motivos × canales",
+      "subtitle": "cifras: reclamos · % resueltos en plazo · ilustrativo",
+      "motivo_col": "Motivo · Annex 1-A",
+      "total_row": "TOTAL",
+      "motivo_304": "Cargos no reconocidos en cuenta",
+      "motivo_211": "Comisión por mantenimiento indebida",
+      "motivo_502": "Diferencia en tasa efectiva anual",
+      "motivo_118": "Aporte deducido incorrectamente",
+      "motivo_402": "Devolución de excedente tardía",
+      "motivo_999": "Texto libre · sin código"
+    },
+    "motivos": {
+      "title": "Motivos más reclamados",
+      "subtitle": "mayo 2026 · ilustrativo",
+      "rank_col": "#",
+      "code_col": "Código",
+      "label_col": "Motivo",
+      "count_col": "Reclamos",
+      "delta_col": "vs mes previo"
+    },
+    "products": {
+      "title": "Productos más reclamados",
+      "subtitle": "mayo 2026 · ilustrativo"
+    }
+  },
+  "assistant": {
+    "title": "Asistente IA",
+    "subtitle": "Vista ampliada · normalmente disponible como panel lateral dentro de Cabina y Hallazgos.",
+    "model_label": "Modelo configurado",
+    "beta": "BETA",
+    "input_placeholder": "Pregunta al asistente sobre lo que estás viendo…",
+    "send": "Enviar",
+    "disclaimer": "Las respuestas pueden contener errores. Verifique las fuentes citadas. Sin acceso a PII en bruto.",
+    "suggestions_title": "Consultas sugeridas",
+    "suggestions": {
+      "compare_months": "Comparar mayo 2026 vs abril 2026",
+      "explain_anomaly": "¿Por qué se activó la anomalía abierta hoy?",
+      "free_text": "¿Qué motivos cayeron al texto libre (999)?"
+    },
+    "preview_only": "Vista previa · respuestas ilustrativas · no conectado a un proveedor LLM",
+    "exchanges": {
+      "user_label": "María Velásquez",
+      "bot_label": "asistente",
+      "anomaly_q": "¿Cuántas anomalías activas hay hoy en BANCO_DEMO_001?",
+      "anomaly_a": "Hay 1 anomalía activa en BANCO_DEMO_001 con composite 0.74 (umbral 0.70), detectada hoy 09:14 PET. Patrón: reclamos reiterativos en 3 canales (API NRT, INDECOPI, Internal), motivo 304 sobre el producto ahorros.",
+      "draft_q": "Genera un borrador de observación supervisora para esta anomalía.",
+      "draft_a": "Borrador preparado a partir de los 3 reclamos asociados a la anomalía y de los códigos del Annex 1-A. Revísalo antes de su envío oficial.",
+      "draft_disclaimer": "Borrador generado por IA — revisar antes de envío oficial.",
+      "fee_q": "¿Qué reclamos de los últimos 7 días mencionan 'comisión por mantenimiento'?",
+      "fee_a": "Encontré 4 reclamos que mencionan 'comisión por mantenimiento' en los últimos 7 días, en 2 instituciones. Resultados ilustrativos."
+    }
+  },
+  "developers": {
+    "header_title": "Portal de integración para instituciones financieras",
+    "header_subtitle": "Sandbox · documentación y credenciales para integradores autorizados",
+    "session_label": "sesión institucional",
+    "subnav": {
+      "portal": "Documentación",
+      "credentials": "Credenciales",
+      "status": "Estado del sistema",
+      "changelog": "Changelog"
+    },
+    "portal": {
+      "hero_title": "API Tier 1 · ingesta de reclamos en tiempo casi real",
+      "hero_subtitle": "Anexo 1-A · Res. SBS 04036-2022 · documentación pública para integradores autorizados.",
+      "start_integration": "Empezar integración",
+      "try_sandbox": "Probar en sandbox",
+      "capabilities": {
+        "quickstart_title": "Quickstart",
+        "quickstart_body": "Empieza en 15 minutos: cert mTLS sandbox, primer POST, validación de payload.",
+        "auth_title": "Autenticación",
+        "auth_body": "mTLS + HMAC-SHA256 + OAuth 2.0 client_credentials. Doble factor en el transporte.",
+        "schemas_title": "Esquemas",
+        "schemas_body": "OpenAPI 3.1 + JSON Schema validados contra Annex 1-A. Codegen oficial.",
+        "webhooks_title": "Webhooks",
+        "webhooks_body": "Callbacks firmados con HMAC para acuses, cambios de estado y observaciones."
+      },
+      "cadence_title": "Modalidades de remisión",
+      "cadence_subtitle": "Frecuencia configurada por SBS según perfil institucional y volumen",
+      "cadence": {
+        "nrt_title": "API NRT",
+        "nrt_audience": "Instituciones Tier 1 · alto volumen y/o alto riesgo.",
+        "nrt_sla": "SLA llegada · ≤ 15 min",
+        "nrt_endpoint": "POST /v1/complaints",
+        "daily_title": "Diario",
+        "daily_audience": "Instituciones de volumen medio · banca, financieras, AFP.",
+        "daily_sla": "Ventana · cierre 23:59 PET",
+        "daily_endpoint": "POST /v1/batch-daily",
+        "weekly_monthly_title": "Semanal / Mensual",
+        "weekly_monthly_audience": "Entidades en transición supervisada · cooperativas medianas.",
+        "weekly_monthly_sla": "Ventana · vie 18:00 PET o día 5 hábil",
+        "weekly_monthly_endpoint": "POST /v1/batch-upload",
+        "quarterly_title": "Trimestral · manual",
+        "quarterly_audience": "Bajo volumen · COOPACs pequeñas · régimen proporcional.",
+        "quarterly_sla": "Ventana · día 10 del mes siguiente",
+        "quarterly_endpoint": "Portal web · carga manual"
+      },
+      "resources_title": "Recursos",
+      "resources": {
+        "guide": "Guía de integración",
+        "catalog": "Catálogo Annex 1-A",
+        "pii": "Política de anonimización PII",
+        "errors": "Catálogo de errores"
+      },
+      "status_title": "Estado del sistema",
+      "status_subtitle": "Última verificación se actualiza cuando el sistema de salud esté conectado",
+      "status_disclaimer": "Vista previa · no conectado al flujo operativo actual"
+    },
+    "credentials": {
+      "title": "Credenciales de institución",
+      "subtitle": "Emisión, rotación y revocación de certificados cliente mTLS y client_id OAuth para instituciones autorizadas.",
+      "request_button": "Solicitar nueva credencial",
+      "history_button": "Historial completo",
+      "table": {
+        "institution": "Institución",
+        "cadence": "Cadencia autorizada",
+        "cert": "Certificado mTLS",
+        "client_id": "OAuth client_id",
+        "scopes": "Scopes",
+        "status": "Estado",
+        "actions": "Acciones",
+        "rotate": "Rotar",
+        "edit": "Editar",
+        "revoke": "Revocar",
+        "status_active": "ACTIVO",
+        "status_pending": "EN APROBACIÓN",
+        "sla_label": "SLA",
+        "endpoint_label": "Endpoint",
+        "tier1_chip": "Tier 1 · API NRT"
+      },
+      "preview_only": "Vista previa · no conectado al flujo operativo actual"
+    }
   }
 }

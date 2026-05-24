@@ -1,7 +1,10 @@
 // ComplaintCard — used identically on both the Tier 1 and Tier 2
 // panels. The visual sameness is the proportionality argument made
 // visible (per the WS3 directive): both tiers produce the same
-// Annex 1-A record; both render the same card.
+// Annex 1-A record; both render the same card. Layout matches the
+// Claude Design artifact: ID in font-mono brand-navy, severity pill,
+// timestamp on the right, motivo / product / channel as a mono foot
+// row with subtle separators.
 
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -37,17 +40,30 @@ export function ComplaintCard({ complaint, locale, className }: ComplaintCardPro
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-2xs text-fg-muted">{complaint.complaint_id}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs font-semibold tabular text-brand-navy">
+          {complaint.complaint_id}
+        </span>
         <Badge variant={SEVERITY_VARIANT[complaint.severity] ?? 'medium'}>
-          {complaint.severity}
+          {complaint.severity.toUpperCase()}
         </Badge>
+        <time
+          dateTime={complaint.received_at}
+          className="ml-auto font-mono text-2xs tabular text-fg-muted"
+        >
+          {timeLabel}
+        </time>
       </div>
-      <p className="mt-1.5 line-clamp-2 text-sm text-fg">{complaint.description_preview}</p>
-      <div className="mt-2 flex items-center justify-between gap-2 text-2xs text-fg-muted">
-        <span>{complaint.motivo_code} · {complaint.product_category}</span>
-        <time dateTime={complaint.received_at} className="tabular">{timeLabel}</time>
-      </div>
+      <p className="mt-2 line-clamp-2 text-sm leading-snug text-fg">
+        {complaint.description_preview}
+      </p>
+      <p className="mt-2 font-mono text-2xs uppercase tracking-wider text-fg-muted">
+        <span className="text-fg-subtle">motivo</span>{' '}
+        <span className="text-fg">{complaint.motivo_code}</span>
+        <span className="mx-1.5 text-border-strong">·</span>
+        <span className="text-fg-subtle">producto</span>{' '}
+        <span className="text-fg">{complaint.product_category}</span>
+      </p>
     </article>
   );
 }

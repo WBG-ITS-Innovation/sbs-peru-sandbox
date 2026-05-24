@@ -45,12 +45,28 @@ async def test_existing_rows_default_to_api_realtime(test_database_url, db_schem
     engine = create_async_engine(test_database_url)
     async with engine.connect() as conn:
         result = await conn.execute(
-            text("SELECT DISTINCT source FROM complaints")
+            text(
+                "SELECT complaint_id, source FROM complaints "
+                "WHERE complaint_id LIKE 'BCO-2026-%'"
+            )
         )
-        sources = {row[0] for row in result}
+        rows = {row[0]: row[1] for row in result}
+        coopac = (
+            await conn.execute(
+                text(
+                    "SELECT DISTINCT source FROM complaints "
+                    "WHERE complaint_id LIKE 'COP-2026-%'"
+                )
+            )
+        ).scalars().all()
     await engine.dispose()
-    # The fixture seeds 3 complaints in db_schema; all must be api_realtime.
-    assert sources == {"api_realtime"}, sources
+    # The fixture seeds three BCO Tier 1 rows on SBS-001234; all must
+    # default to api_realtime via the migration server_default. The
+    # Tier 2 COP rows are seeded explicitly with source='batch' and
+    # are checked separately below.
+    assert rows, "expected at least one BCO-2026-* row from the fixture"
+    assert set(rows.values()) == {"api_realtime"}, rows
+    assert set(coopac) == {"batch"}, coopac
 
 
 async def test_tier_1_post_writes_api_realtime(client, test_database_url):

@@ -195,6 +195,11 @@
       "body": "La cola está vacía. Los hallazgos enviados por los analistas aparecerán aquí.",
       "primary": "Abrir cola de riesgo"
     },
+    "access_denied": {
+      "title": "Las aprobaciones requieren rol de analista o jefe",
+      "body": "La vista de supervisora no incluye la cola de aprobaciones. Use el conmutador de personas en la barra superior para continuar como Jorge (jefe) o Lucía (analista). El relevo después de Enviar a Aprobaciones es intencional.",
+      "primary": "Volver a hallazgos"
+    },
     "kpis": {
       "pending": "Pendientes",
       "approved_today": "Aprobadas hoy",

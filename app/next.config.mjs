@@ -8,6 +8,16 @@ const nextConfig = {
   basePath: '/app',
   reactStrictMode: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/app/api/auth/demo-login',
+        permanent: false,
+        basePath: false,
+      },
+    ];
+  },
   experimental: {
     // App Router is GA in Next 14; this block stays empty until we need
     // anything that genuinely experimental.

@@ -113,29 +113,45 @@ async def sse_stream(
                 data=json.dumps(snapshot_payload, default=str),
             ).encode("utf-8")
 
-        # Subscribe with a heartbeat task running in parallel.
-        cancel_event = asyncio.Event()
+        # Keep the stream open even when there are no live events.
+        #
+        # Do not poll request.is_disconnected() here. Under the current
+        # middleware stack it can report a disconnect after the snapshot and
+        # close the stream. StreamingResponse cancels this generator on a real
+        # client disconnect, and the subscriber is cleaned up in finally.
+        last_seen = parsed_last
+        subscriber = bus.subscribe(topic, last_event_id=last_seen)
+        next_event_task = asyncio.create_task(anext(subscriber))
 
-        async def heartbeat() -> AsyncIterator[bytes]:
-            while not cancel_event.is_set():
-                try:
-                    await asyncio.wait_for(
-                        cancel_event.wait(), timeout=_HEARTBEAT_SECONDS
-                    )
-                except asyncio.TimeoutError:
-                    yield _frame_comment("heartbeat").encode("utf-8")
-
-        # Multiplex events and heartbeats by polling the subscriber
-        # with a short timeout.
         try:
-            async for evt in bus.subscribe(topic, last_event_id=parsed_last):
-                if await request.is_disconnected():
-                    break
+            while True:
+                done, _pending = await asyncio.wait(
+                    {next_event_task}, timeout=_HEARTBEAT_SECONDS
+                )
+
+                if next_event_task not in done:
+                    yield _frame_comment("heartbeat").encode("utf-8")
+                    continue
+
+                try:
+                    evt = next_event_task.result()
+                except StopAsyncIteration:
+                    await asyncio.sleep(0.1)
+                    subscriber = bus.subscribe(topic, last_event_id=last_seen)
+                    next_event_task = asyncio.create_task(anext(subscriber))
+                    continue
+
+                last_seen = evt.id
                 yield _frame_event(
                     event_id=evt.id, event_name=evt.event, data=evt.data
                 ).encode("utf-8")
+                next_event_task = asyncio.create_task(anext(subscriber))
         finally:
-            cancel_event.set()
+            next_event_task.cancel()
+            try:
+                await subscriber.aclose()
+            except Exception:
+                pass
 
     return StreamingResponse(
         stream(),

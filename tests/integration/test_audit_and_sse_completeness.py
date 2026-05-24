@@ -23,6 +23,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from tests.conftest import pytestmark_db
+from tests.integration._sse_probe import open_sse_head_only
 
 pytestmark = pytestmark_db
 
@@ -272,44 +273,35 @@ async def test_audit_edit_draft_narrative_row_carries_before_and_after(db_schema
 # -- Findings SSE role scope ----------------------------------------------
 
 
-@pytest.mark.xfail(reason="Starlette BaseHTTPMiddleware does not pass streaming responses (text/event-stream) through cleanly when invoked via pytest ASGITransport. The SSE endpoint works correctly in the browser (uvicorn path). Contract tested at the SSE bus level by test_sse_bus_replays_after_last_event_id. Convert custom middlewares to pure ASGI in a P11 cleanup task.", strict=False)
 @pytest.mark.asyncio
 async def test_findings_sse_topic_allows_supervisor(app_with_secret):
-    transport = ASGITransport(app=app_with_secret)
-    async with AsyncClient(
-        transport=transport, base_url="http://test", timeout=2.0
-    ) as c:
-        response = await c.get(
-            "/v1/internal/sse/findings", headers=_hdr("sbs:conduct:supervisor")
-        )
-    assert response.status_code == 200
-    assert "text/event-stream" in response.headers.get("content-type", "")
+    status, headers = await open_sse_head_only(
+        app_with_secret,
+        "/v1/internal/sse/findings",
+        _hdr("sbs:conduct:supervisor"),
+    )
+    assert status == 200
+    assert b"text/event-stream" in headers.get(b"content-type", b"")
 
 
-@pytest.mark.xfail(reason="Starlette BaseHTTPMiddleware does not pass streaming responses (text/event-stream) through cleanly when invoked via pytest ASGITransport. The SSE endpoint works correctly in the browser (uvicorn path). Contract tested at the SSE bus level by test_sse_bus_replays_after_last_event_id. Convert custom middlewares to pure ASGI in a P11 cleanup task.", strict=False)
 @pytest.mark.asyncio
 async def test_findings_sse_topic_allows_analyst(app_with_secret):
-    transport = ASGITransport(app=app_with_secret)
-    async with AsyncClient(
-        transport=transport, base_url="http://test", timeout=2.0
-    ) as c:
-        response = await c.get(
-            "/v1/internal/sse/findings", headers=_hdr("sbs:conduct:analyst")
-        )
-    assert response.status_code == 200
+    status, _ = await open_sse_head_only(
+        app_with_secret,
+        "/v1/internal/sse/findings",
+        _hdr("sbs:conduct:analyst"),
+    )
+    assert status == 200
 
 
-@pytest.mark.xfail(reason="Starlette BaseHTTPMiddleware does not pass streaming responses (text/event-stream) through cleanly when invoked via pytest ASGITransport. The SSE endpoint works correctly in the browser (uvicorn path). Contract tested at the SSE bus level by test_sse_bus_replays_after_last_event_id. Convert custom middlewares to pure ASGI in a P11 cleanup task.", strict=False)
 @pytest.mark.asyncio
 async def test_findings_sse_topic_allows_head(app_with_secret):
-    transport = ASGITransport(app=app_with_secret)
-    async with AsyncClient(
-        transport=transport, base_url="http://test", timeout=2.0
-    ) as c:
-        response = await c.get(
-            "/v1/internal/sse/findings", headers=_hdr("sbs:conduct:head")
-        )
-    assert response.status_code == 200
+    status, _ = await open_sse_head_only(
+        app_with_secret,
+        "/v1/internal/sse/findings",
+        _hdr("sbs:conduct:head"),
+    )
+    assert status == 200
 
 
 # -- SSE reconnect replay -------------------------------------------------

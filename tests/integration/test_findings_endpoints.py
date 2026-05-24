@@ -15,6 +15,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from tests.conftest import pytestmark_db
+from tests.integration._sse_probe import open_sse_head_only
 
 pytestmark = pytestmark_db
 
@@ -314,29 +315,25 @@ async def test_sse_approvals_topic_rejects_supervisor_role(app_with_secret):
     assert response.status_code == 403
 
 
-@pytest.mark.xfail(reason="Starlette BaseHTTPMiddleware does not pass streaming responses (text/event-stream) through cleanly when invoked via pytest ASGITransport. The SSE endpoint works correctly in the browser (uvicorn path). Contract tested at the SSE bus level by test_sse_bus_replays_after_last_event_id. Convert custom middlewares to pure ASGI in a P11 cleanup task.", strict=False)
 @pytest.mark.asyncio
 async def test_sse_approvals_topic_allows_head_role(app_with_secret):
     """The same approvals endpoint accepts head — minimum proof that
-    the role check is permissive when the scope matches."""
+    the role check is permissive when the scope matches.
 
-    transport = ASGITransport(app=app_with_secret)
-    async with AsyncClient(
-        transport=transport, base_url="http://test", timeout=2.0
-    ) as client:
-        # Use a HEAD-ish quick request: we don't want to wait on the
-        # stream. The status code is what we assert.
-        response = await client.get(
-            "/v1/internal/sse/approvals",
-            headers={
-                "Authorization": f"Bearer {SHARED_VAL}",
-                "X-SBS-Role": "sbs:conduct:head",
-            },
-        )
-    # 200 with text/event-stream content type means the role check passed
-    # and the stream started; we abort by ignoring the body.
-    assert response.status_code == 200
-    assert "text/event-stream" in response.headers.get("content-type", "")
+    Uses the ASGI head-only probe so we read headers without blocking
+    on the SSE body (which by design never ends).
+    """
+
+    status, headers = await open_sse_head_only(
+        app_with_secret,
+        "/v1/internal/sse/approvals",
+        {
+            "Authorization": f"Bearer {SHARED_VAL}",
+            "X-SBS-Role": "sbs:conduct:head",
+        },
+    )
+    assert status == 200
+    assert b"text/event-stream" in headers.get(b"content-type", b"")
 
 
 @pytest.mark.asyncio

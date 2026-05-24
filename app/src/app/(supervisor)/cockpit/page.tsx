@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
 import { CockpitClient } from '@/components/cockpit/CockpitClient';
+import { PageHeader } from '@/components/shell/PageHeader';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
 import { internalGet } from '@/lib/api';
@@ -74,11 +75,49 @@ export default async function CockpitPage() {
       title: t(locale, 'cockpit.anomalies_empty.title'),
       body: t(locale, 'cockpit.anomalies_empty.body'),
     },
+    liveIngestion: {
+      title: t(locale, 'live_ingestion.title'),
+      subtitle: t(locale, 'live_ingestion.subtitle'),
+      preview_disclaimer: t(locale, 'pilot.preview_disclaimer'),
+      pilot_badge: t(locale, 'pilot.badge'),
+      live_toggle: t(locale, 'live_ingestion.live_toggle'),
+      paused_toggle: t(locale, 'live_ingestion.paused_toggle'),
+      mtls_label: t(locale, 'live_ingestion.mtls_label'),
+      simulate_button: t(locale, 'live_ingestion.simulate_button'),
+      simulate_toast_title: t(locale, 'live_ingestion.simulate_toast_title'),
+      simulate_toast_body: t(locale, 'live_ingestion.simulate_toast_body'),
+      timeline_title: t(locale, 'live_ingestion.timeline_title'),
+      diff_title: t(locale, 'live_ingestion.diff_title'),
+      diff_tag_before: t(locale, 'live_ingestion.diff_tag_before'),
+      diff_tag_after: t(locale, 'live_ingestion.diff_tag_after'),
+      diff_before_text: t(locale, 'live_ingestion.diff_before_text'),
+      diff_after_text: t(locale, 'live_ingestion.diff_after_text'),
+      policy_footer: t(locale, 'live_ingestion.policy_footer'),
+      events: {
+        received: t(locale, 'live_ingestion.events.received'),
+        validated: t(locale, 'live_ingestion.events.validated'),
+        redacted: t(locale, 'live_ingestion.events.redacted'),
+        persisted: t(locale, 'live_ingestion.events.persisted'),
+        broadcast: t(locale, 'live_ingestion.events.broadcast'),
+      },
+    },
   };
 
   return (
-    <main className="mx-auto max-w-7xl space-y-4 p-6">
-      <CockpitClient initialSnapshot={snapshot} labels={labels} />
+    <main className="flex flex-col">
+      <PageHeader
+        breadcrumb={[
+          t(locale, 'cockpit.page.breadcrumb_supervision'),
+          t(locale, 'cockpit.page.breadcrumb_conduct'),
+          t(locale, 'cockpit.page.breadcrumb_current'),
+        ]}
+        title={t(locale, 'cockpit.page.title')}
+        subtitle={t(locale, 'cockpit.page.subtitle')}
+        meta={t(locale, 'cockpit.page.meta')}
+      />
+      <div className="mx-auto w-full max-w-7xl px-6 py-4">
+        <CockpitClient initialSnapshot={snapshot} labels={labels} />
+      </div>
     </main>
   );
 }

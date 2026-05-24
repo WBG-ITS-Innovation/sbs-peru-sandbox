@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
-import { IBM_Plex_Mono, Inter } from 'next/font/google';
+import { IBM_Plex_Mono, Inter, Source_Serif_4 } from 'next/font/google';
 
 import { currentLocale } from '@/i18n/server';
 
 import './globals.css';
 
 // ADR 0041 D1 — Inter as the UI typeface, IBM Plex Mono for monospace.
+// Source Serif 4 is used only for page-title H1s in the supervisor
+// shell, following the Claude Design artifact.
 // `next/font/google` self-hosts (no third-party CDN at runtime) and
 // produces a CSS custom property our Tailwind config consumes.
 const inter = Inter({
@@ -21,6 +23,13 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
+const sourceSerif = Source_Serif_4({
+  weight: ['400', '600'],
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'SBS SupTech',
   description: 'Supervisor UI for the SBS SupTech prototype',
@@ -33,7 +42,10 @@ export default function RootLayout({
 }) {
   const locale = currentLocale();
   return (
-    <html lang={locale} className={`${inter.variable} ${ibmPlexMono.variable}`}>
+    <html
+      lang={locale}
+      className={`${inter.variable} ${ibmPlexMono.variable} ${sourceSerif.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

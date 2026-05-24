@@ -14,6 +14,7 @@ import type { CockpitSnapshot, ComplaintCardData } from '@/types/cockpit';
 import { AnomalyCard } from './AnomalyCard';
 import { CrossSourceStrip } from './CrossSourceStrip';
 import { KpiStrip } from './KpiStrip';
+import { LiveIngestionPanel } from './LiveIngestionPanel';
 import { TierPanel } from './TierPanel';
 import {
   TIER1_INSTITUTION_ID,
@@ -42,6 +43,7 @@ interface Labels {
   emptyTier1: { title: string; body: string; primary: { label: string; href: string } };
   emptyTier2: { title: string; body: string; primary: { label: string; href: string } };
   emptyAnomalies: { title: string; body: string };
+  liveIngestion: React.ComponentProps<typeof LiveIngestionPanel>['labels'];
 }
 
 interface CockpitClientProps {
@@ -99,11 +101,11 @@ export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <KpiStrip kpis={state.kpis} locale={labels.locale} labels={labels.kpis} />
 
       {state.anomalies.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {state.anomalies.map(a => (
             <AnomalyCard
               key={a.id}
@@ -115,7 +117,7 @@ export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
         <TierPanel
           panel={state.tier1}
           locale={labels.locale}
@@ -127,6 +129,8 @@ export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
           emptyText={labels.emptyTier2}
         />
       </div>
+
+      <LiveIngestionPanel labels={labels.liveIngestion} />
 
       <CrossSourceStrip
         strip={state.cross_source}

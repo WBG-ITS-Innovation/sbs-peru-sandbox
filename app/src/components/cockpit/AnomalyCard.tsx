@@ -51,30 +51,34 @@ export function AnomalyCard({ anomaly, locale, labels }: AnomalyCardProps) {
     <TooltipProvider delayDuration={200}>
       <article
         className={cn(
-          'flex flex-col gap-2 rounded-sbs border-l-4 bg-surface-elevated p-4 shadow-sm',
-          'border-l-severity-' + anomaly.severity + '-border',
-          'border border-border',
+          'flex flex-col gap-2 rounded-sbs border bg-surface-elevated px-4 py-3 shadow-sm',
+          'border-l-4 border-l-brand-gold',
+          'border-border',
         )}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <AlertTriangle
-              className="h-4 w-4 text-severity-high-fg"
-              aria-hidden="true"
-            />
-            <h3 className="text-sm font-semibold text-fg">{anomaly.institution_name}</h3>
-          </div>
-          <Badge variant={SEVERITY_VARIANT[anomaly.severity]}>{anomaly.severity}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <AlertTriangle
+            className="h-4 w-4 text-brand-gold"
+            aria-hidden="true"
+          />
+          <span className="font-mono text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+            {labels.composite}
+          </span>
+          <h3 className="font-mono text-sm font-semibold tabular text-brand-navy">
+            {anomaly.institution_name}
+          </h3>
+          <Badge variant={SEVERITY_VARIANT[anomaly.severity]}>
+            {anomaly.severity.toUpperCase()}
+          </Badge>
         </div>
 
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs">
           <div>
             <span className="text-fg-muted">{labels.composite}: </span>
-            <span className="tabular font-medium text-fg">
+            <span className="font-semibold tabular text-brand-navy">
               {formatNumber(anomaly.composite_score, locale)}
             </span>
           </div>
-          <div className="text-fg-muted">·</div>
           <div>
             <span className="text-fg-muted">{labels.threshold}: </span>
             <span className="tabular text-fg">

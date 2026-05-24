@@ -132,4 +132,31 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Re-tint primitives that assume a light surface when they render
+     inside the institutional navy band (TopBar right cluster). Keeps
+     the LanguageToggle + PersonaSwitcher legible without touching
+     their shared component definitions. */
+  [data-on-navy] .text-fg {
+    color: var(--color-fg-inverted);
+  }
+  [data-on-navy] .text-fg-muted {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  [data-on-navy] .border-border-strong {
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  [data-on-navy] .border-border-subtle {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  [data-on-navy] .bg-surface-subtle {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+  [data-on-navy] button[aria-pressed='true'].bg-brand-navy {
+    background-color: var(--color-brand-cyan);
+    color: var(--color-brand-navy);
+  }
+  [data-on-navy] button[aria-pressed='false'] {
+    color: var(--color-fg-inverted);
+  }
 }

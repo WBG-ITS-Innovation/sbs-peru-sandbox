@@ -59,9 +59,42 @@ async def test_cockpit_returns_snapshot_with_tier_panels(
     assert body["tier2"]["tier_label"] == "Tier 2"
     assert body["tier1"]["institution_id"] == "SBS-001234"
     assert body["tier2"]["institution_id"] == "SBS-005678"
-    # The conftest seeds three complaints on SBS-001234, all in May
-    # 2026 — they will appear on the Tier 1 panel.
+    assert body["tier2"]["institution_name"] == "COOPAC_DEMO_002"
+    # The conftest seeds three complaints on SBS-001234 (Tier 1) and
+    # three on SBS-005678 (Tier 2). Both panels must reflect their
+    # seeded rows — Tier 2 being empty is the P10 demo-data integrity
+    # bug we explicitly guard against here.
     assert isinstance(body["tier1"]["recent"], list)
+    assert isinstance(body["tier2"]["recent"], list)
+    assert len(body["tier1"]["recent"]) >= 3, body["tier1"]["recent"]
+    assert len(body["tier2"]["recent"]) >= 3, body["tier2"]["recent"]
+    # Every Tier 2 card must come from the SBS-005678 institution; the
+    # cockpit query is the source of truth — there are no hardcoded
+    # UI cards in the snapshot.
+    assert all(
+        card["institution_id"] == "SBS-005678"
+        for card in body["tier2"]["recent"]
+    ), body["tier2"]["recent"]
+    # And every Tier 2 card must carry the batch provenance the seed
+    # records via source='batch'.
+    assert all(
+        card["source"] == "batch" for card in body["tier2"]["recent"]
+    ), body["tier2"]["recent"]
+    # Lastly: no PII-looking value (DNI, phone, email) leaks through
+    # the synthetic narrative excerpts.
+    import re
+
+    _PII_PATTERNS = (
+        re.compile(r"\b\d{8}\b"),
+        re.compile(r"\b9\d{8}\b"),
+        re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"),
+    )
+    for card in body["tier2"]["recent"]:
+        preview = card.get("description_preview", "")
+        for pattern in _PII_PATTERNS:
+            assert pattern.search(preview) is None, (
+                f"unexpected PII-shaped value in Tier 2 preview: {preview!r}"
+            )
     # Cross-source strip carries exactly five channels.
     assert len(body["cross_source"]["channels"]) == 5
     keys = {c["key"] for c in body["cross_source"]["channels"]}

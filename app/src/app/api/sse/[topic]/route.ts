@@ -21,6 +21,13 @@ export async function GET(
     return new Response(null, { status: 401 });
   }
 
+  const personas = session.personas as Record<string, { roles?: readonly string[] }>;
+  const activePersona = personas[session.activePersonaKey];
+  const roles = activePersona?.roles ?? [];
+  if (roles.length === 0) {
+    return new Response(null, { status: 403 });
+  }
+
   const lastEventId = request.headers.get('Last-Event-ID');
 
   const upstream = await fetch(
@@ -30,6 +37,7 @@ export async function GET(
       headers: {
         Authorization: `Bearer ${authConfig.internalApiSecret()}`,
         Accept: 'text/event-stream',
+        'X-SBS-Role': roles.join(','),
         ...(lastEventId ? { 'Last-Event-ID': lastEventId } : {}),
       },
       // SSE is a long-lived stream — disable caching and let Next.js

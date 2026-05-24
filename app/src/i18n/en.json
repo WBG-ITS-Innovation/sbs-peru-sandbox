@@ -195,6 +195,11 @@
       "body": "The queue is clear. Findings sent up by analysts will appear here.",
       "primary": "Open risk queue"
     },
+    "access_denied": {
+      "title": "Approvals are restricted to analyst and head roles",
+      "body": "The supervisor view does not include the approvals queue. Use the persona switcher in the top bar to continue as Jorge (head) or Lucía (analyst). The hand-off after Send to Approvals is by design.",
+      "primary": "Back to findings"
+    },
     "kpis": {
       "pending": "Pending",
       "approved_today": "Approved today",

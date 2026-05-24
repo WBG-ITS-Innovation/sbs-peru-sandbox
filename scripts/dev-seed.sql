@@ -192,3 +192,129 @@ INSERT INTO complaints (
         'api_realtime'
     )
 ON CONFLICT (complaint_id) DO NOTHING;
+
+-- Tier 2 batch complaints for COOPAC_DEMO_002 (Prompt 10 cockpit panel).
+--
+-- The supervisor cockpit renders Tier 1 (BANCO_DEMO_001 / SBS-001234)
+-- and Tier 2 (COOPAC_DEMO_002 / SBS-005678) side by side. Without the
+-- rows below the Tier 2 panel renders empty — a P10 demo-data
+-- integrity bug, not a UI bug. The cockpit query is the source of
+-- truth: ComplaintRecord WHERE institution_id = SBS-005678.
+--
+-- Each row carries source='batch' (ADR 0034) so the Tier 2 provenance
+-- is recorded in the complaints column the cockpit and downstream
+-- analytics will read once tier provenance becomes a filter. Today
+-- the cockpit only filters by institution_id; the source value lets
+-- a future "show only batch-ingested" toggle land without re-seeding.
+--
+-- received_date values fall inside the cockpit Tier 2 28-day window
+-- relative to the May 25 demo anchor (2026-04-25..2026-05-23).
+-- received_at is server_default=now() so a fresh seed lands inside
+-- the 28-day window regardless of clock skew.
+--
+-- Narrative text is synthetic and PII-free (no DNI, card, phone,
+-- email, or proper-name marker). COOPAC operations span agency,
+-- cajero, and app-móvil channels to mirror a credit-union profile.
+INSERT INTO complaints (
+    complaint_id,
+    institution_id,
+    received_date,
+    complainant_doc_type,
+    product_category,
+    channel,
+    motivo_code,
+    severity,
+    description_text,
+    description_language,
+    complainant_age_range,
+    complainant_district,
+    submission_method,
+    resolution_status,
+    source
+) VALUES
+    (
+        'COP-2026-000001',
+        'SBS-005678',
+        '2026-05-10',
+        'DNI',
+        'COOPAC',
+        'AGENCIA',
+        'DEMORA_ATENCION',
+        'MEDIUM',
+        E'Aporte mensual no acreditado en mi cuenta cooperativa después de cinco días hábiles. La agencia indica que la conciliación está pendiente. Solicito la acreditación correspondiente.',
+        'es',
+        '35_44',
+        '150100',
+        'AGENCIA',
+        'pendiente',
+        'batch'
+    ),
+    (
+        'COP-2026-000002',
+        'SBS-005678',
+        '2026-05-12',
+        'DNI',
+        'CREDITOS',
+        'APP_MOVIL',
+        'INFORMACION_INCORRECTA',
+        'MEDIUM',
+        E'El simulador de la app mostró una cuota distinta a la del contrato firmado. La diferencia se mantiene en tres cuotas consecutivas. Pido revisión del cronograma.',
+        'es',
+        '25_34',
+        '150100',
+        'APP_MOVIL',
+        'pendiente',
+        'batch'
+    ),
+    (
+        'COP-2026-000003',
+        'SBS-005678',
+        '2026-05-15',
+        'DNI',
+        'DEPOSITOS',
+        'AGENCIA',
+        'COBRO_INDEBIDO',
+        'HIGH',
+        E'Cargo de mantenimiento de cuenta aplicado pese a saldo promedio superior al mínimo informado al momento de la apertura. Solicito la devolución y la corrección del estado de cuenta.',
+        'es',
+        '45_54',
+        '150100',
+        'AGENCIA',
+        'pendiente',
+        'batch'
+    ),
+    (
+        'COP-2026-000004',
+        'SBS-005678',
+        '2026-05-18',
+        'DNI',
+        'TARJETA_DEBITO',
+        'WEB',
+        'OPERACION_NO_RECONOCIDA',
+        'HIGH',
+        E'Operación en cajero externo que no reconozco, por monto inferior al límite diario. Bloqueé la tarjeta el mismo día. Solicito la reversión y la investigación del punto de débito.',
+        'es',
+        '35_44',
+        '150100',
+        'CAJERO',
+        'pendiente',
+        'batch'
+    ),
+    (
+        'COP-2026-000005',
+        'SBS-005678',
+        '2026-05-20',
+        'DNI',
+        'CREDITOS',
+        'TELEFONO',
+        'CALIDAD_SERVICIO',
+        'LOW',
+        E'Llamada al call center con espera superior a treinta minutos para una consulta de saldo. Solicito que se revise el dimensionamiento del canal en horario de mediodía.',
+        'es',
+        '55_64',
+        '150100',
+        'OTRO',
+        'pendiente',
+        'batch'
+    )
+ON CONFLICT (complaint_id) DO NOTHING;

@@ -2,38 +2,38 @@
 
 Uvicorn's default body size is generous; this middleware caps it at
 ``MAX_REQUEST_BODY_BYTES`` (default 256 KiB) and returns 413 with the
-stable code ``REQUEST_BODY_TOO_LARGE``. The middleware materialises the
-RFC 9457 ProblemDetail JSONResponse directly because BaseHTTPMiddleware
-sits outside FastAPI's exception-handler dispatch chain (ADR 0028
-§Consequences).
+stable code ``REQUEST_BODY_TOO_LARGE``. The 413 ProblemDetail is emitted
+directly through the ASGI ``send`` channel (no ``JSONResponse``) because
+the middleware sits outside FastAPI's exception-handler chain.
 
-Two changes from the Prompt 6 implementation:
+ADR 0028 amendment notes:
 
-* **F.2** — The 413 response carries ``X-Correlation-Id`` (pulled from
-  ``request.state.correlation_id`` set by the surrounding
-  ``CorrelationIdMiddleware``) and ``traceparent`` (echoed by the
-  surrounding ``TraceparentMiddleware`` on the response path). The
-  app's middleware install order was reversed so this header propagation
-  works.
-* **F.3** — The slow path replaces the unbounded ``await request.body()``
-  with a bounded streaming read: iterate ``request.stream()``,
-  accumulate into a bytearray, and abort with ``RequestBodyTooLarge``
-  as soon as the running total exceeds ``max_body_size``. A client
-  that lies about ``Content-Length`` can no longer force a full-body
-  allocation.
+* **F.2** — The 413 response carries ``X-Correlation-Id`` and
+  ``traceparent``. With the pure-ASGI conversion (P10 SSE close-out)
+  those headers are added by the surrounding middlewares' wrapped
+  ``send`` callbacks; this middleware does not need to write them
+  manually.
+* **F.3** — Bodyful requests are read chunk-by-chunk and the size cap
+  is enforced on the running total, so a client lying about
+  ``Content-Length`` cannot force a full-body allocation.
+* **P10 SSE close-out** — Pure ASGI shape (not ``BaseHTTPMiddleware``).
+  ``receive()`` is never called for bodyless methods (GET, HEAD,
+  OPTIONS, DELETE, TRACE), which is what kept the SSE
+  ``listen_for_disconnect`` task from getting a spurious
+  ``http.request`` message when stacked under other middlewares.
 """
 
 from __future__ import annotations
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
-from starlette.types import ASGIApp
+import json
+from typing import Iterable
+
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from sbs_api.config import Settings, get_settings
 from sbs_api.errors.exceptions import BatchFileTooLarge, RequestBodyTooLarge, SBSAPIException
 
-PROBLEM_CONTENT_TYPE = "application/problem+json"
+PROBLEM_CONTENT_TYPE = b"application/problem+json"
 
 # ADR 0034: the Tier 2 multipart upload may carry up to
 # `settings.max_batch_file_bytes` of CSV, which is two orders of magnitude
@@ -43,123 +43,198 @@ PROBLEM_CONTENT_TYPE = "application/problem+json"
 # from "your JSON payload was wrong".
 _BATCH_UPLOAD_PATH = "/v1/batches"
 
-
-def _too_large_response(
-    exc: SBSAPIException, *, correlation_id: str | None
-) -> JSONResponse:
-    """Build the 413 ProblemDetail directly.
-
-    Pulls the correlation_id from the outer middleware's request-state
-    binding so the response carries the support-handoff identifier.
-    """
-
-    settings = get_settings()
-    body: dict = {
-        "type": f"{settings.problem_type_namespace}/{exc.type_suffix}",
-        "title": exc.title,
-        "status": exc.status,
-        "code": exc.code,
-        "detail": exc.detail,
-    }
-    headers: dict[str, str] = {}
-    if correlation_id is not None:
-        headers["X-Correlation-Id"] = correlation_id
-    return JSONResponse(
-        status_code=exc.status,
-        content=body,
-        media_type=PROBLEM_CONTENT_TYPE,
-        headers=headers,
-    )
+# Methods that semantically carry no request body. We never call
+# ``receive()`` on these — SSE handlers (GET /v1/internal/sse/*) rely on
+# this so their StreamingResponse's listen_for_disconnect task observes
+# a clean receive channel.
+_BODYLESS_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "DELETE", "TRACE"})
 
 
 def _limit_for(path: str, method: str, settings: Settings) -> tuple[int, type[SBSAPIException]]:
-    """Return (max_bytes, exception_class) for the request shape.
-
-    The Tier 2 multipart upload (`POST /v1/batches`) takes the batch cap;
-    the equivalent GET endpoints stay on the general cap (they have no
-    body to speak of). Future per-path overrides land here.
-    """
+    """Return (max_bytes, exception_class) for the request shape."""
 
     if method == "POST" and path == _BATCH_UPLOAD_PATH:
         return settings.max_batch_file_bytes, BatchFileTooLarge
     return settings.max_request_body_bytes, RequestBodyTooLarge
 
 
-class BodySizeLimitMiddleware(BaseHTTPMiddleware):
-    """Enforce per-path body-size caps.
+def _read_header(
+    headers: Iterable[tuple[bytes, bytes]], name_lower: bytes
+) -> bytes | None:
+    for raw_name, raw_value in headers:
+        if raw_name.lower() == name_lower:
+            return raw_value
+    return None
 
-    Runs inside CorrelationIdMiddleware (F.2 order) so the 413 response
-    can pull ``request.state.correlation_id``. The cap and the
-    error-code that surfaces on overflow are both per-path so the Tier 2
-    upload at `/v1/batches` can carry tens of megabytes while everything
-    else stays on the 256-KiB default.
+
+async def _send_413(
+    send: Send, exc: SBSAPIException, *, settings: Settings
+) -> None:
+    """Emit the 413 ProblemDetail directly via the ASGI send channel.
+
+    ``X-Correlation-Id`` and ``traceparent`` are not written here — the
+    surrounding pure-ASGI middlewares wrap ``send`` and add those
+    headers on the outbound ``http.response.start``.
+    """
+
+    body = json.dumps(
+        {
+            "type": f"{settings.problem_type_namespace}/{exc.type_suffix}",
+            "title": exc.title,
+            "status": exc.status,
+            "code": exc.code,
+            "detail": exc.detail,
+        }
+    ).encode("utf-8")
+    headers: list[tuple[bytes, bytes]] = [
+        (b"content-type", PROBLEM_CONTENT_TYPE),
+        (b"content-length", str(len(body)).encode("ascii")),
+    ]
+    await send(
+        {
+            "type": "http.response.start",
+            "status": exc.status,
+            "headers": headers,
+        }
+    )
+    await send({"type": "http.response.body", "body": body, "more_body": False})
+
+
+class BodySizeLimitMiddleware:
+    """Enforce per-path body-size caps as a pure ASGI middleware.
+
+    Install order (outer → inner at request time):
+        traceparent → correlation_id → body_size_limit
+
+    The 413 ProblemDetail therefore inherits ``X-Correlation-Id`` and
+    ``traceparent`` from the surrounding middlewares' wrapped ``send``.
     """
 
     def __init__(self, app: ASGIApp, *, max_bytes: int | None = None) -> None:
-        super().__init__(app)
+        self.app = app
         self._override_max = max_bytes
 
-    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
-        correlation_id = getattr(request.state, "correlation_id", None)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
         settings = get_settings()
-        max_bytes, exc_cls = _limit_for(
-            request.url.path, request.method, settings
-        )
+        method: str = scope.get("method", "GET")
+        path: str = scope.get("path", "")
+        max_bytes, exc_cls = _limit_for(path, method, settings)
         if self._override_max is not None:
-            # Test override: same cap on every route. Stays on the
-            # general RequestBodyTooLarge code because the override is
-            # only used by tests that don't care about the per-path
-            # error-code distinction.
+            # Test override: same cap on every route.
             max_bytes = self._override_max
             exc_cls = RequestBodyTooLarge
 
-        # Fast path: trust Content-Length when present and small enough.
-        content_length = request.headers.get("content-length")
-        if content_length is not None:
+        headers = scope.get("headers", [])
+        raw_cl = _read_header(headers, b"content-length")
+        declared: int | None
+        if raw_cl is None:
+            declared = None
+        else:
             try:
-                declared = int(content_length)
-            except ValueError:
+                declared = int(raw_cl.decode("ascii"))
+            except (ValueError, UnicodeDecodeError):
                 declared = None
-            if declared is not None and declared > max_bytes:
-                return _too_large_response(
-                    exc_cls(
-                        detail=(
-                            f"Request body declared {declared} bytes; "
-                            f"server maximum is {max_bytes} bytes."
-                        )
-                    ),
-                    correlation_id=correlation_id,
-                )
 
-        # Bounded streaming read. Accumulate the body chunk-by-chunk and
-        # abort as soon as the running total exceeds the cap so a client
-        # lying about Content-Length cannot force a full-body allocation.
+        # Fast path: Content-Length over the cap is rejected without
+        # touching receive(). Works for any method.
+        if declared is not None and declared > max_bytes:
+            await _send_413(
+                send,
+                exc_cls(
+                    detail=(
+                        f"Request body declared {declared} bytes; "
+                        f"server maximum is {max_bytes} bytes."
+                    )
+                ),
+                settings=settings,
+            )
+            return
+
+        # Bodyless methods: never consume receive(). SSE handlers
+        # depend on this — see module docstring.
+        if method in _BODYLESS_METHODS:
+            await self.app(scope, receive, send)
+            return
+
+        # Bodyful methods: buffer the body chunk-by-chunk so we can
+        # enforce the cap on the running total, then replay it
+        # downstream via a wrapped receive().
         accumulated = bytearray()
-        async for chunk in request.stream():
+        # We collect each message; the last one carries more_body=False.
+        # ``http.disconnect`` mid-read means the client gave up — we
+        # forward it to the app via the wrapped receive once the app
+        # starts; here we just stop reading.
+        saw_disconnect = False
+        while True:
+            message = await receive()
+            mtype = message["type"]
+            if mtype == "http.disconnect":
+                saw_disconnect = True
+                break
+            if mtype != "http.request":
+                # Unknown message — pass through to the app verbatim
+                # by buffering it and continuing. ASGI does not define
+                # other message types for HTTP scope today.
+                continue
+            chunk = message.get("body", b"") or b""
             accumulated.extend(chunk)
             if len(accumulated) > max_bytes:
-                return _too_large_response(
+                await _send_413(
+                    send,
                     exc_cls(
                         detail=(
                             f"Request body exceeded {max_bytes} bytes "
                             f"after streaming (declared "
-                            f"{content_length or 'unknown'} bytes)."
+                            f"{declared if declared is not None else 'unknown'} "
+                            f"bytes)."
                         )
                     ),
-                    correlation_id=correlation_id,
+                    settings=settings,
                 )
-        body = bytes(accumulated)
+                # Drain remaining body chunks so the client's
+                # connection state matches what we just sent.
+                if message.get("more_body", False):
+                    while True:
+                        m = await receive()
+                        if m["type"] != "http.request":
+                            break
+                        if not m.get("more_body", False):
+                            break
+                return
+            if not message.get("more_body", False):
+                break
 
-        # Replay the body for downstream handlers. ``request.body()``
-        # caches in ``request._body`` on first call; we pre-populate
-        # both ``_body`` and a replay ``_receive`` so any access shape
-        # (``body()``, ``stream()``, ``form()``) works.
-        async def receive():
-            return {"type": "http.request", "body": body, "more_body": False}
+        body_bytes = bytes(accumulated)
 
-        request._body = body  # type: ignore[attr-defined]
-        request._receive = receive  # type: ignore[attr-defined]
+        if saw_disconnect:
+            # Client disconnected before sending the full body. We
+            # still hand control to the app with a receive() that
+            # surfaces the disconnect so the route can shut down
+            # cleanly.
+            async def disconnect_receive() -> Message:
+                return {"type": "http.disconnect"}
 
-        response: Response = await call_next(request)
-        return response
+            await self.app(scope, disconnect_receive, send)
+            return
+
+        body_emitted = False
+
+        async def replay_receive() -> Message:
+            nonlocal body_emitted
+            if not body_emitted:
+                body_emitted = True
+                return {
+                    "type": "http.request",
+                    "body": body_bytes,
+                    "more_body": False,
+                }
+            # Body already replayed — pass through to the real
+            # receive so ``http.disconnect`` (and any future ASGI
+            # message types) reach the app unchanged.
+            return await receive()
+
+        await self.app(scope, replay_receive, send)

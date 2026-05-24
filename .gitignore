@@ -91,3 +91,7 @@ standards-pack/schemas/
 standards-pack/catalogs/
 standards-pack/sdk-helpers/
 standards-pack/examples/
+
+# Local demo secrets
+.demo-internal-api-secret
+app/.env.local

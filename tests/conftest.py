@@ -234,6 +234,35 @@ async def db_schema(test_database_url):
                     submission_method="APP_MOVIL",
                     original_reference_id=None,
                     resolution_status="pendiente",
+                    source="api_realtime",
+                )
+                for i in range(1, 4)
+            ]
+            # Tier 2 batch-ingested complaints for COOPAC_DEMO_002. Mirrors
+            # the dev-seed.sql block so the cockpit Tier 2 panel has rows
+            # to render in tests and in the local dev DB. source='batch'
+            # matches the worker contract (ADR 0034).
+            + [
+                ComplaintRecord(
+                    complaint_id=f"COP-2026-{i:06d}",
+                    institution_id="SBS-005678",
+                    received_date=date(2026, 5, 9 + i * 2),
+                    complainant_doc_type="DNI",
+                    product_category="COOPAC",
+                    channel="AGENCIA",
+                    motivo_code="DEMORA_ATENCION",
+                    severity="MEDIUM",
+                    description_text=(
+                        "Aporte mensual no acreditado en mi cuenta cooperativa. "
+                        "Solicito la acreditación correspondiente."
+                    ),
+                    description_language="es",
+                    complainant_age_range="35_44",
+                    complainant_district="150100",
+                    submission_method="AGENCIA",
+                    original_reference_id=None,
+                    resolution_status="pendiente",
+                    source="batch",
                 )
                 for i in range(1, 4)
             ]

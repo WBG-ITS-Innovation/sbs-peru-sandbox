@@ -21,6 +21,7 @@ from sbs_api.db.models.institution_webhook_config import (
 from sbs_api.db.models.oauth_client import OAuthClient
 from sbs_api.db.models.outbound_webhook_secret import OutboundWebhookSecret
 from sbs_api.db.models.pending_approval import PendingApproval
+from sbs_api.db.models.raw_complaint import RawComplaint
 from sbs_api.db.models.supervisory_observation import SupervisoryObservation
 from sbs_api.db.models.webhook_delivery import WebhookDelivery
 
@@ -40,6 +41,7 @@ __all__ = [
     "OAuthClient",
     "OutboundWebhookSecret",
     "PendingApproval",
+    "RawComplaint",
     "SupervisoryObservation",
     "WebhookDelivery",
 ]

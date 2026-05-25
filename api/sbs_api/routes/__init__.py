@@ -20,6 +20,7 @@ from sbs_api.routes.meta import router as meta_router
 from sbs_api.routes.oauth import router as oauth_router
 from sbs_api.routes.openapi import router as openapi_router
 from sbs_api.routes.portal import router as portal_router
+from sbs_api.routes.sandbox_complaints import router as sandbox_complaints_router
 from sbs_api.routes.sse import router as sse_router
 
 v1_router = APIRouter(prefix="/v1")
@@ -36,5 +37,6 @@ v1_router.include_router(findings_router)
 v1_router.include_router(approvals_router)
 v1_router.include_router(audit_router)
 v1_router.include_router(sse_router)
+v1_router.include_router(sandbox_complaints_router)
 
 __all__ = ["v1_router"]

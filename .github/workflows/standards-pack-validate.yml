@@ -52,7 +52,7 @@ jobs:
           java-version: '17'
 
       - name: setup Go (for the webhook-verification-go snippet test)
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.22'
 

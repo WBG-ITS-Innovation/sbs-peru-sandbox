@@ -278,6 +278,31 @@ Goal: SBS publishes a machine-readable Anexo 1-A that any institution, vendor, o
 
 **May 25 scope.** Reduced. Standards pack v0.1 (OpenAPI + JSON Schema) generated and version-stamped as part of Part 7's May 25 work. **Deferred to post-sprint (June/July):** SemVer versioning policy, code lists distribution, OCI artifact publishing, GitHub release distribution, full standards pack governance. See [ADR 0025](adr/0025-may-25-sprint-critical-path.md).
 
+## Mission overlay: P11A — live ingestion / redaction / data-quality slice
+
+P11A is a **mission overlay**, not a renumbering of Part 11. The Standards Pack work above stands. P11A delivers the live-API demo slice that the LiveIngestionPanel needs to be credible during the regulator walkthrough: a real backend endpoint, deterministic PII redaction, deterministic data-quality checks, and a restricted PII store.
+
+Sandbox / demo scope. Not final SBS production infrastructure.
+
+- [x] `POST /v1/internal/demo/simulate-submission` — internal, shared-secret + session-gated endpoint accepting realistic Anexo-1A-shaped payloads with PII. Reuses the existing `verify_internal_secret` pattern. Production-shaped `POST /v1/complaints` auth chain unchanged.
+- [x] Deterministic regex+allowlist PII redactor at `api/sbs_api/redaction/` (`pii-redaction-demo-v1`). Five entity kinds — `pii_name`, `pii_id`, `pii_phone`, `pii_email`, `pii_account` — mapped to the existing `anonymizer_call` JSON Schema enum. See [ADR 0044](adr/0044-deterministic-pii-redaction.md).
+- [x] Deterministic data-quality checker at `api/sbs_api/data_quality/` (`dq-demo-v1`). Three buckets (`errors` / `warnings` / `suggested_enrichments`) with stable rule IDs. Sandbox-scoped product / motive / channel allowlists. See [ADR 0045](adr/0045-data-quality-tool-contract.md).
+- [x] `raw_complaints` table (migration `20260524_0001`) — the **only** PII-bearing store. Restricted policy `restricted-demo-pii-v1`. Not exposed in any normal API route, builder, or UI.
+- [x] LiveIngestionPanel rewired through `/app/api/ingest` proxy → backend demo endpoint. Browser shows masked BEFORE / redacted AFTER / detected entities (kind + replacement) / DQ report / persistence handles.
+- [x] One `agent_runs` row per submission (agent_name `live-ingestion-orchestrator`) with the anonymizer tool_call + DQ in `final_output.data_quality`. Status maps `success` ↔ no DQ errors, `partial` ↔ ≥ 1 error.
+- [x] Five audit-chain rows per submission: `demo-complaint-received`, `pii-redacted`, `canonical-complaint-persisted`, `data-quality-completed`, `complaint-triage-emitted`. No raw PII in any audit row.
+- [x] One `complaint.received` SSE delta published on the `cockpit` topic with redacted-only payload; existing CockpitClient reducer adds the card to Tier 1 with no UI rewrite.
+- [x] No-raw-PII-egress invariant test under `tests/integration/test_no_raw_pii_egress.py`.
+
+**Invariants.**
+
+- No raw PII to cloud / LLM / SSE / audit / agent_runs / canonical complaints / UI. Browser-visible BEFORE is server-side masked.
+- Data-quality rules are deterministic and sandbox-scoped.
+- FNA / vendor / Qlik-like outputs remain replay / adapter shapes unless real APIs are provided.
+- The production-shaped Tier 1 surface (`POST /v1/complaints`) and the OAuth / session / persona / existing SSE topics are unchanged.
+
+**Exit.** A supervisor in the sandbox can click Submit on the LiveIngestionPanel and see: timeline of the pipeline, masked-before vs redacted-after diff, detected PII entities (kind + replacement, no raw values), data-quality report, canonical + raw complaint ids, agent_run id, and SSE event id. The new card appears in the cockpit Tier 1 panel.
+
 ## Daily discipline
 
 - Morning: open part's chat, paste git log + status, get task list

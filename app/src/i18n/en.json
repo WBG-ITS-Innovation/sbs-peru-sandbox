@@ -114,6 +114,10 @@
       "channels": "Channel contributions",
       "open_findings": "Open related findings"
     },
+    "complaint_card": {
+      "motivo": "reason",
+      "producto": "product"
+    },
     "tier1_empty": {
       "title": "No recent Tier 1 activity",
       "body": "No complaints received via the API in the current window.",
@@ -178,7 +182,8 @@
       "classification_top_k": "Top 3 classes",
       "classification_model": "Model",
       "feature_model": "Ranker model",
-      "rank_band": "Rank band"
+      "rank_band": "Rank band",
+      "confidence_degraded": "⚠ Confidence degraded — regex fallback in use."
     },
     "agent_status": {
       "success": "Success",

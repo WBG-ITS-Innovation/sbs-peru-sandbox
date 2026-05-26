@@ -99,6 +99,8 @@ export function DraftNarrativeEditor({
           </p>
         )}
         {savedAt ? (
+          // Glyph + an already-localised timestamp — no translatable copy.
+          // eslint-disable-next-line i18next/no-literal-string
           <p className="mt-2 text-2xs text-severity-low-fg">✓ {savedAt}</p>
         ) : null}
         {error ? (

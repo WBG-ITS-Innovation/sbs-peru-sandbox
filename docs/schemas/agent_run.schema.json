@@ -425,6 +425,7 @@
                         "enum": [
                           "pii_name",
                           "pii_id",
+                          "pii_ruc",
                           "pii_account",
                           "pii_phone",
                           "pii_email",

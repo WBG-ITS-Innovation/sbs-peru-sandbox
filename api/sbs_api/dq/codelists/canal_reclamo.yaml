@@ -1,0 +1,16 @@
+# Annex 1-A — canal de ingreso del reclamo (field 7) +
+#              canal de respuesta del reclamo (field 12).
+#
+# The Reglamento (annexo.pdf, pp. 1, 7–8) explicitly says these two
+# fields are scoped to the Anexo A "Códigos de canales" table, the
+# same list canal_operacion (field 8) uses. canal_reclamo.yaml is
+# the explicit alias so a DQ rule on "canal_ingreso" or
+# "canal_respuesta" reads from the same registry as canal_operacion
+# without re-listing the codes.
+#
+# review_status: in_repo_spec
+spec_source: "Anexo A — Res. SBS 04036-2022 (aliased from canales.yaml)"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: all_systems
+alias_of: canales

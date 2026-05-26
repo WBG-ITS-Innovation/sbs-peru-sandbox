@@ -33,6 +33,9 @@ GOLDEN_PAYLOAD = {
     "institution_name": "BANCO_DEMO_001",
     "institution_complaint_id": "BCO-CLI-IN-0001",
     "client_submission_id": "test-sandbox-001",
+    # P11 DQ completion — Annex 1-A fields 2 + 3.
+    "tid_cli": "DNI",
+    "nro_cli": "47291834",
     "received_at": "2026-05-25T10:15:00-05:00",
     "channel_in": "APP_MOVIL",
     "channel_operation": "APP_MOVIL",
@@ -85,7 +88,11 @@ async def test_granular_happy_path_returns_receipt(client):
     )
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["status"] == "accepted"
+    # P11 DQ completion: the GOLDEN_PAYLOAD uses friendly-name channel
+    # codes (APP_MOVIL) instead of the Anexo A numeric codes ("10");
+    # DQ-A1A-013 surfaces this as a warning, so accepted_with_warnings
+    # is also a valid happy-path outcome.
+    assert body["status"] in ("accepted", "accepted_with_warnings"), body
     assert body["institution_id"] == "SBS-001234"
     assert body["complaint_id"]
     assert body["raw_complaint_id"]
@@ -475,3 +482,159 @@ async def test_granular_full_peruvian_pii_payload_egress(client, test_database_u
     assert "20512345678" in raw.raw_narrative, "RUC missing from raw_complaints"
     assert "47291834" in raw.raw_narrative, "DNI missing from raw_complaints"
     assert raw.storage_policy == "restricted-demo-pii-v1"
+
+
+# ---------------------------------------------------------------------------
+# P11 DQ completion — Annex 1-A integration tests
+# ---------------------------------------------------------------------------
+
+
+_ANNEX_1A_COMPLETE: dict = {
+    "institution_id": "SBS-001234",
+    "institution_name": "BANCO_DEMO_001",
+    "institution_complaint_id": "BCO-A1A-COMPLETE-001",
+    "client_submission_id": "a1a-complete",
+    "tid_cli": "DNI",
+    "nro_cli": "47291834",
+    "cod_cli": "CLI-A1A-001",
+    "received_at": "2026-05-26",
+    "channel_in": "10",
+    "channel_operation": "APP_MOVIL",
+    "canal_respuesta": "10",
+    "ubigeo": "150101",
+    "product": "TARJETA_CREDITO",
+    "motive": "COBRO_INDEBIDO",
+    "submotive": "30",
+    "narrative": (
+        "Reclamo Annex-1A completo. Descripción suficiente para superar "
+        "el umbral de longitud y proveer contexto al supervisor."
+    ),
+    "amount_claimed": "450.00",
+    "moneda": "PEN",
+    "status": "atendido",
+    "fecha_resolucion": "2026-05-26",
+    "resolucion_reclamo": "favor_usuario",
+    "bancaseguros": "no",
+    "demo_scenario": "p11-dq-complete-valid",
+}
+
+
+@pytest.mark.asyncio
+async def test_a1a_fully_valid_payload_is_accepted(client):
+    """Exit gate 1: a fully-valid Annex 1-A payload → accepted, no DQ errors."""
+
+    r = await client.post(
+        GRANULAR_PATH,
+        json=_ANNEX_1A_COMPLETE,
+        headers={"Idempotency-Key": _idem_key("a1a-valid")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["status"] == "accepted", body
+    a1a = body["annex_1a_data_quality"]
+    assert a1a["error_count"] == 0
+    assert a1a["warning_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_a1a_bancaseguros_without_conditionals_is_rejected(
+    client, test_database_url
+):
+    """Trigger DQ-A1A-024 + 025 by setting bancaseguros=si without
+    producto/motivo bancaseguros. Expected: rejected; DQ-A1A-024 in
+    audit_events.meta; no second canonical complaint."""
+
+    payload = {
+        **_ANNEX_1A_COMPLETE,
+        "client_submission_id": "a1a-bancaseguros-missing",
+        "bancaseguros": "si",
+    }
+    r = await client.post(
+        GRANULAR_PATH,
+        json=payload,
+        headers={"Idempotency-Key": _idem_key("a1a-bs")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["status"] == "rejected", body
+    fired = {
+        item["rule_id"]
+        for item in body["annex_1a_data_quality"]["results"]
+    }
+    assert "DQ-A1A-024" in fired
+    assert "DQ-A1A-025" in fired
+
+    # Audit row check — at least one dq-rule-violated row with rule_id=024.
+    from sbs_api.db.models.audit_event import AuditEvent
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SessionMaker() as session:
+            rows = (
+                await session.execute(
+                    select(AuditEvent).where(
+                        AuditEvent.object_id == body["complaint_id"],
+                        AuditEvent.action == "dq-rule-violated",
+                    )
+                )
+            ).scalars().all()
+    finally:
+        await engine.dispose()
+    rule_ids_in_audit = {r.meta.get("rule_id") for r in rows}
+    assert "DQ-A1A-024" in rule_ids_in_audit
+    assert "DQ-A1A-025" in rule_ids_in_audit
+
+
+@pytest.mark.asyncio
+async def test_a1a_invalid_estado_is_rejected_with_rule_id_in_audit(
+    client, test_database_url
+):
+    """Trigger DQ-A1A-020 with an invalid estado code; expect rejected
+    and the rule_id present in an audit row's meta."""
+
+    payload = {
+        **_ANNEX_1A_COMPLETE,
+        "client_submission_id": "a1a-bad-estado",
+        "status": "inventado",
+        # Remove fecha_resolucion + resolucion_reclamo so the
+        # atendido-conditional rules don't double-fire; we want a
+        # focused DQ-A1A-020 trigger.
+    }
+    payload.pop("fecha_resolucion", None)
+    payload.pop("resolucion_reclamo", None)
+    r = await client.post(
+        GRANULAR_PATH,
+        json=payload,
+        headers={"Idempotency-Key": _idem_key("a1a-estado")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["status"] == "rejected", body
+    fired = {
+        item["rule_id"] for item in body["annex_1a_data_quality"]["results"]
+    }
+    assert "DQ-A1A-020" in fired
+
+    from sbs_api.db.models.audit_event import AuditEvent
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SessionMaker() as session:
+            rows = (
+                await session.execute(
+                    select(AuditEvent).where(
+                        AuditEvent.object_id == body["complaint_id"],
+                        AuditEvent.action == "dq-rule-violated",
+                    )
+                )
+            ).scalars().all()
+    finally:
+        await engine.dispose()
+    rule_020 = [r for r in rows if r.meta.get("rule_id") == "DQ-A1A-020"]
+    assert rule_020, "DQ-A1A-020 audit row missing"
+    meta = rule_020[0].meta
+    assert meta["field_path"] == "estado"
+    assert meta["observed_value"] == "inventado"
+    assert meta["severity"] == "error"

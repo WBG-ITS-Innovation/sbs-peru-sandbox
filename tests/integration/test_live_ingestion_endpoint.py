@@ -46,6 +46,10 @@ GOLDEN_PAYLOAD = {
     "institution_name": "BANCO_DEMO_001",
     "institution_complaint_id": "BCO-DEMO-IN-0001",
     "client_submission_id": "test-live-001",
+    # P11 DQ completion — Annex 1-A fields 2 + 3 (tipo + número de
+    # documento) are required by DQ-A1A-007 / DQ-A1A-009.
+    "tid_cli": "DNI",
+    "nro_cli": "12345678",
     "received_at": "2026-05-24T10:15:00-05:00",
     "channel_in": "APP_MOVIL",
     "channel_operation": "APP_MOVIL",
@@ -298,17 +302,28 @@ async def test_demo_endpoint_records_five_audit_events(
     finally:
         await engine.dispose()
 
-    actions = sorted(r.action for r in rows)
-    assert actions == sorted(
-        [
-            "demo-complaint-received",
-            "pii-redacted",
-            "canonical-complaint-persisted",
-            "data-quality-completed",
-            "complaint-triage-emitted",
-        ]
+    # Existing five-event chain stays additive-stable. After P11 DQ
+    # completion, ``dq-rule-violated`` rows may also appear (one per
+    # Annex 1-A rule firing); the assertion below uses set-subset so
+    # the additive new rows don't break it.
+    actions = {r.action for r in rows}
+    required_actions = {
+        "demo-complaint-received",
+        "pii-redacted",
+        "canonical-complaint-persisted",
+        "data-quality-completed",
+        "complaint-triage-emitted",
+    }
+    assert required_actions.issubset(actions), (
+        f"missing audit actions: {required_actions - actions}"
     )
-    # No raw PII in any audit row.
+    # Any extra actions must be the new dq-rule-violated rows — no
+    # other unannounced types should appear.
+    extras = actions - required_actions
+    assert extras.issubset({"dq-rule-violated"}), (
+        f"unexpected audit actions: {extras}"
+    )
+    # No raw PII in any audit row (including the new dq-rule-violated rows).
     for row in rows:
         for col in (row.action, row.actor_id, row.object_id):
             _no_raw_pii(col)

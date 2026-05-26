@@ -1,0 +1,14 @@
+# Annex 1-A — field 24: Bancaseguros trigger.
+# Source: annexo.pdf, p. 1, field 24 ("Indicar sí/no si el reclamo
+# corresponde a Bancaseguros, debiendo consignar adicionalmente la
+# información requerida en los campos 24 al 27"). Triggering on "si"
+# requires fields 25, 26, 27 to be present.
+#
+# review_status: in_repo_spec
+spec_source: "Anexo 1-A field 24 — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: financial_system
+codes:
+  - { code: "si", label: "Reclamo corresponde a bancaseguros (requiere campos 25–27)" }
+  - { code: "no", label: "Reclamo no corresponde a bancaseguros" }

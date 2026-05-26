@@ -16,6 +16,36 @@
 - The supervisor UI reads the same rows whether the agent layer is LangGraph, AutoGen, Semantic Kernel, or a hand-written orchestrator. The contract survives the orchestrator choice.
 - Partial failures are first-class (see [`status`](#status-state-machine)), so the UI does not need to infer failure from missing fields.
 
+## P11A note — `live-ingestion-orchestrator` and data-quality placement
+
+The P11A demo ingestion path (`POST /v1/internal/demo/simulate-submission`) writes agent_runs rows with `agent_name = "live-ingestion-orchestrator"` and `agent_version = "live-ingestion-orchestrator-0.1.0"`. The kebab-case name and the `<name>-<semver>` version both validate against the existing pattern constraints.
+
+The deterministic data-quality report from `sbs_api.data_quality` is **not** persisted as a new `tool_call`. The `tool_name` enum in [`agent_run.schema.json`](agent_run.schema.json) is closed at `bert_classifier | xgboost_ranker | regex_taxonomy | anonymizer | qlik_lookup`, and ADR 0045 commits to not widening it in P11A. Instead, the DQ report sits in `final_output.data_quality` with the documented shape:
+
+```json
+{
+  "final_output": {
+    "complaint_id": "BCO-2026-1234567",
+    "raw_complaint_id": "<uuid>",
+    "redaction": { "policy_version": "pii-redaction-demo-v1", "entity_count_by_kind": {"pii_id": 1, "pii_name": 1} },
+    "data_quality": {
+      "errors": [], "warnings": [], "suggested_enrichments": [],
+      "extracted_fields": {}, "policy_version": "dq-demo-v1"
+    },
+    "summary": "first 120 chars of redacted narrative"
+  }
+}
+```
+
+The `tool_calls` array carries one entry — the `anonymizer` call (already in the enum) covering the redaction step. The findings builder's `tool_name == "anonymizer"` selector therefore keeps working unchanged.
+
+Status mapping for live-ingestion-orchestrator runs:
+
+- `success` — DQ produced zero errors. `error` is null. `final_output` is the dict above.
+- `partial` — DQ produced ≥ 1 error. `error = {"code": "DATA_QUALITY_ERRORS", "message": "..."}`. `final_output` still carries the DQ report so a supervisor can act on the errors.
+
+The full schema check is exercised against a live agent_run row by `tests/integration/test_live_ingestion_endpoint.py:test_demo_endpoint_writes_pii_free_agent_run`.
+
 ## Table: `agent_runs`
 
 The JSON Schema is named `agent_run` (singular — it describes the shape of one record); the Postgres table is `agent_runs` (plural — matches the repo convention `institutions`, `complaints`, `batches`).

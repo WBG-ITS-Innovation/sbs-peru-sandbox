@@ -1,0 +1,359 @@
+"""End-to-end test for the P11A.5a sandbox granular institutional endpoint.
+
+Drives ``POST /v1/sandbox/complaints/granular`` through the in-process
+FastAPI app using the shared ``client`` fixture (which bypasses mTLS
+/ OAuth / HMAC / rate-limit dependencies, mirroring the existing
+``/v1/complaints`` test pattern). The HMAC chain is exercised by the
+dedicated ``test_hmac_*.py`` files; this test covers the route's own
+logic — orchestrator wiring, receipt shape, idempotency, tenant
+binding, missing-auth fallthroughs, and the no-raw-PII egress
+guarantee.
+"""
+
+from __future__ import annotations
+
+import json
+import uuid
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from tests.conftest import pytestmark_db
+
+pytestmark = pytestmark_db
+
+
+GRANULAR_PATH = "/v1/sandbox/complaints/granular"
+
+
+GOLDEN_PAYLOAD = {
+    "institution_id": "SBS-001234",
+    "institution_name": "BANCO_DEMO_001",
+    "institution_complaint_id": "BCO-CLI-IN-0001",
+    "client_submission_id": "test-sandbox-001",
+    "received_at": "2026-05-25T10:15:00-05:00",
+    "channel_in": "APP_MOVIL",
+    "channel_operation": "APP_MOVIL",
+    "product": "TARJETA_CREDITO",
+    "motive": "COBRO_INDEBIDO",
+    "amount_claimed": "700.00",
+    "narrative": (
+        "El cliente Carlos Rodríguez Mendoza (DNI 12345678) reporta un cargo "
+        "no reconocido por S/ 700 en la tarjeta 4556 1234 5678 9999. "
+        "Indica que recibió notificaciones en el aplicativo móvil y "
+        "solicita ser contactado al +51 987 654 321 o al correo "
+        "carlos.rodriguez@example.com."
+    ),
+    "response_detail": None,
+    "status": "pendiente",
+    "severity": "HIGH",
+    "demo_scenario": "p11a5a-sandbox-test",
+}
+
+
+RAW_PII_NEEDLES = (
+    "Carlos Rodríguez Mendoza",
+    "12345678",
+    "987 654 321",
+    "carlos.rodriguez@example.com",
+    "4556 1234 5678 9999",
+)
+
+
+def _no_raw_pii(blob: str, where: str) -> None:
+    for needle in RAW_PII_NEEDLES:
+        assert needle not in blob, f"raw PII {needle!r} leaked into {where}"
+
+
+def _idem_key(prefix: str) -> str:
+    return f"sandbox-{prefix}-{uuid.uuid4().hex[:16]}"
+
+
+# ---------------------------------------------------------------------------
+# Happy path + receipt shape
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_granular_happy_path_returns_receipt(client):
+    r = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": _idem_key("happy")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["status"] == "accepted"
+    assert body["institution_id"] == "SBS-001234"
+    assert body["complaint_id"]
+    assert body["raw_complaint_id"]
+    assert body["submission_id"]
+    assert body["idempotency_key"]
+    assert body["received_at"]
+    assert body["redaction_policy_version"]
+    assert body["data_quality_policy_version"]
+
+    # Timeline contains the orchestrator's signature events.
+    timeline_events = [t["event"] for t in body["timeline"]]
+    for required in (
+        "received",
+        "pii_redacted",
+        "canonical_complaint_persisted",
+        "data_quality_checks_completed",
+        "finding_triage_event_emitted",
+    ):
+        assert required in timeline_events, timeline_events
+
+    # No raw PII in the response.
+    _no_raw_pii(r.text, "HTTP response body")
+
+
+@pytest.mark.asyncio
+async def test_granular_response_has_no_raw_pii(client):
+    r = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": _idem_key("no-pii")},
+    )
+    assert r.status_code == 201
+    _no_raw_pii(r.text, "HTTP response body")
+
+
+# ---------------------------------------------------------------------------
+# Idempotency
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_granular_idempotency_replay_returns_same_complaint(client):
+    key = _idem_key("idem")
+    r1 = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": key},
+    )
+    assert r1.status_code == 201
+    cid1 = r1.json()["complaint_id"]
+
+    r2 = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": key},
+    )
+    assert r2.status_code == 201
+    cid2 = r2.json()["complaint_id"]
+    # Same Idempotency-Key + same body → cached receipt with the
+    # original complaint_id, not a fresh canonical complaint.
+    assert cid1 == cid2
+    assert r2.headers.get("Idempotency-Replayed") == "true"
+
+
+@pytest.mark.asyncio
+async def test_granular_idempotency_does_not_create_second_canonical_complaint(
+    client, test_database_url
+):
+    from sbs_api.db.models.complaint import ComplaintRecord
+
+    key = _idem_key("idem-count")
+    payload = {**GOLDEN_PAYLOAD, "client_submission_id": "idem-count-test"}
+    r1 = await client.post(
+        GRANULAR_PATH, json=payload, headers={"Idempotency-Key": key}
+    )
+    assert r1.status_code == 201
+    cid = r1.json()["complaint_id"]
+
+    r2 = await client.post(
+        GRANULAR_PATH, json=payload, headers={"Idempotency-Key": key}
+    )
+    assert r2.status_code == 201
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SessionMaker() as session:
+            rows = (
+                await session.execute(
+                    select(ComplaintRecord).where(
+                        ComplaintRecord.client_submission_id == "idem-count-test"
+                    )
+                )
+            ).scalars().all()
+    finally:
+        await engine.dispose()
+
+    assert len(rows) == 1, "idempotency replay created a duplicate canonical complaint"
+    assert rows[0].complaint_id == cid
+
+
+# ---------------------------------------------------------------------------
+# Header / auth fallthroughs
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_granular_requires_idempotency_key(client):
+    r = await client.post(GRANULAR_PATH, json=GOLDEN_PAYLOAD)
+    # FastAPI's required-header validation returns 422 (or 400 depending
+    # on how the route declares it). Either way it must not 2xx.
+    assert r.status_code in (400, 422)
+
+
+@pytest.mark.asyncio
+async def test_granular_rejects_missing_oauth_bearer(app):
+    """Pop the OAuth scope override so the route exercises the real dep."""
+
+    from sbs_api.auth.scopes import COMPLAINTS_WRITE
+    from sbs_api.dependencies.oauth import verified_oauth_token_with_scope
+
+    dep = verified_oauth_token_with_scope(COMPLAINTS_WRITE)
+    app.dependency_overrides.pop(dep, None)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
+        r = await ac.post(
+            GRANULAR_PATH,
+            json=GOLDEN_PAYLOAD,
+            headers={"Idempotency-Key": _idem_key("no-oauth")},
+        )
+    assert r.status_code == 401
+    body = r.json()
+    # The OAuth dependency raises TokenRequired/Invalid, which surface
+    # with a stable code from the catalogue.
+    assert body.get("code", "").startswith("SBS-401-")
+
+
+@pytest.mark.asyncio
+async def test_granular_rejects_missing_hmac(app):
+    """Pop the HMAC bypass so the route runs the real verifier."""
+
+    from sbs_api.dependencies.hmac_verify import verified_hmac_signature
+
+    app.dependency_overrides.pop(verified_hmac_signature, None)
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
+        r = await ac.post(
+            GRANULAR_PATH,
+            json=GOLDEN_PAYLOAD,
+            headers={"Idempotency-Key": _idem_key("no-hmac")},
+        )
+    assert r.status_code == 401
+    body = r.json()
+    # Missing X-SBS-Timestamp / X-SBS-Signature surfaces as
+    # SIGNATURE_MISSING_HEADER.
+    assert "SIGNATURE_MISSING_HEADER" in body.get("type", "")
+
+
+@pytest.mark.asyncio
+async def test_granular_tenant_mismatch_returns_404(client):
+    bad = {**GOLDEN_PAYLOAD, "institution_id": "SBS-005678"}
+    r = await client.post(
+        GRANULAR_PATH,
+        json=bad,
+        headers={"Idempotency-Key": _idem_key("tenant")},
+    )
+    assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# PII egress — DB surfaces
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_granular_raw_pii_only_in_raw_complaints(client, test_database_url):
+    r = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": _idem_key("egress")},
+    )
+    assert r.status_code == 201
+    body = r.json()
+
+    from sbs_api.db.models.agent_run import AgentRun
+    from sbs_api.db.models.audit_event import AuditEvent
+    from sbs_api.db.models.complaint import ComplaintRecord
+    from sbs_api.db.models.raw_complaint import RawComplaint
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SessionMaker() as session:
+            canonical = (
+                await session.execute(
+                    select(ComplaintRecord).where(
+                        ComplaintRecord.complaint_id == body["complaint_id"]
+                    )
+                )
+            ).scalar_one()
+            raw = (
+                await session.execute(
+                    select(RawComplaint).where(
+                        RawComplaint.id == body["raw_complaint_id"]
+                    )
+                )
+            ).scalar_one()
+            run = (
+                await session.execute(
+                    select(AgentRun).where(AgentRun.id == body["submission_id"])
+                )
+            ).scalar_one()
+            events = (
+                await session.execute(
+                    select(AuditEvent).where(
+                        AuditEvent.object_id == body["complaint_id"]
+                    )
+                )
+            ).scalars().all()
+    finally:
+        await engine.dispose()
+
+    _no_raw_pii(canonical.description_text, "complaints.description_text")
+    run_blob = json.dumps(
+        {
+            "tool_calls": run.tool_calls,
+            "final_output": run.final_output,
+            "error": run.error,
+        }
+    )
+    _no_raw_pii(run_blob, "agent_runs row")
+    for ev in events:
+        ev_blob = json.dumps(
+            {
+                "action": ev.action,
+                "actor_id": ev.actor_id,
+                "object_id": ev.object_id,
+                "diff": ev.diff,
+                "meta": ev.meta,
+            }
+        )
+        _no_raw_pii(ev_blob, f"audit_events row {ev.id}")
+
+    # Raw narrative present in raw_complaints.
+    assert "Carlos Rodríguez Mendoza" in raw.raw_narrative
+    assert raw.canonical_complaint_id == canonical.complaint_id
+
+
+@pytest.mark.asyncio
+async def test_granular_sse_payload_is_pii_free(client):
+    from sbs_api.sse import get_bus
+
+    bus = get_bus()
+    pre = list(
+        bus._topics.get("cockpit", type("S", (), {"buffer": []})).buffer  # type: ignore[attr-defined]
+    )
+    r = await client.post(
+        GRANULAR_PATH,
+        json=GOLDEN_PAYLOAD,
+        headers={"Idempotency-Key": _idem_key("sse")},
+    )
+    assert r.status_code == 201
+
+    cockpit_state = bus._topics.get("cockpit")  # type: ignore[attr-defined]
+    assert cockpit_state is not None
+    new_events = [e for e in cockpit_state.buffer if e not in pre]
+    received = [e for e in new_events if e.event == "complaint.received"]
+    assert received, "no complaint.received SSE event from sandbox endpoint"
+    _no_raw_pii(received[-1].data, "SSE event data")

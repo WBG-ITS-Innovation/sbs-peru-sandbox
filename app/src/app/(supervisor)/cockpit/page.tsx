@@ -78,27 +78,63 @@ export default async function CockpitPage() {
     liveIngestion: {
       title: t(locale, 'live_ingestion.title'),
       subtitle: t(locale, 'live_ingestion.subtitle'),
-      preview_disclaimer: t(locale, 'pilot.preview_disclaimer'),
-      pilot_badge: t(locale, 'pilot.badge'),
-      live_toggle: t(locale, 'live_ingestion.live_toggle'),
-      paused_toggle: t(locale, 'live_ingestion.paused_toggle'),
-      mtls_label: t(locale, 'live_ingestion.mtls_label'),
-      simulate_button: t(locale, 'live_ingestion.simulate_button'),
-      simulate_toast_title: t(locale, 'live_ingestion.simulate_toast_title'),
-      simulate_toast_body: t(locale, 'live_ingestion.simulate_toast_body'),
+      sandbox_badge: t(locale, 'live_ingestion.sandbox_badge'),
+      nrt_label: t(locale, 'live_ingestion.nrt_label'),
+      submit_button: t(locale, 'live_ingestion.submit_button'),
+      submitting: t(locale, 'live_ingestion.submitting'),
+      submit_again_button: t(locale, 'live_ingestion.submit_again_button'),
+      error_title: t(locale, 'live_ingestion.error_title'),
+      error_body: t(locale, 'live_ingestion.error_body'),
+      error_detail_label: t(locale, 'live_ingestion.error_detail_label'),
+      evidence_label: t(locale, 'live_ingestion.evidence_label'),
+      idle_hint: t(locale, 'live_ingestion.idle_hint'),
       timeline_title: t(locale, 'live_ingestion.timeline_title'),
       diff_title: t(locale, 'live_ingestion.diff_title'),
       diff_tag_before: t(locale, 'live_ingestion.diff_tag_before'),
       diff_tag_after: t(locale, 'live_ingestion.diff_tag_after'),
-      diff_before_text: t(locale, 'live_ingestion.diff_before_text'),
-      diff_after_text: t(locale, 'live_ingestion.diff_after_text'),
-      policy_footer: t(locale, 'live_ingestion.policy_footer'),
+      redaction_entities_title: t(locale, 'live_ingestion.redaction_entities_title'),
+      redaction_entity_kinds: {
+        pii_name: t(locale, 'live_ingestion.redaction_entity_kinds.pii_name'),
+        pii_id: t(locale, 'live_ingestion.redaction_entity_kinds.pii_id'),
+        pii_phone: t(locale, 'live_ingestion.redaction_entity_kinds.pii_phone'),
+        pii_email: t(locale, 'live_ingestion.redaction_entity_kinds.pii_email'),
+        pii_account: t(locale, 'live_ingestion.redaction_entity_kinds.pii_account'),
+        pii_address: t(locale, 'live_ingestion.redaction_entity_kinds.pii_address'),
+      },
+      redaction_no_entities: t(locale, 'live_ingestion.redaction_no_entities'),
+      redaction_policy_footer: t(locale, 'live_ingestion.redaction_policy_footer'),
+      dq_title: t(locale, 'live_ingestion.dq_title'),
+      dq_errors_label: t(locale, 'live_ingestion.dq_errors_label'),
+      dq_warnings_label: t(locale, 'live_ingestion.dq_warnings_label'),
+      dq_suggested_label: t(locale, 'live_ingestion.dq_suggested_label'),
+      dq_empty: t(locale, 'live_ingestion.dq_empty'),
+      dq_policy_footer: t(locale, 'live_ingestion.dq_policy_footer'),
+      ids_title: t(locale, 'live_ingestion.ids_title'),
+      complaint_id_label: t(locale, 'live_ingestion.complaint_id_label'),
+      raw_id_label: t(locale, 'live_ingestion.raw_id_label'),
+      agent_run_id_label: t(locale, 'live_ingestion.agent_run_id_label'),
+      event_id_label: t(locale, 'live_ingestion.event_id_label'),
+      event_id_pending: t(locale, 'live_ingestion.event_id_pending'),
       events: {
         received: t(locale, 'live_ingestion.events.received'),
-        validated: t(locale, 'live_ingestion.events.validated'),
-        redacted: t(locale, 'live_ingestion.events.redacted'),
-        persisted: t(locale, 'live_ingestion.events.persisted'),
-        broadcast: t(locale, 'live_ingestion.events.broadcast'),
+        institution_authenticated_simulated: t(
+          locale,
+          'live_ingestion.events.institution_authenticated_simulated',
+        ),
+        schema_validated: t(locale, 'live_ingestion.events.schema_validated'),
+        pii_redacted: t(locale, 'live_ingestion.events.pii_redacted'),
+        canonical_complaint_persisted: t(
+          locale,
+          'live_ingestion.events.canonical_complaint_persisted',
+        ),
+        data_quality_checks_completed: t(
+          locale,
+          'live_ingestion.events.data_quality_checks_completed',
+        ),
+        finding_triage_event_emitted: t(
+          locale,
+          'live_ingestion.events.finding_triage_event_emitted',
+        ),
       },
     },
   };
@@ -116,7 +152,11 @@ export default async function CockpitPage() {
         meta={t(locale, 'cockpit.page.meta')}
       />
       <div className="mx-auto w-full max-w-7xl px-6 py-4">
-        <CockpitClient initialSnapshot={snapshot} labels={labels} />
+        <CockpitClient
+          initialSnapshot={snapshot}
+          labels={labels}
+          csrfToken={session.csrfToken}
+        />
       </div>
     </main>
   );

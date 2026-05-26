@@ -49,6 +49,7 @@ interface Labels {
 interface CockpitClientProps {
   initialSnapshot: CockpitSnapshot;
   labels: Labels;
+  csrfToken: string;
 }
 
 function reduceCockpit(state: CockpitSnapshot, message: SSEMessage<unknown>): CockpitSnapshot {
@@ -92,7 +93,7 @@ function reduceCockpit(state: CockpitSnapshot, message: SSEMessage<unknown>): Co
   return state;
 }
 
-export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
+export function CockpitClient({ initialSnapshot, labels, csrfToken }: CockpitClientProps) {
   const reduce = useCallback(reduceCockpit, []);
   const { state } = useSSE<CockpitSnapshot>({
     url: '/app/api/sse/cockpit',
@@ -130,7 +131,7 @@ export function CockpitClient({ initialSnapshot, labels }: CockpitClientProps) {
         />
       </div>
 
-      <LiveIngestionPanel labels={labels.liveIngestion} />
+      <LiveIngestionPanel labels={labels.liveIngestion} csrfToken={csrfToken} />
 
       <CrossSourceStrip
         strip={state.cross_source}

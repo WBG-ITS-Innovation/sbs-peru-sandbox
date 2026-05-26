@@ -1,0 +1,16 @@
+# Annex 1-A — field 18: Resolución del reclamo.
+# Source: annexo.pdf, p. 1, field 18 ("A favor del usuario o a favor
+# de empresa"). The spec also implies a "no resuelto" state for any
+# reclamo whose estado is "pendiente" or "anulado"; we capture that
+# with a "no_resuelto" sentinel so the validator can express "field
+# present but reclamo not yet resolved".
+#
+# review_status: in_repo_spec
+spec_source: "Anexo 1-A field 18 — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: all_systems
+codes:
+  - { code: "favor_usuario", label: "Reclamo resuelto a favor del usuario" }
+  - { code: "favor_empresa", label: "Reclamo resuelto a favor de la empresa" }
+  - { code: "no_resuelto",   label: "Reclamo aún no resuelto (estado != atendido)" }

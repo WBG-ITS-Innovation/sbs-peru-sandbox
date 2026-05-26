@@ -1,0 +1,121 @@
+# Annex 1-A — Anexo D: Códigos de sub-motivos.
+# Source: annexo.pdf, pp. 17–18.
+#
+# Sub-motivos are scoped by parent motivo code. The structure below
+# matches the table on pp. 17–18: each entry has the parent motivo
+# code(s) and the integer sub-code with its label. Some sub-motivo
+# integers appear under multiple parent motivos (e.g. "9: Operación
+# no ejecutada" lives under both motivo 06 and motivo 106), which
+# the validator handles by allowing any (parent, sub) pair listed
+# below.
+#
+# review_status: in_repo_spec
+spec_source: "Anexo D — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: financial_system_and_seguros
+codes:
+  # Motivo 03 — Cobros indebidos de intereses, comisiones, gastos y tributos
+  - { parent_motivo: "3",  code: "1",  label: "Interés" }
+  - { parent_motivo: "3",  code: "2",  label: "Comisiones" }
+  - { parent_motivo: "3",  code: "3",  label: "Gastos" }
+  - { parent_motivo: "3",  code: "4",  label: "Tributos" }
+  - { parent_motivo: "3",  code: "5",  label: "Penalidades" }
+  # Motivo 04 — Modificación indebida de tasas / comisiones / otras condiciones
+  - { parent_motivo: "4",  code: "6",  label: "Tasa de intereses" }
+  - { parent_motivo: "4",  code: "2",  label: "Comisiones" }
+  - { parent_motivo: "4",  code: "3",  label: "Gastos" }
+  - { parent_motivo: "4",  code: "4",  label: "Tributos" }
+  - { parent_motivo: "4",  code: "7",  label: "Condiciones de aplicación de tarifas" }
+  - { parent_motivo: "4",  code: "5",  label: "Penalidades" }
+  - { parent_motivo: "4",  code: "8",  label: "Ajustes transaccionales" }
+  # Motivo 06 — Transacciones no procesadas / mal realizadas
+  - { parent_motivo: "6",  code: "9",  label: "Operación no ejecutada" }
+  - { parent_motivo: "6",  code: "10", label: "Operación ejecutada con errores" }
+  - { parent_motivo: "6",  code: "11", label: "Problemas con proceso de validación" }
+  - { parent_motivo: "6",  code: "12", label: "Extornos" }
+  # Motivo 07 — Retenciones indebidas
+  - { parent_motivo: "7",  code: "13", label: "Operación de retención sin sustento" }
+  - { parent_motivo: "7",  code: "14", label: "Indebido cargo comisiones o gastos" }
+  - { parent_motivo: "7",  code: "15", label: "Limitaciones en cuenta" }
+  # Motivo 09 — Problemas con cheques
+  - { parent_motivo: "9",  code: "16", label: "Cheque mal emitido" }
+  - { parent_motivo: "9",  code: "17", label: "Cheque falsificado" }
+  - { parent_motivo: "9",  code: "18", label: "Cheque duplicado" }
+  # Motivo 13 — Problemas con garantías
+  - { parent_motivo: "13", code: "19", label: "Tasación" }
+  - { parent_motivo: "13", code: "20", label: "Custodia" }
+  - { parent_motivo: "13", code: "21", label: "Ejecución de garantía" }
+  # Motivo 15 — Tarjeta de crédito / débito
+  - { parent_motivo: "15", code: "22", label: "Tarjeta retenida" }
+  - { parent_motivo: "15", code: "23", label: "Tarjeta no emitida" }
+  - { parent_motivo: "15", code: "24", label: "Tarjeta no entregada a tiempo" }
+  - { parent_motivo: "15", code: "25", label: "Tarjeta desactivada" }
+  - { parent_motivo: "15", code: "26", label: "Tarjeta bloqueada" }
+  - { parent_motivo: "15", code: "27", label: "Tarjeta cancelada" }
+  - { parent_motivo: "15", code: "28", label: "Tarjeta con fallas físicas" }
+  - { parent_motivo: "15", code: "29", label: "Servicios adicionales" }
+  # Motivos 18 / 112 — Operaciones no reconocidas (con/sin abono temporal)
+  - { parent_motivo: "18",  code: "30", label: "Consumo" }
+  - { parent_motivo: "18",  code: "31", label: "Disposición de efectivo" }
+  - { parent_motivo: "18",  code: "32", label: "Retiros" }
+  - { parent_motivo: "18",  code: "33", label: "Transferencias" }
+  - { parent_motivo: "18",  code: "34", label: "Contratación de producto" }
+  - { parent_motivo: "112", code: "30", label: "Consumo" }
+  - { parent_motivo: "112", code: "31", label: "Disposición de efectivo" }
+  - { parent_motivo: "112", code: "32", label: "Retiros" }
+  - { parent_motivo: "112", code: "33", label: "Transferencias" }
+  - { parent_motivo: "112", code: "34", label: "Contratación de producto" }
+  # Motivo 19 — Demoras o incumplimientos de correspondencia
+  - { parent_motivo: "19", code: "35", label: "Envío físico" }
+  - { parent_motivo: "19", code: "36", label: "Envío electrónico" }
+  # Motivo 24 — Compraventa de moneda extranjera
+  - { parent_motivo: "24", code: "37", label: "Compra de moneda extranjera" }
+  - { parent_motivo: "24", code: "38", label: "Venta de moneda extranjera" }
+  - { parent_motivo: "24", code: "39", label: "Modificación de moneda en compras por internet" }
+  # Motivo 28 — Cajeros automáticos
+  - { parent_motivo: "28", code: "40", label: "ATM propio" }
+  - { parent_motivo: "28", code: "41", label: "ATM de tercero" }
+  # Motivo 106 — Pago anticipado del crédito
+  - { parent_motivo: "106", code: "9",  label: "Operación no ejecutada" }
+  - { parent_motivo: "106", code: "10", label: "Operación ejecutada con errores" }
+  - { parent_motivo: "106", code: "11", label: "Problemas con proceso de validación" }
+  # Motivo 113 — Exceso de tasas de interés (BCRP)
+  - { parent_motivo: "113", code: "42", label: "Interés compensatorio" }
+  - { parent_motivo: "113", code: "43", label: "Interés moratorio" }
+  # Sistema de seguros — motivo 39
+  - { parent_motivo: "39", code: "44", label: "Falta de atención a requerimientos" }
+  # Sistema de seguros — motivo 40
+  - { parent_motivo: "40", code: "45", label: "Monto de prima" }
+  - { parent_motivo: "40", code: "46", label: "Deducible o coaseguro" }
+  - { parent_motivo: "40", code: "47", label: "Franquicia" }
+  - { parent_motivo: "40", code: "48", label: "Endoso" }
+  - { parent_motivo: "40", code: "49", label: "Suma asegurada" }
+  # Sistema de seguros — motivo 44
+  - { parent_motivo: "44", code: "50", label: "Demora en trámite de rescate" }
+  - { parent_motivo: "44", code: "51", label: "Demora en gastos de sepelio" }
+  # Sistema de seguros — motivo 47
+  - { parent_motivo: "47", code: "52", label: "Renovación no solicitada / autorizada" }
+  - { parent_motivo: "47", code: "53", label: "Póliza no renovada" }
+  # Sistema de seguros — motivo 48
+  - { parent_motivo: "48", code: "54", label: "Anulación por falta de pago" }
+  - { parent_motivo: "48", code: "55", label: "Anulación por error operativo" }
+  # Sistema de seguros — motivo 49
+  - { parent_motivo: "49", code: "56", label: "Cobro de primas por duplicado" }
+  - { parent_motivo: "49", code: "57", label: "Cobro de primas en exceso" }
+  - { parent_motivo: "49", code: "58", label: "Cobro posterior a la anulación / extinción de la póliza" }
+  - { parent_motivo: "49", code: "59", label: "Cobro no efectuado por el canal acordado" }
+  - { parent_motivo: "49", code: "60", label: "Problemas con débito automático" }
+  # Sistema de seguros — motivo 200
+  - { parent_motivo: "200", code: "61", label: "Disconformidad con importe de la pensión" }
+  - { parent_motivo: "200", code: "62", label: "Demora referida al cálculo de pensión" }
+  - { parent_motivo: "200", code: "63", label: "Demora en el otorgamiento y pago de pensión" }
+  # Sistema de seguros — motivo 115
+  - { parent_motivo: "115", code: "64", label: "Asesoría sobre coberturas considerando el riesgo asegurable" }
+  - { parent_motivo: "115", code: "65", label: "Asesoría sobre condiciones de la póliza" }
+  - { parent_motivo: "115", code: "66", label: "No comunicar a la aseguradora cambio de riesgo / siniestro" }
+  # Sistema de seguros — motivo 116
+  - { parent_motivo: "116", code: "67", label: "Inadecuada atención ante la ocurrencia del siniestro" }
+  - { parent_motivo: "116", code: "68", label: "Documentación / seguimiento de cobertura" }
+  - { parent_motivo: "116", code: "69", label: "Tramitación tras rechazo del siniestro" }
+  - { parent_motivo: "116", code: "70", label: "Intereses moratorios por pago fuera de plazo" }

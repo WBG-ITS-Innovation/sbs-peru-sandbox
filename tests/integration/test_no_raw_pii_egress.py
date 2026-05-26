@@ -33,6 +33,9 @@ GOLDEN_PAYLOAD = {
     "institution_name": "BANCO_DEMO_001",
     "institution_complaint_id": "BCO-DEMO-IN-0002",
     "client_submission_id": "test-no-pii-egress",
+    # P11 DQ completion — Annex 1-A fields 2 + 3.
+    "tid_cli": "DNI",
+    "nro_cli": "12345678",
     "received_at": "2026-05-24T10:15:00-05:00",
     "channel_in": "APP_MOVIL",
     "channel_operation": "APP_MOVIL",

@@ -1,0 +1,27 @@
+# Annex 1-A — Anexo A: Códigos de canales.
+# Source: annexo.pdf, pp. 7–8 (Reglamento de Gestión de Reclamos y
+# Requerimientos, Res. SBS 04036-2022). Covers the financial-system
+# table; codes 7 and 12 from the seguros / SPP tables are also kept
+# so a single registry covers the granular endpoint for all three
+# sub-systems.
+#
+# review_status: in_repo_spec  (canonical per annexo.pdf)
+spec_source: "Anexo A — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: financial_system_and_seguros_spp
+codes:
+  - { code: "1",  label: "Oficina" }
+  - { code: "2",  label: "Cajero automático" }
+  - { code: "3",  label: "Domicilio" }
+  - { code: "4",  label: "Correo electrónico" }
+  - { code: "5",  label: "Vía telefónica" }
+  - { code: "6",  label: "Cajeros corresponsales" }
+  - { code: "7",  label: "Ejecutivo de servicios — promotores (SPP)" }
+  - { code: "8",  label: "Página web de la empresa" }
+  - { code: "9",  label: "Plataforma online de terceros" }
+  - { code: "10", label: "Aplicativo móvil" }
+  - { code: "11", label: "Puntos de venta / POS" }
+  - { code: "12", label: "Corredores de seguros" }
+  - { code: "13", label: "Billeteras electrónicas" }
+  - { code: "99", label: "No existe canal asociado" }

@@ -152,6 +152,13 @@ const DEMO_PAYLOAD = {
   institution_name: 'BANCO_DEMO_001',
   institution_complaint_id: 'BCO-DEMO-IN-0001',
   client_submission_id: 'live-demo-001',
+  // Annex 1-A fields 2 + 3 (tipo + número de documento). The DQ
+  // engine treats these as required (DQ-A1A-007 / DQ-A1A-009); the
+  // values below are also the raw DNI the redaction engine targets
+  // in the narrative, so the live-ingestion demo exercises both
+  // the structured-field DQ path and the narrative-redaction path.
+  tid_cli: 'DNI',
+  nro_cli: '12345678',
   received_at: '2026-05-24T10:15:00-05:00',
   channel_in: 'APP_MOVIL',
   channel_operation: 'APP_MOVIL',

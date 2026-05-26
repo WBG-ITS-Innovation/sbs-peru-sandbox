@@ -65,7 +65,61 @@ class DemoSubmissionRequest(BaseModel):
     amount_claimed: str | None = Field(default=None, description="MNT_REC.")
     status: str | None = Field(default=None, description="EST_REC.")
     previous_complaint_id: str | None = Field(default=None, max_length=64, description="COD_PRV.")
-    bancaseguros: str | None = Field(default=None, description="BCA_SEG.")
+    bancaseguros: str | None = Field(default=None, description="BCA_SEG (field 24).")
+
+    # --- Annex 1-A fields 9 / 10 / 11 / 12 / 13 / 18 / 21 (P11 DQ
+    # completion) — all optional in the request model. The DQ engine
+    # enforces presence and code-list membership per rule.
+    fecha_comunicacion_ampliacion: str | None = Field(
+        default=None,
+        description="Field 9 — fecha de comunicación de ampliación (ISO 8601 date).",
+    )
+    canal_comunicacion_ampliacion: str | None = Field(
+        default=None,
+        description="Field 10 — canal de comunicación de ampliación (Anexo A).",
+    )
+    fecha_resolucion: str | None = Field(
+        default=None,
+        description="Field 11 — fecha de resolución (ISO 8601 date).",
+    )
+    canal_respuesta: str | None = Field(
+        default=None,
+        description="Field 12 — canal de respuesta del reclamo (Anexo A).",
+    )
+    ubigeo: str | None = Field(
+        default=None,
+        max_length=6,
+        description="Field 13 — código de ubicación geográfica INEI (4 or 6 digits).",
+    )
+    resolucion_reclamo: str | None = Field(
+        default=None,
+        description="Field 18 — favor_usuario / favor_empresa / no_resuelto.",
+    )
+    nombre_comercial_producto: str | None = Field(
+        default=None,
+        max_length=200,
+        description="Field 21 — nombre comercial del producto o servicio.",
+    )
+    moneda: str | None = Field(
+        default=None,
+        max_length=3,
+        description="Currency for monto_reclamado — ISO 4217 (PEN/USD/EUR/...).",
+    )
+
+    # --- Annex 1-A fields 25 / 26 / 27 (P11 DQ completion — bancaseguros
+    # conditional triplet). Required when ``bancaseguros == 'si'``.
+    producto_bancaseguros: str | None = Field(
+        default=None,
+        description="Field 25 — producto bancaseguros (Anexo B Sistema de Seguros).",
+    )
+    motivo_bancaseguros: str | None = Field(
+        default=None,
+        description="Field 26 — motivo bancaseguros (Anexo C Sistema de Seguros).",
+    )
+    submotivo_bancaseguros: str | None = Field(
+        default=None,
+        description="Field 27 — submotivo bancaseguros (Anexo D Sistema de Seguros).",
+    )
 
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] | None = Field(
         default=None,

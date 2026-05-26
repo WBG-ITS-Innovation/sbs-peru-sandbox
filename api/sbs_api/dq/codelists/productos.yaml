@@ -1,0 +1,73 @@
+# Annex 1-A — Anexo B: Códigos de operaciones, servicios o productos.
+# Source: annexo.pdf, pp. 8–11.
+#
+# Covers the financial-system codes, plus the seguros / AFOCAT /
+# derramas / SPP / cross-cutting codes so the same code list serves
+# both the granular reclamo and the bancaseguros producto fields.
+#
+# review_status: in_repo_spec
+spec_source: "Anexo B — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: all_systems
+codes:
+  # Sistema financiero
+  - { code: "1",   label: "Cuenta de ahorro sin tarjeta de débito" }
+  - { code: "2",   label: "Cuenta corriente" }
+  - { code: "3",   label: "Cuenta a plazo" }
+  - { code: "4",   label: "Cuenta CTS" }
+  - { code: "5",   label: "Tarjeta de crédito" }
+  - { code: "6",   label: "Cuenta de ahorro con tarjeta de débito" }
+  - { code: "7",   label: "Crédito hipotecario para vivienda" }
+  - { code: "8",   label: "Crédito corporativo, gran empresa, mediana empresa" }
+  - { code: "9",   label: "Crédito de consumo" }
+  - { code: "11",  label: "Transferencias de fondos (interbancarias / intrabancario)" }
+  - { code: "12",  label: "Transferencias de fondos al extranjero" }
+  - { code: "13",  label: "Remesas" }
+  - { code: "14",  label: "Factoring y/o descuento" }
+  - { code: "15",  label: "Carta fianza / fianzas" }
+  - { code: "16",  label: "Otras garantías (reales y personales)" }
+  - { code: "17",  label: "Títulos valores (cheques, pagarés, entre otros)" }
+  - { code: "18",  label: "Fideicomiso" }
+  - { code: "19",  label: "Custodia de valores" }
+  - { code: "20",  label: "Cajas de seguridad" }
+  - { code: "21",  label: "Almacenaje" }
+  - { code: "24",  label: "Arrendamiento financiero (leasing)" }
+  - { code: "25",  label: "Arbitraje (compraventa de valores financieros)" }
+  - { code: "26",  label: "Inversiones (fondos mutuos, entre otros)" }
+  - { code: "27",  label: "Servicio de recaudación" }
+  - { code: "28",  label: "Pago de servicios" }
+  - { code: "29",  label: "Servicios varios" }
+  - { code: "97",  label: "Créditos a pequeñas empresas y microempresas" }
+  - { code: "101", label: "Giros" }
+  - { code: "103", label: "Banca — Seguros (vendidos en canales del sistema financiero)" }
+  - { code: "104", label: "Dinero electrónico" }
+  # Sistema de seguros (subset — full enumeration on pp. 8–10)
+  - { code: "31",  label: "Incendio" }
+  - { code: "32",  label: "Líneas aliadas de incendio" }
+  - { code: "33",  label: "Terremoto" }
+  - { code: "34",  label: "Cristales" }
+  - { code: "35",  label: "Lucro cesante" }
+  - { code: "36",  label: "Lucro cesante rotura de maquinaria" }
+  - { code: "37",  label: "Transporte" }
+  - { code: "38",  label: "Marítimo cascos" }
+  # AFOCAT
+  - { code: "100", label: "CAT (AFOCAT)" }
+  # Derramas y Cajas de Beneficios
+  - { code: "201", label: "Pensiones (DyCB)" }
+  - { code: "202", label: "Sepelio e invalidez (DyCB)" }
+  - { code: "203", label: "Préstamos (DyCB)" }
+  # Sistema Privado de Pensiones (subset of pp. 10–11)
+  - { code: "77",  label: "Afiliación al SPP" }
+  - { code: "78",  label: "Desafiliación del SPP" }
+  - { code: "79",  label: "Traspasos entre AFP" }
+  - { code: "80",  label: "Aportes del afiliado (CIC)" }
+  - { code: "81",  label: "Bono de reconocimiento" }
+  - { code: "86",  label: "Jubilación legal" }
+  - { code: "87",  label: "Jubilación anticipada" }
+  - { code: "92",  label: "Inversión del fondo de pensiones" }
+  - { code: "110", label: "Retiros por decretos de urgencia" }
+  - { code: "111", label: "Aportes voluntarios al SPP" }
+  - { code: "112", label: "Atención al público" }
+  # Catch-all
+  - { code: "999", label: "Otras operaciones, servicios y/o productos (detallar en RR2)" }

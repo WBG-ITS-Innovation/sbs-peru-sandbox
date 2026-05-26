@@ -1,0 +1,75 @@
+# Annex 1-A — Anexo C: Códigos de motivos de reclamo.
+# Source: annexo.pdf, pp. 12–16.
+#
+# Covers the financial-system motives (pp. 12–13), the seguros block
+# (p. 13), AFOCAT and Derramas y Cajas de Beneficios (p. 13), the
+# SPP block (pp. 14–15), and the universal motives applicable to
+# every supervised company (pp. 15–16).
+#
+# review_status: in_repo_spec
+spec_source: "Anexo C — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: all_systems
+codes:
+  # Universal — applicable to every supervised entity
+  - { code: "1",   label: "Incumplimiento de cláusulas / pólizas / condiciones / acuerdos" }
+  - { code: "2",   label: "Inadecuada o insuficiente información sobre productos y servicios" }
+  - { code: "3",   label: "Cobros indebidos de intereses, comisiones, gastos y tributos" }
+  - { code: "20",  label: "Notificaciones dirigidas a terceras personas" }
+  - { code: "21",  label: "Publicidad engañosa o información que induce al error" }
+  - { code: "30",  label: "Fallas del sistema informático" }
+  - { code: "34",  label: "Error en los datos del usuario registrado en la empresa" }
+  - { code: "39",  label: "Inadecuada atención al usuario — calidad del servicio" }
+  - { code: "117", label: "Indebida contratación" }
+  - { code: "999", label: "Otros motivos (detallar en RR2)" }
+  # Sistema financiero
+  - { code: "6",   label: "Transacciones no procesadas / mal realizadas" }
+  - { code: "8",   label: "Resolución de contrato" }
+  - { code: "9",   label: "Problemas con cheques" }
+  - { code: "10",  label: "Liquidaciones erradas de intereses en ahorros / depósitos a plazo" }
+  - { code: "11",  label: "Cierre indebido de cuentas corrientes por girar cheques sin fondos" }
+  - { code: "13",  label: "Problemas relacionados a garantías" }
+  - { code: "14",  label: "Inadecuada ejecución de garantías otorgadas por la entidad" }
+  - { code: "15",  label: "Problemas con la tarjeta de crédito o débito" }
+  - { code: "17",  label: "Incumplimiento del secreto bancario" }
+  - { code: "18",  label: "Operaciones no reconocidas con abono temporal" }
+  - { code: "19",  label: "Demoras o incumplimientos de envío de correspondencia" }
+  - { code: "22",  label: "Reporte indebido en la central de riesgos" }
+  - { code: "23",  label: "Demora en la rectificación de la información reportada" }
+  - { code: "24",  label: "Errores en compraventa de moneda extranjera y tipo de cambio" }
+  - { code: "25",  label: "Problemas relacionados a programas estatales de crédito" }
+  - { code: "27",  label: "Demora o incumplimiento en devolución de documentos valorados" }
+  - { code: "28",  label: "Problemas relacionados con cajeros automáticos" }
+  - { code: "29",  label: "Entrega de billetes falsos" }
+  - { code: "31",  label: "Deficiencias en el transporte y/o custodia de numerario" }
+  - { code: "32",  label: "Disconformidad con liquidación de deudas vendidas a cobranzas" }
+  - { code: "33",  label: "Difusión de información sin autorización del usuario" }
+  - { code: "35",  label: "Problemas referidos a programas de lealtad" }
+  - { code: "104", label: "Problemas relacionados a cajeros corresponsales" }
+  - { code: "105", label: "Problemas con la página web de la empresa" }
+  - { code: "106", label: "Problemas relacionados con el pago anticipado del crédito" }
+  - { code: "107", label: "Modificaciones contractuales — falta de entrega / demora" }
+  - { code: "108", label: "Modificaciones contractuales — nuevas condiciones aplicadas" }
+  - { code: "109", label: "Modificaciones contractuales — problemas para reversiones" }
+  - { code: "110", label: "Modificaciones contractuales — inadecuada información sobre condiciones" }
+  - { code: "111", label: "Modificaciones contractuales del crédito — otros motivos" }
+  - { code: "112", label: "Operaciones no reconocidas sin abono temporal" }
+  - { code: "113", label: "Exceso de tasas de interés sobre los topes del BCRP" }
+  - { code: "114", label: "Indebida capitalización de interés moratorios" }
+  # Sistema de seguros
+  - { code: "12",  label: "Contratación o cargo indebido de seguros" }
+  - { code: "36",  label: "Inadecuada o insuficiente información sobre el seguro contratado" }
+  - { code: "40",  label: "No conforme con condiciones de la póliza" }
+  - { code: "41",  label: "No conforme con el monto de la indemnización" }
+  - { code: "43",  label: "No conforme con el diagnóstico médico (auditor interno)" }
+  - { code: "44",  label: "Incumplimiento del plazo de atención de siniestros" }
+  - { code: "46",  label: "No recibió la póliza / certificado / endoso / cobertura provisional" }
+  - { code: "47",  label: "Disconformidad con la renovación de la póliza" }
+  - { code: "48",  label: "Cancelación indebida de la póliza de seguros" }
+  - { code: "49",  label: "Errores en la cobranza de primas" }
+  - { code: "51",  label: "Incumplimiento en la resolución de la póliza de seguros" }
+  - { code: "62",  label: "Rechazo en la atención del siniestro" }
+  - { code: "115", label: "Inadecuada asesoría al contratante de seguros" }
+  - { code: "116", label: "Inadecuada asesoría para la gestión de la indemnización" }
+  - { code: "200", label: "Problemas o demoras en el pago de pensión por la aseguradora" }

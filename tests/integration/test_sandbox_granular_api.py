@@ -357,3 +357,121 @@ async def test_granular_sse_payload_is_pii_free(client):
     received = [e for e in new_events if e.event == "complaint.received"]
     assert received, "no complaint.received SSE event from sandbox endpoint"
     _no_raw_pii(received[-1].data, "SSE event data")
+
+
+# ---------------------------------------------------------------------------
+# P11 sandbox completion — exit-gate 1 anchor: a full Peruvian-PII payload
+# (DNI + RUC + phone + email + Spanish name) must end up with raw PII in
+# raw_complaints only; canonical complaint, SSE, audit, agent_run, and
+# response body all carry redacted text exclusively.
+# ---------------------------------------------------------------------------
+
+
+P11_FULL_PII_NARRATIVE = (
+    "El cliente Carlos Rodríguez Mendoza (DNI 47291834) representa a la "
+    "empresa RUC 20512345678 y reporta un cargo no reconocido por S/ 450 "
+    "en la tarjeta 4556 1234 5678 9999. Contactarlo al +51 987 654 321 o "
+    "al correo carlos.rodriguez@example.com."
+)
+
+P11_FULL_PII_NEEDLES = (
+    "Carlos Rodríguez Mendoza",
+    "47291834",
+    "20512345678",
+    "987 654 321",
+    "carlos.rodriguez@example.com",
+    "4556 1234 5678 9999",
+)
+
+
+@pytest.mark.asyncio
+async def test_granular_full_peruvian_pii_payload_egress(client, test_database_url):
+    """Exit gate 1+2: DNI/RUC/phone/email/name all redacted before
+    canonical storage. raw_complaints holds the raw narrative; every
+    other surface is PII-free."""
+
+    payload = {
+        **GOLDEN_PAYLOAD,
+        "client_submission_id": "p11-full-pii-egress",
+        "narrative": P11_FULL_PII_NARRATIVE,
+        "demo_scenario": "p11-sandbox-close",
+    }
+    r = await client.post(
+        GRANULAR_PATH,
+        json=payload,
+        headers={"Idempotency-Key": _idem_key("full-pii")},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+
+    # Response body: no raw PII.
+    for needle in P11_FULL_PII_NEEDLES:
+        assert needle not in r.text, f"raw PII {needle!r} leaked into response"
+
+    # DB surfaces.
+    from sbs_api.db.models.agent_run import AgentRun
+    from sbs_api.db.models.audit_event import AuditEvent
+    from sbs_api.db.models.complaint import ComplaintRecord
+    from sbs_api.db.models.raw_complaint import RawComplaint
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SessionMaker() as session:
+            canonical = (
+                await session.execute(
+                    select(ComplaintRecord).where(
+                        ComplaintRecord.complaint_id == body["complaint_id"]
+                    )
+                )
+            ).scalar_one()
+            raw = (
+                await session.execute(
+                    select(RawComplaint).where(
+                        RawComplaint.id == body["raw_complaint_id"]
+                    )
+                )
+            ).scalar_one()
+            run = (
+                await session.execute(
+                    select(AgentRun).where(AgentRun.id == body["submission_id"])
+                )
+            ).scalar_one()
+            events = (
+                await session.execute(
+                    select(AuditEvent).where(
+                        AuditEvent.object_id == body["complaint_id"]
+                    )
+                )
+            ).scalars().all()
+    finally:
+        await engine.dispose()
+
+    # Canonical complaint: no raw PII at all.
+    for needle in P11_FULL_PII_NEEDLES:
+        assert needle not in (canonical.description_text or ""), (
+            f"raw PII {needle!r} leaked into canonical complaint"
+        )
+    # agent_run + audit: same.
+    run_blob = json.dumps(
+        {"tool_calls": run.tool_calls, "final_output": run.final_output, "error": run.error}
+    )
+    for needle in P11_FULL_PII_NEEDLES:
+        assert needle not in run_blob, f"raw PII {needle!r} leaked into agent_run"
+    for ev in events:
+        ev_blob = json.dumps(
+            {"action": ev.action, "actor_id": ev.actor_id, "object_id": ev.object_id,
+             "diff": ev.diff, "meta": ev.meta}
+        )
+        for needle in P11_FULL_PII_NEEDLES:
+            assert needle not in ev_blob, (
+                f"raw PII {needle!r} leaked into audit row {ev.id}"
+            )
+
+    # raw_complaints holds the raw narrative — exit gate 2's "raw PII
+    # only in raw_complaints" requires that the raw narrative remains
+    # accessible from the restricted store.
+    assert raw.canonical_complaint_id == canonical.complaint_id
+    assert "20512345678" in raw.raw_narrative, "RUC missing from raw_complaints"
+    assert "47291834" in raw.raw_narrative, "DNI missing from raw_complaints"
+    assert raw.storage_policy == "restricted-demo-pii-v1"

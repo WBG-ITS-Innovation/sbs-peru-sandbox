@@ -111,6 +111,7 @@ export default async function FindingDetailPage({
             title: t(locale, 'findings.panels.classification'),
             top_k: t(locale, 'findings.panels.classification_top_k'),
             model: t(locale, 'findings.panels.classification_model'),
+            confidence_degraded: t(locale, 'findings.panels.confidence_degraded'),
           }}
         />
         <FeatureImportancePanel

@@ -101,6 +101,21 @@ fail() { echo "FAIL: $*" >&2; exit "${2:-1}"; }
 
 step "Pre-flight"
 
+# 0. Python runner — prefer `uv run python` (matches the documented
+#    workflow); fall back to the project's .venv when uv is not on
+#    PATH (e.g. a stripped CI machine or a dev box that uses the
+#    venv directly). Either path drives the same scripts against the
+#    same interpreter.
+if command -v uv >/dev/null 2>&1; then
+  PY_RUN=(uv run python)
+  note "Python runner: uv run python"
+elif [[ -x .venv/bin/python ]]; then
+  PY_RUN=(.venv/bin/python)
+  note "Python runner: .venv/bin/python (uv not on PATH; falling back to venv)"
+else
+  fail "no Python runner available — install uv (https://astral.sh/uv) or create .venv" 1
+fi
+
 # 1. docker compose worker + webhook-listener up
 note "docker compose status — worker + webhook-listener must be running"
 SERVICES=$(docker compose ps --format '{{.Service}} {{.State}}' 2>/dev/null || true)
@@ -138,11 +153,11 @@ step "Generating synthetic corpus (scale=$SCALE seed=$SEED rows/inst=$ROWS_PER_I
 CORPUS_DIR="$OUTDIR/corpus"
 mkdir -p "$CORPUS_DIR"
 
-if ! uv run python scripts/generate-synthetic-corpus.py \
+if ! "${PY_RUN[@]}" scripts/generate-synthetic-corpus.py \
       --out "$CORPUS_DIR" \
       --rows-per-institution "$ROWS_PER_INSTITUTION" \
-      --seed "$SEED" >/dev/null 2>&1; then
-  fail "synthetic corpus generation failed" 3
+      --seed "$SEED" >"$OUTDIR/generate.log" 2>&1; then
+  fail "synthetic corpus generation failed; see $OUTDIR/generate.log" 3
 fi
 
 CORPUS_FILE_COUNT=$(find "$CORPUS_DIR" -type f -name "*.csv" | wc -l | tr -d ' ')
@@ -156,7 +171,7 @@ fi
 
 step "Replaying batches (max_wait=${MAX_WAIT}s per batch)"
 
-if ! uv run python scripts/demo_replay.py \
+if ! "${PY_RUN[@]}" scripts/demo_replay.py \
       --corpus-dir "$CORPUS_DIR" \
       --out-dir "$OUTDIR" \
       --max-wait "$MAX_WAIT" \

@@ -36,9 +36,15 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from sbs_api.audit import record_audit_event
 from sbs_api.data_quality import POLICY_VERSION as DQ_POLICY_VERSION
 from sbs_api.data_quality import run_checks as run_dq_checks
+from sbs_api.data_quality.annex_1a_rules import (
+    POLICY_VERSION as ANNEX_1A_POLICY_VERSION,
+    run_annex_1a_checks,
+)
 from sbs_api.db.models.agent_run import AgentRun
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.db.models.institution import InstitutionRecord
@@ -84,6 +90,10 @@ class DemoIngestionOutcome:
     timeline: list[dict[str, str]]
     redaction_diff: dict[str, Any]
     data_quality: dict[str, Any]
+    # P11 DQ completion — Annex 1-A 21-rule report. Distinct from the
+    # legacy ``data_quality`` envelope (which carries the original six
+    # rules unchanged) so existing consumers see no shape drift.
+    annex_1a_data_quality: dict[str, Any] | None = None
 
 
 def _now() -> datetime:
@@ -144,6 +154,23 @@ async def _resolve_institution_name(
 ) -> str | None:
     inst = await session.get(InstitutionRecord, institution_id)
     return inst.display_name if inst else None
+
+
+async def _load_known_institution_ids(session: AsyncSession) -> frozenset[str]:
+    """Snapshot the set of onboarded institution_ids for DQ-A1A-027.
+
+    Cheap one-shot SELECT. The orchestrator runs at most once per
+    submission so we don't bother caching across requests.
+    """
+
+    rows = (
+        await session.execute(
+            select(InstitutionRecord.institution_id).where(
+                InstitutionRecord.onboarded.is_(True)
+            )
+        )
+    ).all()
+    return frozenset(r[0] for r in rows)
 
 
 async def _insert_complaint_with_retry(
@@ -337,6 +364,27 @@ async def run_demo_ingestion(
         f"policy={DQ_POLICY_VERSION}",
     )
 
+    # 4b. Annex 1-A DQ rules (DQ-A1A-007..027) — additive on top of
+    #     the legacy six rules. The dict-payload built below carries
+    #     the FULL request shape so per-field rules can read each
+    #     Annex 1-A acronym; rule code never touches the raw narrative
+    #     (rule logic operates on structured fields only).
+    known_iids = await _load_known_institution_ids(session)
+    annex_1a_payload_in: dict[str, Any] = json.loads(request.model_dump_json())
+    annex_1a_report = run_annex_1a_checks(
+        annex_1a_payload_in, known_institutions=known_iids
+    )
+    annex_1a_payload = {
+        **annex_1a_report.as_dict(),
+        "policy_version": ANNEX_1A_POLICY_VERSION,
+    }
+    step(
+        "annex_1a_checks_completed",
+        f"errors={len(annex_1a_report.errors)} "
+        f"warnings={len(annex_1a_report.warnings)} "
+        f"policy={ANNEX_1A_POLICY_VERSION}",
+    )
+
     # 5. agent_runs row. anonymizer tool_call only — the DQ report
     #    sits in final_output to keep the JSON Schema tool_name enum
     #    unchanged (ADR 0045 §Divergence).
@@ -348,7 +396,10 @@ async def run_demo_ingestion(
         started_at=redaction_started_at,
         ended_at=redaction_ended_at,
     )
-    run_status = "partial" if dq_report.has_blocking_errors else "success"
+    has_blocking_errors = (
+        dq_report.has_blocking_errors or bool(annex_1a_report.errors)
+    )
+    run_status = "partial" if has_blocking_errors else "success"
     final_output: dict[str, Any] = {
         "complaint_id": canonical.complaint_id,
         "raw_complaint_id": raw_complaint_id,
@@ -357,16 +408,20 @@ async def run_demo_ingestion(
             "entity_count_by_kind": entity_counts,
         },
         "data_quality": dq_payload,
+        "annex_1a_data_quality": annex_1a_payload,
         "summary": _description_preview(narrative_result.redacted_text),
     }
+    legacy_err_count = len(dq_report.errors)
+    annex_err_count = len(annex_1a_report.errors)
     run_error = (
         None
         if run_status == "success"
         else {
             "code": "DATA_QUALITY_ERRORS",
             "message": (
-                f"{len(dq_report.errors)} data-quality error(s) recorded; "
-                "see final_output.data_quality.errors"
+                f"{legacy_err_count} legacy data-quality error(s) and "
+                f"{annex_err_count} Annex 1-A error(s) recorded; "
+                "see final_output.data_quality / annex_1a_data_quality."
             ),
         }
     )
@@ -439,8 +494,39 @@ async def run_demo_ingestion(
             diff=None,
             meta=meta or base_audit_meta,
         )
+
+    # 6b. One ``dq-rule-violated`` row per Annex 1-A DQ result. The
+    #     meta carries the structured rule output (rule_id, field_path,
+    #     observed_value, expected, severity) per the prompt's audit
+    #     contract. observed_value is PII-safe by construction — the
+    #     rule layer tags PII-bearing fields with "present" / "absent"
+    #     / "invalid-format" instead of the raw value.
+    for rule_result in annex_1a_report.results:
+        await record_audit_event(
+            session,
+            actor_type="agent",
+            actor_id=actor_id,
+            action="dq-rule-violated",
+            object_type="complaint",
+            object_id=canonical.complaint_id,
+            diff=None,
+            meta={
+                **base_audit_meta,
+                "rule_id": rule_result.rule_id,
+                "field_path": rule_result.field_path,
+                "observed_value": rule_result.observed_value,
+                "expected": rule_result.expected,
+                "severity": rule_result.severity,
+                "policy_version": ANNEX_1A_POLICY_VERSION,
+            },
+        )
+
     await session.flush()
-    step("finding_triage_event_emitted", "audit chain x5")
+    step(
+        "finding_triage_event_emitted",
+        f"audit chain x{5 + len(annex_1a_report.results)} "
+        f"(5 chain + {len(annex_1a_report.results)} dq-rule-violated)",
+    )
 
     # 7. publish SSE complaint.received with the cockpit-card shape.
     cockpit_card_payload = {
@@ -475,4 +561,5 @@ async def run_demo_ingestion(
         timeline=timeline,
         redaction_diff=redaction_diff_payload,
         data_quality=dq_payload,
+        annex_1a_data_quality=annex_1a_payload,
     )

@@ -170,8 +170,13 @@ async def submit_granular_complaint(
     outcome = await run_demo_ingestion(session, request=body)
 
     dq_report: dict[str, Any] = outcome.data_quality
-    has_errors = bool(dq_report.get("errors"))
-    has_warnings = bool(dq_report.get("warnings"))
+    annex_1a_report: dict[str, Any] = outcome.annex_1a_data_quality or {}
+    annex_results = annex_1a_report.get("results", [])
+    annex_errors = [r for r in annex_results if r.get("severity") == "error"]
+    annex_warnings = [r for r in annex_results if r.get("severity") == "warning"]
+
+    has_errors = bool(dq_report.get("errors")) or bool(annex_errors)
+    has_warnings = bool(dq_report.get("warnings")) or bool(annex_warnings)
     if has_errors:
         status_code = "rejected"
     elif has_warnings:
@@ -190,6 +195,7 @@ async def submit_granular_complaint(
         "received_at": received_at_iso,
         "timeline": outcome.timeline,
         "data_quality": dq_report,
+        "annex_1a_data_quality": annex_1a_report,
         "redaction_policy_version": REDACTION_POLICY_VERSION,
         "data_quality_policy_version": DQ_POLICY_VERSION,
         "event_id": outcome.event_id,

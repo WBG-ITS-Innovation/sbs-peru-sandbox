@@ -1,0 +1,19 @@
+# Annex 1-A — tipo de documento de identidad (field 2).
+# The Reglamento (annexo.pdf, p. 1) names this field but does not
+# enumerate the codes inside the PDF. The list below is the working
+# sandbox set; it must be validated against SBS's canonical
+# tipo_documento table.
+#
+# review_status: TBD — validate with Luis/Diego
+# source: TBD — sandbox-plausible defaults pending SBS sign-off
+spec_source: "Anexo 1-A field 2 (codes referenced, not enumerated in annexo.pdf)"
+spec_file: "annexo.pdf"
+review_status: needs_review
+applies_to: all_systems
+codes:
+  - { code: "DNI",        label: "Documento Nacional de Identidad (8 dígitos)" }
+  - { code: "CE",         label: "Carné de Extranjería (alfanumérico)" }
+  - { code: "RUC",        label: "Registro Único de Contribuyentes (11 dígitos)" }
+  - { code: "PASAPORTE",  label: "Pasaporte (alfanumérico)" }
+  - { code: "PTP",        label: "Permiso Temporal de Permanencia" }
+  - { code: "OTRO",       label: "Otro documento de identidad" }

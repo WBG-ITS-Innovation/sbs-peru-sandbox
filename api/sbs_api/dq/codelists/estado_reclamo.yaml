@@ -1,0 +1,11 @@
+# Annex 1-A — field 22: Estado del reclamo.
+# Source: annexo.pdf, p. 1, field 22 ("pendiente, atendido o anulado").
+# Enumeration is verbatim from the spec; review_status: in_repo_spec.
+spec_source: "Anexo 1-A field 22 — Res. SBS 04036-2022"
+spec_file: "annexo.pdf"
+review_status: in_repo_spec
+applies_to: all_systems
+codes:
+  - { code: "pendiente", label: "Reclamo en trámite" }
+  - { code: "atendido",  label: "Reclamo absuelto (respuesta entregada al usuario)" }
+  - { code: "anulado",   label: "Reclamo anulado" }

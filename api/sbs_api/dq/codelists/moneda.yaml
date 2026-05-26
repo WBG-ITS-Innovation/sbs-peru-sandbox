@@ -1,0 +1,20 @@
+# Annex 1-A — currency for field 20 (Monto reclamado).
+# The Reglamento (annexo.pdf, p. 1) does NOT enumerate currency codes
+# for the monto_reclamado field; the SBS general convention is the
+# ISO 4217 alphabetic code, with PEN as the working default. The
+# list below is the minimum SBS-supervised-institution set; expand
+# during onboarding sign-off.
+#
+# review_status: TBD — validate with Luis/Diego
+# source: TBD — ISO 4217 alphabetic codes; spec is silent on the field
+spec_source: "ISO 4217 — spec silent on field 20 currency"
+spec_file: "annexo.pdf"
+review_status: needs_review
+applies_to: all_systems
+codes:
+  - { code: "PEN", label: "Nuevo Sol Peruano" }
+  - { code: "USD", label: "Dólar de los Estados Unidos" }
+  - { code: "EUR", label: "Euro" }
+  - { code: "CLP", label: "Peso Chileno" }
+  - { code: "COP", label: "Peso Colombiano" }
+  - { code: "BRL", label: "Real Brasileño" }

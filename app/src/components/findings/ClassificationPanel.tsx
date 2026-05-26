@@ -13,6 +13,7 @@ interface ClassificationPanelProps {
     title: string;
     top_k: string;
     model: string;
+    confidence_degraded?: string;
   };
 }
 
@@ -85,9 +86,9 @@ export function ClassificationPanel({
               />
             </div>
           ) : null}
-          {classification.confidence_degraded ? (
+          {classification.confidence_degraded && labels.confidence_degraded ? (
             <p className="mt-1 text-2xs text-severity-high-fg">
-              ⚠ Confidence degraded — regex fallback in use.
+              {labels.confidence_degraded}
             </p>
           ) : null}
         </div>
@@ -103,6 +104,9 @@ export function ClassificationPanel({
                   <Badge variant="default" className="font-mono text-2xs">
                     {sp.label}
                   </Badge>
+                  {/* Technical instrumentation: character-index span tag
+                      shown to engineers, not regulator UI copy. */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="tabular text-2xs text-fg-muted">
                     span [{sp.evidence_span[0]}, {sp.evidence_span[1]}]
                   </span>

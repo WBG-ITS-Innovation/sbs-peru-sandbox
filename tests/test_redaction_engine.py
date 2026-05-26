@@ -155,3 +155,47 @@ def test_masked_preview_keeps_partial_dni_phone_email_account():
     assert "<PERSON:masked>" in preview
     assert re.search(r"\*+5678", preview)  # last 4 digits of the DNI
     assert re.search(r"\*+@com", preview) or re.search(r"\*\*\*@", preview)
+
+
+# ---------------------------------------------------------------------------
+# P11 sandbox completion — RUC redaction (Peruvian taxpayer id, 11 digits)
+# ---------------------------------------------------------------------------
+
+
+def test_ruc_with_explicit_prefix_is_redacted():
+    text = "El cliente reporta una operación contra la empresa RUC 20512345678 emisora."
+    result = redact(text)
+    kinds = _kinds(result.entities)
+    assert "pii_ruc" in kinds, f"RUC not detected: {kinds}"
+    assert "20512345678" not in result.redacted_text
+    assert "<RUC_1>" in result.redacted_text
+
+
+def test_bare_11_digit_run_is_redacted_as_ruc():
+    text = "Sin prefijo: la contraparte 20512345678 figura en la queja."
+    result = redact(text)
+    assert "pii_ruc" in _kinds(result.entities)
+    assert "20512345678" not in result.redacted_text
+
+
+def test_ruc_does_not_swallow_dni_phone_or_account():
+    text = (
+        "DNI 12345678. RUC 20512345678. Llamar al +51 987 654 321. "
+        "Tarjeta 4556 1234 5678 9999."
+    )
+    result = redact(text)
+    kinds = _kinds(result.entities)
+    for required in ("pii_id", "pii_ruc", "pii_phone", "pii_account"):
+        assert required in kinds, (required, kinds)
+    # No raw value should survive.
+    for needle in ("12345678", "20512345678", "987 654 321", "4556 1234 5678 9999"):
+        assert needle not in result.redacted_text, needle
+
+
+def test_masked_preview_partials_ruc():
+    text = "Empresa RUC 20512345678 emisora."
+    result = redact(text)
+    preview = masked_preview(text, result.entities)
+    assert "20512345678" not in preview
+    # last 4 digits preserved per the documented mask shape.
+    assert "5678" in preview

@@ -26,6 +26,10 @@ function renderWithRedactions(text: string, redactions: Redaction[]): React.Reac
   for (const r of sorted) {
     const [start, end] = r.span;
     if (start > pos) out.push(<span key={`t-${key++}`}>{text.slice(pos, start)}</span>);
+    /* eslint-disable i18next/no-literal-string -- fixed-format redaction
+       token, not translatable UI copy. `r.kind` is a machine identifier
+       (pii_id / pii_phone / …) and the surrounding brackets are part of
+       the redaction-token contract documented in ADR 0044. */
     out.push(
       <span
         key={`r-${key++}`}
@@ -35,6 +39,7 @@ function renderWithRedactions(text: string, redactions: Redaction[]): React.Reac
         [REDACTED:{r.kind}]
       </span>,
     );
+    /* eslint-enable i18next/no-literal-string */
     pos = end;
   }
   if (pos < text.length) out.push(<span key={`t-${key++}`}>{text.slice(pos)}</span>);

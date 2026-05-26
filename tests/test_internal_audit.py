@@ -39,9 +39,16 @@ async def app_with_internal_secret(app_settings, monkeypatch, internal_secret, d
 
 @pytest.fixture
 async def app_without_internal_secret(app_settings, monkeypatch, db_schema):
-    """A FastAPI app with no internal secret configured (the safe default)."""
+    """A FastAPI app with no internal secret configured (the safe default).
 
-    monkeypatch.delenv("SBS_API_INTERNAL_API_SECRET", raising=False)
+    Pydantic's BaseSettings loads ``.env`` from disk, so ``delenv`` alone
+    leaves a developer's local ``SBS_API_INTERNAL_API_SECRET=...`` line
+    in effect. Force the value to an empty string instead — the
+    ``if not expected:`` check in ``verify_internal_secret`` treats
+    both ``None`` and ``""`` as "not configured" and returns 404.
+    """
+
+    monkeypatch.setenv("SBS_API_INTERNAL_API_SECRET", "")
     from sbs_api.config import get_settings
 
     get_settings.cache_clear()

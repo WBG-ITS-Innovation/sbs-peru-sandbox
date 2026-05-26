@@ -7,6 +7,7 @@
 // row with subtle separators.
 
 import { Badge } from '@/components/ui';
+import { t, type Locale } from '@/i18n';
 import { cn } from '@/lib/cn';
 import type { ComplaintCardData, Severity } from '@/types/cockpit';
 
@@ -24,6 +25,9 @@ interface ComplaintCardProps {
 }
 
 export function ComplaintCard({ complaint, locale, className }: ComplaintCardProps) {
+  const i18nLocale = (locale === 'en-US' ? 'en-US' : 'es-PE') as Locale;
+  const motivoLabel = t(i18nLocale, 'cockpit.complaint_card.motivo');
+  const productoLabel = t(i18nLocale, 'cockpit.complaint_card.producto');
   const receivedAt = new Date(complaint.received_at);
   const timeLabel = new Intl.DateTimeFormat(locale, {
     timeZone: 'America/Lima',
@@ -58,10 +62,10 @@ export function ComplaintCard({ complaint, locale, className }: ComplaintCardPro
         {complaint.description_preview}
       </p>
       <p className="mt-2 font-mono text-2xs uppercase tracking-wider text-fg-muted">
-        <span className="text-fg-subtle">motivo</span>{' '}
+        <span className="text-fg-subtle">{motivoLabel}</span>{' '}
         <span className="text-fg">{complaint.motivo_code}</span>
         <span className="mx-1.5 text-border-strong">·</span>
-        <span className="text-fg-subtle">producto</span>{' '}
+        <span className="text-fg-subtle">{productoLabel}</span>{' '}
         <span className="text-fg">{complaint.product_category}</span>
       </p>
     </article>

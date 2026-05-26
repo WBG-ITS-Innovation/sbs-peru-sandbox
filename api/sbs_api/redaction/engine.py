@@ -3,6 +3,10 @@
 Five entity kinds are detected:
 
 * ``pii_id``    — Peruvian DNI (8 digits, optionally ``DNI`` prefix).
+* ``pii_ruc``   — Peruvian RUC (11 digits, optionally ``RUC`` prefix). The
+                  taxpayer identifier — issued to both individuals and firms,
+                  so it can show up in granular complaint payloads when the
+                  complainant is a small business / sole proprietor.
 * ``pii_phone`` — Peruvian mobile (``+51 9XX XXX XXX``, ``9XX XXX XXX``,
   ``9XXXXXXXX``).
 * ``pii_email`` — RFC-shaped email.
@@ -57,6 +61,15 @@ _SOLES_AMOUNT_PATTERN = re.compile(
 # itself is consumed so the replacement spans the whole construct.
 _DNI_PATTERN = re.compile(
     r"\bDNI\s*[:.-]?\s*(\d{8})\b|\b(\d{8})\b",
+    flags=re.IGNORECASE,
+)
+
+# RUC: 11 contiguous digits, with optional ``RUC`` prefix. Distinct from
+# the 8-digit DNI and the 12-19-digit account/card range, so a bare
+# 11-digit run is overwhelmingly a RUC in Peruvian financial-complaint
+# narratives. The prefix is consumed.
+_RUC_PATTERN = re.compile(
+    r"\bRUC\s*[:.-]?\s*(\d{11})\b|\b(\d{11})\b",
     flags=re.IGNORECASE,
 )
 
@@ -132,6 +145,7 @@ def _build_replacement(kind: str, counters: dict[str, int]) -> str:
     label = {
         "pii_name": "PERSON",
         "pii_id": "DNI",
+        "pii_ruc": "RUC",
         "pii_phone": "PHONE",
         "pii_email": "EMAIL",
         "pii_account": "ACCOUNT",
@@ -168,6 +182,25 @@ def _detect_dni(text: str) -> list[RedactionEntity]:
                 span=(match.start(), match.end()),
                 replacement="",
                 confidence=0.95,
+                matched_value=match.group(0),
+            )
+        )
+    return out
+
+
+def _detect_ruc(text: str) -> list[RedactionEntity]:
+    out: list[RedactionEntity] = []
+    for match in _RUC_PATTERN.finditer(text):
+        out.append(
+            RedactionEntity(
+                kind="pii_ruc",
+                rule_id="ruc-11-digits",
+                span=(match.start(), match.end()),
+                replacement="",
+                # Slightly lower than DNI because an 11-digit run could
+                # in principle be a coincidence; in Peruvian complaint
+                # narratives it is overwhelmingly a RUC.
+                confidence=0.92,
                 matched_value=match.group(0),
             )
         )
@@ -266,6 +299,7 @@ def redact(text: str) -> RedactionResult:
     raw.extend(_detect_email(text))
     raw.extend(_detect_phone(text))
     raw.extend(_detect_dni(text))
+    raw.extend(_detect_ruc(text))
     raw.extend(_detect_account(text, exclude_ranges=soles_ranges))
 
     resolved = _resolve_overlaps(raw)
@@ -325,6 +359,11 @@ def masked_preview(text: str, entities: tuple[RedactionEntity, ...]) -> str:
             if len(digits) >= 4:
                 return "****" + digits[-4:]
             return "****"
+        if ent.kind == "pii_ruc":
+            digits = re.sub(r"\D", "", value)
+            if len(digits) >= 4:
+                return "***" + digits[-4:]
+            return "***"
         if ent.kind == "pii_phone":
             digits = re.sub(r"\D", "", value)
             if len(digits) >= 3:

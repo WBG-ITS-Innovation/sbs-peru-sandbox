@@ -1,0 +1,18 @@
+{
+  "model_id": "replay-investigation-v1",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "rank_features", "arguments": {}},
+        {"name": "compute_anomaly_score", "arguments": {}},
+        {"name": "search_similar_complaints", "arguments": {"limit": 5}}
+      ]
+    },
+    {
+      "tool_calls": [
+        {"name": "draft_narrative", "arguments": {}}
+      ]
+    },
+    {"text": "Investigation complete."}
+  ]
+}

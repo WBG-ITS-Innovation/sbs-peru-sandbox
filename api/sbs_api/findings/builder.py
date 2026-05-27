@@ -187,6 +187,9 @@ async def build_finding_detail(
     taxonomy_normalizations, taxonomy_dictionary_version = (
         _extract_taxonomy_normalizations(runs)
     )
+    executive_summary = _extract_executive_summary(runs)
+    anomaly = _extract_anomaly(runs)
+    similar_complaints = _extract_similar_complaints(runs)
 
     latest_draft_row = (
         await session.execute(
@@ -262,6 +265,14 @@ async def build_finding_detail(
         "agent_runs": agent_runs_payload,
         "current_narrative": current_narrative,
         "agent_drafted_narrative": narrative_draft,
+        # Part 12 (P12) — executive brief from SynthesisAgent surfaces
+        # under the Draft summary panel; null when synthesis has not run.
+        "executive_summary": executive_summary,
+        # Part 12 — anomaly contributions and similar complaints come
+        # from InvestigationAgent.final_output. Older complaints that
+        # only have the seeded classifier row return None for both.
+        "anomaly": anomaly,
+        "similar_complaints": similar_complaints,
         "latest_draft_id": latest_draft_row.id if latest_draft_row else None,
         "pending_approval": (
             {
@@ -309,11 +320,28 @@ async def _load_latest_classifier_outputs(
     for run in runs:
         if run.agent_name == "narrative-drafter" and run.status == "success":
             drafted[run.complaint_id] = True
+        # Part 12: investigation produces the draft today.
+        if run.agent_name == "investigation" and run.status == "success":
+            draft = (run.final_output or {}).get("draft_narrative") or {}
+            if draft.get("text"):
+                drafted[run.complaint_id] = True
         if run.agent_name == "classifier" and run.complaint_id not in out:
             output = run.final_output or {}
             out[run.complaint_id] = {
                 "label": output.get("classification"),
                 "confidence": output.get("confidence"),
+            }
+        # Part 12: triage carries classification under .classification.{label,confidence}.
+        if (
+            run.agent_name == "triage"
+            and run.status == "success"
+            and run.complaint_id not in out
+        ):
+            output = run.final_output or {}
+            clf = output.get("classification") or {}
+            out[run.complaint_id] = {
+                "label": clf.get("label"),
+                "confidence": clf.get("confidence"),
             }
 
     for cid, info in out.items():
@@ -374,8 +402,27 @@ def _extract_taxonomy_normalizations(
 
 
 def _extract_classification(runs: list[AgentRun]) -> dict[str, Any] | None:
-    """Pull the most-recent classifier final_output."""
+    """Pull the most-recent classification.
+
+    Priority: Part 12 ``triage`` agent → legacy ``classifier`` agent.
+    The triage agent stores it under ``final_output.classification``;
+    the legacy classifier stored it as flat fields. Either shape gives
+    the same UI render.
+    """
     for run in reversed(runs):
+        if run.agent_name == "triage" and run.final_output:
+            clf = run.final_output.get("classification") or {}
+            if clf.get("label"):
+                return {
+                    "label": clf.get("label"),
+                    "confidence": clf.get("confidence"),
+                    "confidence_degraded": False,
+                    "sub_patterns": [],
+                    "rank_band": None,
+                    "model_version": clf.get("model_id"),
+                    "alternatives": clf.get("alternatives") or [],
+                    "source_agent": "triage",
+                }
         if run.agent_name == "classifier" and run.final_output:
             fo = run.final_output
             return {
@@ -385,6 +432,8 @@ def _extract_classification(runs: list[AgentRun]) -> dict[str, Any] | None:
                 "sub_patterns": fo.get("sub_patterns", []),
                 "rank_band": fo.get("rank_band"),
                 "model_version": _extract_bert_model_version(run),
+                "alternatives": [],
+                "source_agent": "classifier",
             }
     return None
 
@@ -398,7 +447,34 @@ def _extract_bert_model_version(run: AgentRun) -> str | None:
 
 
 def _extract_features(runs: list[AgentRun]) -> dict[str, Any] | None:
-    """Pull the most-recent xgboost_ranker tool output (SHAP features)."""
+    """Pull the most-recent feature attribution.
+
+    Priority: Part 12 ``investigation`` agent (``feature_attribution``
+    in ``final_output``, from the ``rank_features`` tool) → legacy
+    ``xgboost_ranker`` tool call. Either shape produces the same UI
+    feature-importance render.
+    """
+    # P12 investigation agent first.
+    for run in reversed(runs):
+        if run.agent_name == "investigation" and run.final_output:
+            attribution = run.final_output.get("feature_attribution") or []
+            if attribution:
+                return {
+                    "score": None,
+                    "rank_band": None,
+                    "feature_contributions": [
+                        {
+                            "feature_name": f.get("name"),
+                            "contribution": f.get("contribution"),
+                            "direction": "positive"
+                            if (f.get("contribution") or 0) >= 0
+                            else "negative",
+                        }
+                        for f in attribution
+                    ],
+                    "model_version": run.final_output.get("feature_model_id"),
+                    "source_agent": "investigation",
+                }
     for run in reversed(runs):
         for tc in run.tool_calls or []:
             if tc.get("tool_name") == "xgboost_ranker":
@@ -409,6 +485,28 @@ def _extract_features(runs: list[AgentRun]) -> dict[str, Any] | None:
                         "rank_band": out.get("rank_band"),
                         "feature_contributions": out.get("feature_contributions", []),
                         "model_version": out.get("model_version"),
+                        "source_agent": "classifier-tool",
+                    }
+        # P12 — also look at rank_features tool inside any run.
+        for tc in run.tool_calls or []:
+            if tc.get("tool_name") == "rank_features":
+                out = tc.get("output")
+                if out:
+                    return {
+                        "score": None,
+                        "rank_band": None,
+                        "feature_contributions": [
+                            {
+                                "feature_name": f.get("name"),
+                                "contribution": f.get("contribution"),
+                                "direction": "positive"
+                                if (f.get("contribution") or 0) >= 0
+                                else "negative",
+                            }
+                            for f in out.get("top_features") or []
+                        ],
+                        "model_version": out.get("model_id"),
+                        "source_agent": "rank_features-tool",
                     }
     return None
 
@@ -430,10 +528,56 @@ def _extract_anonymizer(runs: list[AgentRun]) -> dict[str, Any] | None:
 
 
 def _extract_narrative_draft(runs: list[AgentRun]) -> str | None:
+    """Pull the most-recent draft text.
+
+    Priority: Part 12 ``investigation`` agent (``draft_narrative.text``
+    in ``final_output``) → legacy ``narrative-drafter`` agent.
+    """
+    for run in reversed(runs):
+        if run.agent_name == "investigation" and run.final_output:
+            draft = run.final_output.get("draft_narrative") or {}
+            text = draft.get("text")
+            if text:
+                return text
     for run in reversed(runs):
         if run.agent_name == "narrative-drafter" and run.final_output:
             return run.final_output.get("draft_text")
     return None
+
+
+def _extract_executive_summary(runs: list[AgentRun]) -> dict[str, Any] | None:
+    """Pull the most-recent SynthesisAgent executive summary."""
+    for run in reversed(runs):
+        if run.agent_name == "synthesis" and run.final_output:
+            summary = run.final_output.get("executive_summary") or {}
+            if summary.get("text"):
+                return {
+                    "text": summary.get("text"),
+                    "key_points": summary.get("key_points") or [],
+                    "audience": summary.get("audience"),
+                    "model_version": summary.get("model_id"),
+                }
+    return None
+
+
+def _extract_anomaly(runs: list[AgentRun]) -> dict[str, Any] | None:
+    """Pull the most-recent investigation-agent anomaly block."""
+    for run in reversed(runs):
+        if run.agent_name == "investigation" and run.final_output:
+            anomaly = run.final_output.get("anomaly") or {}
+            if anomaly.get("composite_score") is not None:
+                return anomaly
+    return None
+
+
+def _extract_similar_complaints(runs: list[AgentRun]) -> list[dict[str, Any]]:
+    """Pull the most-recent investigation-agent similar-complaint list."""
+    for run in reversed(runs):
+        if run.agent_name == "investigation" and run.final_output:
+            items = run.final_output.get("similar_complaints") or []
+            if items:
+                return items
+    return []
 
 
 def _serialise_filters(f: FindingsFilters) -> dict[str, Any]:

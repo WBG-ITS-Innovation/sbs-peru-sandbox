@@ -157,6 +157,11 @@ export default async function CockpitPage() {
       filter_label: t(locale, 'cockpit.taxonomy.filter_label'),
       unknown_pill: t(locale, 'cockpit.taxonomy.unknown_pill'),
     },
+    agents: {
+      agent_runs_last_5min: t(locale, 'cockpit.agents.agent_runs_last_5min'),
+      triaged_today: t(locale, 'cockpit.agents.triaged_today'),
+      high_priority_today: t(locale, 'cockpit.agents.high_priority_today'),
+    },
   };
 
   return (

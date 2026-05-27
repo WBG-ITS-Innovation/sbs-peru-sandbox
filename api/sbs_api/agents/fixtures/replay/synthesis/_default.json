@@ -1,0 +1,12 @@
+{
+  "model_id": "replay-synthesis-v1",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "query_audit_chain", "arguments": {}},
+        {"name": "summarize_for_executive", "arguments": {"audience": "superintendent"}}
+      ]
+    },
+    {"text": "Resumen ejecutivo listo."}
+  ]
+}

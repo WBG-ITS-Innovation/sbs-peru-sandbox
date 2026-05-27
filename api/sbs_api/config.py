@@ -313,6 +313,34 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- agent layer (P12 — Triage/Investigation/Synthesis chain) -------
+    agents_pipeline_enabled: bool = Field(
+        default=False,
+        description=(
+            "When True the live-ingestion orchestrator triggers the "
+            "Part 12 Triage→Investigation→Synthesis chain after "
+            "canonical complaint persistence. Default off so the "
+            "Prompt 11 regression tests stay green; the demo script "
+            "(scripts/demo.sh) exports True and the new integration "
+            "test in tests/integration/test_agent_pipeline.py sets it "
+            "True explicitly. Tests that exercise the chain via the "
+            "agents module directly (test_agent_*.py) do not need this "
+            "flag — they call run_triage / run_investigation / "
+            "run_synthesis directly."
+        ),
+    )
+    agents_pipeline_provider: str = Field(
+        default="on_prem",
+        description=(
+            "Provider used by the agent runtime: one of 'on_prem' | "
+            "'replay' | 'mock' | 'cloud'. Equivalent to setting "
+            "SBS_API_MODEL_PROVIDER. The on_prem provider falls back to "
+            "mock when no vLLM endpoint is reachable; cloud is gated "
+            "behind SBS_API_CLOUD_LEGAL_APPROVED=true and raises "
+            "NotImplementedError today."
+        ),
+    )
+
     # --- CORS (P11 demo-ready overlay, two-laptop sandbox) -------------
     cors_allow_origins: str = Field(
         default=(

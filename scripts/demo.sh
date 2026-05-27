@@ -44,6 +44,16 @@ MAX_WAIT="60"
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
+# Part 12 — agent pipeline. The demo path force-exports both the
+# pipeline-on flag and the replay provider so a previous shell-level
+# export cannot silently route the demo through vLLM / mock-fallback
+# and miss the locked BCO-2026-000001 invariants. Operators who need
+# the on_prem path should run the API directly, not through demo.sh.
+export SBS_API_AGENTS_PIPELINE_ENABLED=true
+export SBS_API_MODEL_PROVIDER=replay
+echo "demo.sh: SBS_API_AGENTS_PIPELINE_ENABLED=${SBS_API_AGENTS_PIPELINE_ENABLED}" \
+     "SBS_API_MODEL_PROVIDER=${SBS_API_MODEL_PROVIDER}"
+
 # Demo institutions (mirror scripts/generate-synthetic-corpus.py:INSTITUTIONS).
 INSTITUTIONS=("SBS-001234" "SBS-005678" "SBS-009012")
 

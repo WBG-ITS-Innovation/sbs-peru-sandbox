@@ -51,7 +51,8 @@
     },
     "status": {
       "type": "string",
-      "enum": ["success", "partial", "failed", "timeout"]
+      "enum": ["in_progress", "success", "partial", "failed", "timeout"],
+      "description": "Additive extension (Part 12): 'in_progress' is the in-flight state used by the agent runtime. The four terminal states are unchanged."
     },
     "tool_calls": {
       "type": "array",
@@ -70,6 +71,19 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "in_progress" } }
+      },
+      "then": {
+        "properties": {
+          "ended_at": { "type": "null" },
+          "final_output": { "type": "null" },
+          "error": { "type": "null" }
+        }
+      }
+    },
     {
       "if": {
         "required": ["status"],
@@ -144,8 +158,19 @@
         "xgboost_ranker",
         "regex_taxonomy",
         "anonymizer",
-        "qlik_lookup"
-      ]
+        "qlik_lookup",
+        "classify_complaint",
+        "rank_features",
+        "query_dq_results",
+        "query_taxonomy_normalizations",
+        "query_audit_chain",
+        "search_similar_complaints",
+        "compute_anomaly_score",
+        "draft_narrative",
+        "summarize_for_executive",
+        "log_taxonomy_unknown"
+      ],
+      "description": "Additive extension (Part 12): the ten tool names below `qlik_lookup` are registered by api/sbs_api/agents/tools/ and used by the agent runtime."
     },
     "iso_datetime_tz": {
       "type": "string",

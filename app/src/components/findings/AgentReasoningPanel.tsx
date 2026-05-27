@@ -23,6 +23,7 @@ interface AgentReasoningPanelProps {
   labels: {
     title: string;
     status: {
+      in_progress: string;
       success: string;
       partial: string;
       failed: string;
@@ -47,6 +48,7 @@ const RUN_STATUS_VARIANT: Record<
   AgentRunSummary['status'],
   'low' | 'medium' | 'high' | 'critical'
 > = {
+  in_progress: 'medium',
   success: 'low',
   partial: 'medium',
   failed: 'critical',

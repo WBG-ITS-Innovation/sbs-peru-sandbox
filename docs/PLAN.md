@@ -19,7 +19,7 @@ A reference implementation that:
 - DB: PostgreSQL 16 + pgvector
 - Event bus: Redis Streams (behind EventBus interface)
 - ML: BETO/RoBERTa-BNE via ONNX, XGBoost+SHAP, MLflow
-- Agents: LangGraph internal, A2A inter-agent, MCP for tools
+- Agents: in-house tool-calling loop with a `ModelProvider` abstraction (on_prem / replay / mock / cloud-gated); three-layer split (agents orchestrate, tools execute, supervisors approve). The original MCP + A2A + LangGraph stack is rejected — see [ADR 0001](adr/0001-three-layer-mcp-a2a-langgraph.md).
 - LLM: vLLM serving Qwen 2.5 14B Instruct, on-prem
 - Frontend: Next.js 14 App Router, TypeScript, Tailwind, shadcn/ui, Recharts, TanStack Query
 - Infra: Docker Compose (dev), Helm chart (deploy), Terraform modules
@@ -302,6 +302,32 @@ Sandbox / demo scope. Not final SBS production infrastructure.
 - The production-shaped Tier 1 surface (`POST /v1/complaints`) and the OAuth / session / persona / existing SSE topics are unchanged.
 
 **Exit.** A supervisor in the sandbox can click Submit on the LiveIngestionPanel and see: timeline of the pipeline, masked-before vs redacted-after diff, detected PII entities (kind + replacement, no raw values), data-quality report, canonical + raw complaint ids, agent_run id, and SSE event id. The new card appears in the cockpit Tier 1 panel.
+
+### Part 12 — Agent Layer (Triage → Investigation → Synthesis)
+
+Goal: back the Findings page's classification / feature-importance / agent-reasoning / draft-summary panels with real agent execution instead of placeholder "—" values, and prove the three-layer architecture (agents orchestrate, tools execute, supervisors approve) under regulator-grade auditability.
+
+- [x] ADR 0001 accepted: three-layer architecture (agents / tools / supervisors). MCP+A2A+LangGraph proposal rejected in favour of an in-house tool-calling loop. See [ADR 0001](adr/0001-three-layer-mcp-a2a-langgraph.md).
+- [x] Model provider abstraction with four implementations: `on_prem` (vLLM-compatible, mock fallback), `replay` (fixture-driven), `mock` (test/CI), `cloud` (permanently gated, raises NotImplementedError). Selected via `SBS_API_MODEL_PROVIDER`.
+- [x] Tool registry with ten registered tools: `classify_complaint`, `rank_features`, `query_dq_results`, `query_taxonomy_normalizations`, `query_audit_chain`, `search_similar_complaints`, `compute_anomaly_score`, `draft_narrative`, `summarize_for_executive`, `log_taxonomy_unknown`. Each declares JSON-Schema parameters and a stable version string.
+- [x] Tool-calling loop runtime — alternates `provider.complete()` and tool execution; `max_iterations=5` per agent; enforces per-agent `allowed_tools`.
+- [x] Three real agents: `triage`, `investigation`, `synthesis`. Two scaffolded agents on replay fixtures: `taxonomy-harmonizer`, `cross-source-correlator`.
+- [x] Orchestrator state machine: `triage → (route_to=investigation) → investigation → synthesis → cross-source-correlator (scaffold)`. Triggered inline by `live-ingestion-orchestrator` when `SBS_API_AGENTS_PIPELINE_ENABLED=true` (default off in tests, true in `scripts/demo.sh`).
+- [x] Additive schema extensions: `agent_runs.status` gains `in_progress` (migration `20260527_0001_agents_status`); `tool_name` enum extended from 5 to 15 entries. No row shape invalidated.
+- [x] Findings detail endpoint surfaces `executive_summary`, `anomaly`, `similar_complaints`; cockpit snapshot grows an `agent_stats` block (three tiles: agent runs in the last 5 minutes, complaints triaged today, high-priority routes today). The "in-flight" tile a live-concurrent system would advertise is deliberately omitted today — the synchronous pipeline (ADR 0001) terminates every row inside the ingestion transaction, so a `status='in_progress'` count would always read 0 from the cockpit's perspective.
+- [x] UI panels populated: `ClassificationPanel`, `FeatureImportancePanel`, `AgentReasoningPanel`, `DraftNarrativeEditor` read from triage/investigation runs; new `ExecutiveBriefPanel` reads from synthesis; new `AgentStatsStrip` reads cockpit.agent_stats.
+- [x] BCO-2026-000001 demo invariants locked in `api/sbs_api/agents/fixtures/replay/` and asserted by `tests/integration/test_agent_pipeline.py`: triage classification undisclosed-fees-credit/0.87; investigation top feature narrative_mentions_fee_undisclosed +0.27; anomaly 0.74/0.70/true; draft omits "comisión por mantenimiento"; non-empty plain-Spanish executive summary.
+- [x] Tests: four new files (`tests/test_agent_providers.py`, `tests/test_agent_tools.py`, `tests/test_agent_runtime.py`, `tests/integration/test_agent_pipeline.py`); 26 new tests; total suite 646 passed / 6 skipped.
+- [x] Walkthrough doc: [docs/demo/2026-05-27-agents-ready.md](demo/2026-05-27-agents-ready.md); narration anchors updated at [docs/demo/2026-05-27-narration-anchors.md](demo/2026-05-27-narration-anchors.md).
+- [ ] Async dispatch via arq. Deferred to v0.2 — today's pipeline is synchronous in the same SQLAlchemy session as ingestion to avoid a Postgres-visibility race with the cockpit SSE event.
+- [ ] pgvector similar-complaints search. Deferred to v0.2 — falls back to exact-match on (product_category, motivo_code).
+- [ ] Live INDECOPI / Quantico / MonitoriA correlation in the Cross-Source Correlator. Today scaffolded via replay fixture; v0.2 work item.
+- [ ] OpenTelemetry spans around the loop and per-tool execution + Prometheus counters (`agent_runs_total`, `tool_invocations_total`, `agent_iteration_duration_seconds`). Audit-chain rows cover the durable trace today; full telemetry parity is a v0.2 work item.
+- [ ] Real vLLM deployment on regulator-controlled infrastructure. OnPremProvider speaks the OpenAI-compatible shape but the prototype runs the mock fallback by default; cloud path remains gated by `SBS_API_CLOUD_LEGAL_APPROVED` and still raises `NotImplementedError`.
+
+**Exit.** Ingesting one sample complaint through the live-ingestion orchestrator (with the agent pipeline enabled) writes three real agent_run rows in order (triage, investigation, synthesis) plus one scaffolded cross-source-correlator row; the Findings detail page renders all four WS4 panels plus the new Executive brief sub-panel without "—" placeholders; the cockpit shows the new three-tile agent-stats strip; the BCO-2026-000001 demo invariants hold under both the `replay` and `mock` providers. CI passes with `SBS_API_MODEL_PROVIDER=mock`.
+
+**May 27 scope.** Full for the three real agents and the two scaffolds. Telemetry parity, arq dispatch, pgvector similarity, and live cross-source ingestion explicitly deferred to v0.2 with the work-item checklist above.
 
 ## Daily discipline
 

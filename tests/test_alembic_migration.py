@@ -139,4 +139,7 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
     }
     missing = expected - tables
     assert not missing, f"missing tables: {missing}"
-    assert version_num == "20260527_0001"
+    # Part 12 added an additive migration that bumps the head past the
+    # P11 demo-ui-polish overlay. The exact head string is recorded in
+    # api/migrations/versions/ alongside the down-revision chain.
+    assert version_num == "20260527_0001_agents_status"

@@ -38,7 +38,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy import select
 
+from sbs_api.agents.orchestrator import run_agent_pipeline
 from sbs_api.audit import record_audit_event
+from sbs_api.config import get_settings
+from sbs_api.db.models.agent_run import AgentRun as _AgentRunModel
 from sbs_api.data_quality import POLICY_VERSION as DQ_POLICY_VERSION
 from sbs_api.data_quality import run_checks as run_dq_checks
 from sbs_api.data_quality.annex_1a_rules import (
@@ -377,6 +380,55 @@ def _build_anonymizer_tool_call(
         "status": "success",
         "error": None,
     }
+
+
+async def _finalise_orphan_agent_runs(
+    session: AsyncSession,
+    *,
+    complaint_id: str,
+    reason: str,
+) -> int:
+    """Mark any ``status='in_progress'`` rows for this complaint as ``failed``.
+
+    Returns the number of rows updated. Used as a defensive sweep
+    when the Part 12 agent pipeline raises in a way that left a
+    started-but-not-finished row behind (typically: a session-level
+    SQL failure that prevented the agent's own except-finalise step
+    from writing). Each remaining row gets an audit row so the
+    "every reasoning step is reconstructable" contract holds.
+    """
+    rows = (
+        await session.execute(
+            select(_AgentRunModel)
+            .where(_AgentRunModel.complaint_id == complaint_id)
+            .where(_AgentRunModel.status == "in_progress")
+        )
+    ).scalars().all()
+    if not rows:
+        return 0
+    now = _now()
+    for row in rows:
+        row.ended_at = now
+        row.status = "failed"
+        row.error = {
+            "code": "PIPELINE_INTERRUPTED",
+            "message": f"orphan in_progress row finalised by defensive sweep: {reason}",
+        }
+        await record_audit_event(
+            session,
+            actor_type="agent",
+            actor_id=row.agent_name,
+            action="agent-run-completed",
+            object_type="complaint",
+            object_id=complaint_id,
+            meta={
+                "agent_run_id": row.id,
+                "status": "failed",
+                "swept": True,
+                "reason": reason,
+            },
+        )
+    return len(rows)
 
 
 async def run_demo_ingestion(
@@ -730,6 +782,45 @@ async def run_demo_ingestion(
         f"({chain_rows} chain + {len(annex_1a_report.results)} dq-rule-violated "
         f"+ {len(taxonomy_outcome.unknown_terms)} taxonomy-unknown-term)",
     )
+
+    # 6c. agent pipeline (P12). Runs the triage → investigation →
+    #     synthesis chain inline so the demo path produces visible
+    #     agent_runs before the cockpit card pops. Failure here does
+    #     not roll back ingestion — the canonical row and ingestion
+    #     agent_run are already persisted; the agent chain is best
+    #     effort. On raise, sweep any leaked ``in_progress`` rows for
+    #     this complaint to status='failed' so the audit-chain
+    #     "every reasoning step is reconstructable" claim holds.
+    settings = get_settings()
+    if settings.agents_pipeline_enabled:
+        try:
+            agent_outcome = await run_agent_pipeline(
+                session, complaint_id=canonical.complaint_id
+            )
+            step(
+                "agent_pipeline_completed",
+                f"route={agent_outcome.route_to} "
+                f"triage=ok "
+                f"investigation={'ok' if agent_outcome.investigation else 'skip'} "
+                f"synthesis={'ok' if agent_outcome.synthesis else 'skip'}",
+            )
+        except Exception as exc:  # noqa: BLE001
+            step(
+                "agent_pipeline_failed",
+                f"{type(exc).__name__}: {str(exc)[:120]}",
+            )
+            # Defensive sweep: each agent's own try/except finalises its
+            # own run row, but a SQL-layer failure can leave the session
+            # in a state where the in-agent finalisation also failed.
+            # Force any still-``in_progress`` row for this complaint to
+            # ``failed`` so the chain never leaks an orphaned row.
+            await _finalise_orphan_agent_runs(
+                session,
+                complaint_id=canonical.complaint_id,
+                reason=f"orchestrator caught {type(exc).__name__}",
+            )
+
+    await session.flush()
 
     # 7. publish SSE complaint.received with the cockpit-card shape.
     cockpit_card_payload = {

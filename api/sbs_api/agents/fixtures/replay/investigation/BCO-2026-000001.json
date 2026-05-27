@@ -1,0 +1,19 @@
+{
+  "model_id": "replay-investigation-v1",
+  "notes": "Demo invariants: composite_score=0.74, threshold=0.70, anomaly_flag=true; top feature narrative_mentions_fee_undisclosed (+0.27); draft OMITS 'comisión por mantenimiento' so Lucía's scripted edit surfaces a real gap.",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "rank_features", "arguments": {}},
+        {"name": "compute_anomaly_score", "arguments": {}},
+        {"name": "search_similar_complaints", "arguments": {"limit": 5}}
+      ]
+    },
+    {
+      "tool_calls": [
+        {"name": "draft_narrative", "arguments": {}}
+      ]
+    },
+    {"text": "Investigation complete: evidence bundle ready for supervisor review."}
+  ]
+}

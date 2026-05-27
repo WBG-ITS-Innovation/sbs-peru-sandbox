@@ -303,3 +303,16 @@ bash scripts/demo.sh --scale small    # ~8 s, 3 × 17 rows, 3 listener_pass=true
 # SDK helpers:
 ( cd sdk-helpers/typescript && npm test )    # 19 / 19
 ```
+
+## Browser walk verification — 2026-05-26
+
+Verified manually by Oumaïma against running API + frontend.
+
+Auth chain: mTLS proxy + OAuth + HMAC + Idempotency-Key enforced on submission.
+Two-tier ingestion: Tier 1 NRT (BANCO_DEMO_001) and Tier 2 batch (COOPAC_DEMO_002) both produce identical canonical Annex 1-A records.
+Redaction: response and UI show <PERSON_1>, <DNI_1>, <PHONE_1>, <EMAIL_1>, <ACCOUNT_1> tokens.
+Storage split confirmed at DB layer: raw_complaints holds raw narrative with storage_policy=restricted-demo-pii-v1; complaints (canonical) holds redacted narrative. FK join via canonical_complaint_id shows raw_chars=273 vs canonical_chars=221 — proof of redaction at storage.
+27-field Annex 1-A DQ validator firing (DQ-A1A-007/009/010/013/016 observed).
+10-event kebab-case audit chain persisted per submission.
+
+Screenshots: screenshots/2026-05-26-p11-walk/.

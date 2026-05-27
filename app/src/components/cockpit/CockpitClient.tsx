@@ -15,6 +15,7 @@ import type {
   TaxonomyStats,
 } from '@/types/cockpit';
 
+import { AgentStatsStrip } from './AgentStatsStrip';
 import { AnomalyCard } from './AnomalyCard';
 import { CrossSourceStrip } from './CrossSourceStrip';
 import { KpiStrip } from './KpiStrip';
@@ -56,6 +57,12 @@ interface Labels {
     tile_summary_many: string;
     filter_label: string;
     unknown_pill: string;
+  };
+  // P12 — agent layer tiles. Optional so legacy callers do not break.
+  agents?: {
+    agent_runs_last_5min: string;
+    triaged_today: string;
+    high_priority_today: string;
   };
 }
 
@@ -129,6 +136,14 @@ export function CockpitClient({
   return (
     <div className="space-y-3">
       <KpiStrip kpis={state.kpis} locale={labels.locale} labels={labels.kpis} />
+
+      {labels.agents ? (
+        <AgentStatsStrip
+          stats={state.agent_stats}
+          locale={labels.locale}
+          labels={labels.agents}
+        />
+      ) : null}
 
       {state.anomalies.length > 0 ? (
         <div className="space-y-2">

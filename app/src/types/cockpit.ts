@@ -91,9 +91,24 @@ export interface CrossSourceStrip {
   channels: CrossSourceChannel[];
 }
 
+export interface AgentStats {
+  // Count of agent_run rows started in the last 5 minutes. The
+  // synchronous pipeline (see ADR 0001) terminates rows inside the
+  // ingestion transaction, so an "agents currently running" tile
+  // would always read 0; this counter is the honest demo-cadence
+  // proxy. ``agents_in_flight`` reports any rows still at status
+  // in_progress for completeness.
+  agent_runs_last_5min: number;
+  agents_in_flight: number;
+  complaints_triaged_today: number;
+  high_priority_routes_today: number;
+}
+
 export interface CockpitSnapshot {
   generated_at: string;
   kpis: KpiData;
+  // P12 — optional so older clients (pre-Part-12) still parse the snapshot.
+  agent_stats?: AgentStats;
   tier1: TierPanelData;
   tier2: TierPanelData;
   cross_source: CrossSourceStrip;

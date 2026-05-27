@@ -2,7 +2,12 @@
 
 import type { Severity } from '@/types/cockpit';
 
-export type AgentStatus = 'success' | 'partial' | 'failed' | 'timeout';
+export type AgentStatus =
+  | 'in_progress'
+  | 'success'
+  | 'partial'
+  | 'failed'
+  | 'timeout';
 export type ToolStatus = 'success' | 'failed' | 'timeout';
 
 export interface FindingsListItem {
@@ -64,6 +69,35 @@ export interface ClassificationPayload {
   sub_patterns: Array<{ label: string; evidence_span: [number, number] }>;
   rank_band: string | null;
   model_version: string | null;
+  // P12 additive fields. Older complaints (with only the legacy
+  // classifier agent_run) leave these undefined.
+  alternatives?: Array<{ label: string; confidence: number }>;
+  source_agent?: 'triage' | 'classifier';
+}
+
+export interface ExecutiveSummary {
+  text: string | null;
+  key_points: string[];
+  audience: 'superintendent' | 'supervisor' | null;
+  model_version: string | null;
+}
+
+export interface AnomalyPayload {
+  composite_score: number | null;
+  threshold: number | null;
+  anomaly_flag: boolean | null;
+  contributions: Record<string, number>;
+  weights: Record<string, number>;
+  model_id?: string | null;
+}
+
+export interface SimilarComplaint {
+  complaint_id: string;
+  institution_id: string;
+  received_at: string;
+  product_category: string;
+  motivo_code: string;
+  severity: string;
 }
 
 export interface FeaturesPayload {
@@ -71,6 +105,7 @@ export interface FeaturesPayload {
   rank_band: string | null;
   feature_contributions: FeatureContribution[];
   model_version: string | null;
+  source_agent?: string;
 }
 
 export interface AnonymizationPayload {
@@ -121,6 +156,12 @@ export interface FindingDetailResponse {
   agent_runs: AgentRunSummary[];
   current_narrative: string | null;
   agent_drafted_narrative: string | null;
+  // P12 — SynthesisAgent executive brief surfaced under Draft summary.
+  // Null until synthesis has run.
+  executive_summary?: ExecutiveSummary | null;
+  // P12 — InvestigationAgent anomaly contributions + similar complaints.
+  anomaly?: AnomalyPayload | null;
+  similar_complaints?: SimilarComplaint[];
   latest_draft_id: number | null;
   pending_approval: {
     id: number;

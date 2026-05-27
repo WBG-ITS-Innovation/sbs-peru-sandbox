@@ -1,0 +1,13 @@
+{
+  "model_id": "replay-triage-v1",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "query_dq_results", "arguments": {}},
+        {"name": "query_taxonomy_normalizations", "arguments": {}},
+        {"name": "classify_complaint", "arguments": {}}
+      ]
+    },
+    {"text": "Triage complete."}
+  ]
+}

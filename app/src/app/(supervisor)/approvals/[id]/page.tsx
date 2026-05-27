@@ -155,6 +155,7 @@ export default async function ApprovalDetailPage({
         labels={{
           title: t(locale, 'findings.panels.agent_reasoning'),
           status: {
+            in_progress: t(locale, 'findings.agent_status.in_progress'),
             success: t(locale, 'findings.agent_status.success'),
             partial: t(locale, 'findings.agent_status.partial'),
             failed: t(locale, 'findings.agent_status.failed'),

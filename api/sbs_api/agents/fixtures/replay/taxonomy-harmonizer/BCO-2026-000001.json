@@ -1,0 +1,23 @@
+{
+  "model_id": "replay-harmonizer-v1",
+  "notes": "Scaffolded agent: emits 2-3 plausible dictionary proposals + one reclassification signal.",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "query_audit_chain", "arguments": {}},
+        {"name": "log_taxonomy_unknown", "arguments": {"surface_form": "cargo no informado", "suggested_canonical": "undisclosed-fee"}}
+      ]
+    },
+    {"text": "Harmonizer complete: 3 proposals queued, 1 reclassification signal."}
+  ],
+  "final_output_override": {
+    "proposed_dictionary_entries": [
+      {"field_path": "motive", "surface_form": "cargo no informado", "suggested_canonical": "undisclosed-fee", "frequency": 12, "confidence": 0.81},
+      {"field_path": "product", "surface_form": "tarjeta crédito clásica", "suggested_canonical": "credit-card", "frequency": 7, "confidence": 0.74},
+      {"field_path": "channel_operation", "surface_form": "app móvil", "suggested_canonical": "mobile-app", "frequency": 33, "confidence": 0.91}
+    ],
+    "reclassification_signals": [
+      {"institution_id": "SBS-001234", "motive_from": "comisiones", "motive_to": "cargo no informado", "delta_pct": 0.18, "note": "Possible gaming: 18% shift in motivo distribution over 30d window."}
+    ]
+  }
+}

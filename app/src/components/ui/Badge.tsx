@@ -39,6 +39,16 @@ const badgeVariants = cva(
         // Role chips (Supervisor / Analyst / Unit Head)
         role:
           'border-brand-gold/40 bg-brand-gold/10 text-brand-navy',
+        // P11 demo-ui-polish — explicit tier badges. WBG palette:
+        // Tier 1 (NRT) cyan #009FDA, Tier 2 (batch) gold #F5BD24.
+        tier1:
+          'border-brand-cyan bg-brand-cyan/15 text-brand-navy',
+        tier2:
+          'border-brand-gold bg-brand-gold/20 text-brand-navy',
+        // P11 demo-ui-polish — unknown-taxonomy pill on cockpit cards.
+        // Soft gold to draw the eye without screaming severity.
+        warning:
+          'border-brand-gold bg-brand-gold/15 text-brand-navy',
       },
     },
     defaultVariants: {

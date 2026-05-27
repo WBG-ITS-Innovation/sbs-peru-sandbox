@@ -139,4 +139,4 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
     }
     missing = expected - tables
     assert not missing, f"missing tables: {missing}"
-    assert version_num == "20260526_0001"
+    assert version_num == "20260527_0001"

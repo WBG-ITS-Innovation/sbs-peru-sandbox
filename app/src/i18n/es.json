@@ -118,6 +118,18 @@
       "motivo": "motivo",
       "producto": "producto"
     },
+    "taxonomy": {
+      "tile_title": "Armonización taxonómica hoy",
+      "tile_as_of_prefix": "al",
+      "tile_summary_one": "{n} normalización en {m} instituciones",
+      "tile_summary_many": "{n} normalizaciones en {m} instituciones",
+      "filter_label": "Solo filas con taxonomía desconocida",
+      "unknown_pill": "Término desconocido"
+    },
+    "tier_badges": {
+      "tier1_nrt": "Tier 1 NRT",
+      "tier2_batch": "Tier 2 Batch"
+    },
     "tier1_empty": {
       "title": "Sin actividad reciente Tier 1",
       "body": "No hay reclamos recibidos por la API en la ventana actual.",
@@ -180,10 +192,19 @@
       "narrative_anonymization": "Política de anonimización",
       "narrative_length": "Longitud",
       "resolution_description": "Descripción de la resolución",
+      "resolution_section": "Estado de la resolución",
       "resolution_state": "Estado del reclamo",
       "resolution_type": "Tipo de resolución",
       "resolution_date": "Fecha de resolución",
       "pending_amount": "Monto pendiente",
+      "taxonomy_title": "Armonización taxonómica",
+      "taxonomy_show": "Mostrar",
+      "taxonomy_hide": "Ocultar",
+      "taxonomy_field": "Campo",
+      "taxonomy_original": "Valor recibido",
+      "taxonomy_canonical": "Valor canónico",
+      "taxonomy_dictionary": "Diccionario",
+      "taxonomy_empty": "Sin normalizaciones",
       "classification_top_k": "Top 3 clases",
       "classification_model": "Modelo",
       "feature_model": "Modelo de ranker",

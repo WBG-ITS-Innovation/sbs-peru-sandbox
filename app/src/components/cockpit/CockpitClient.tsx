@@ -6,15 +6,20 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useSSE, type SSEMessage } from '@/hooks/useSSE';
-import type { CockpitSnapshot, ComplaintCardData } from '@/types/cockpit';
+import type {
+  CockpitSnapshot,
+  ComplaintCardData,
+  TaxonomyStats,
+} from '@/types/cockpit';
 
 import { AnomalyCard } from './AnomalyCard';
 import { CrossSourceStrip } from './CrossSourceStrip';
 import { KpiStrip } from './KpiStrip';
 import { LiveIngestionPanel } from './LiveIngestionPanel';
+import { TaxonomyStatsTile } from './TaxonomyStatsTile';
 import { TierPanel } from './TierPanel';
 import {
   TIER1_INSTITUTION_ID,
@@ -44,10 +49,19 @@ interface Labels {
   emptyTier2: { title: string; body: string; primary: { label: string; href: string } };
   emptyAnomalies: { title: string; body: string };
   liveIngestion: React.ComponentProps<typeof LiveIngestionPanel>['labels'];
+  taxonomy: {
+    tile_title: string;
+    tile_as_of_prefix: string;
+    tile_summary_one: string;
+    tile_summary_many: string;
+    filter_label: string;
+    unknown_pill: string;
+  };
 }
 
 interface CockpitClientProps {
   initialSnapshot: CockpitSnapshot;
+  initialTaxonomyStats: TaxonomyStats;
   labels: Labels;
   csrfToken: string;
 }
@@ -93,13 +107,24 @@ function reduceCockpit(state: CockpitSnapshot, message: SSEMessage<unknown>): Co
   return state;
 }
 
-export function CockpitClient({ initialSnapshot, labels, csrfToken }: CockpitClientProps) {
+export function CockpitClient({
+  initialSnapshot,
+  initialTaxonomyStats,
+  labels,
+  csrfToken,
+}: CockpitClientProps) {
   const reduce = useCallback(reduceCockpit, []);
   const { state } = useSSE<CockpitSnapshot>({
     url: '/app/api/sse/cockpit',
     initialState: initialSnapshot,
     reduce,
   });
+  const [showOnlyUnknownTaxonomy, setShowOnlyUnknownTaxonomy] = useState(false);
+
+  const summaryFor = (n: number, m: number): string =>
+    (n === 1 ? labels.taxonomy.tile_summary_one : labels.taxonomy.tile_summary_many)
+      .replace('{n}', new Intl.NumberFormat(labels.locale).format(n))
+      .replace('{m}', new Intl.NumberFormat(labels.locale).format(m));
 
   return (
     <div className="space-y-3">
@@ -118,16 +143,43 @@ export function CockpitClient({ initialSnapshot, labels, csrfToken }: CockpitCli
         </div>
       ) : null}
 
+      <div className="grid gap-3 md:grid-cols-[2fr_1fr] md:items-stretch">
+        <div className="flex items-center justify-end gap-2 rounded-sbs border border-border-subtle bg-surface px-3 py-2 text-xs">
+          <label className="inline-flex cursor-pointer items-center gap-2 font-mono uppercase tracking-wider text-fg-muted">
+            <input
+              type="checkbox"
+              checked={showOnlyUnknownTaxonomy}
+              onChange={e => setShowOnlyUnknownTaxonomy(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-border accent-brand-gold"
+            />
+            {labels.taxonomy.filter_label}
+          </label>
+        </div>
+        <TaxonomyStatsTile
+          stats={initialTaxonomyStats}
+          locale={labels.locale}
+          labels={{
+            title: labels.taxonomy.tile_title,
+            summary: summaryFor,
+            as_of_prefix: labels.taxonomy.tile_as_of_prefix,
+          }}
+        />
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
         <TierPanel
           panel={state.tier1}
           locale={labels.locale}
           emptyText={labels.emptyTier1}
+          showOnlyUnknownTaxonomy={showOnlyUnknownTaxonomy}
+          unknownPillLabel={labels.taxonomy.unknown_pill}
         />
         <TierPanel
           panel={state.tier2}
           locale={labels.locale}
           emptyText={labels.emptyTier2}
+          showOnlyUnknownTaxonomy={showOnlyUnknownTaxonomy}
+          unknownPillLabel={labels.taxonomy.unknown_pill}
         />
       </div>
 

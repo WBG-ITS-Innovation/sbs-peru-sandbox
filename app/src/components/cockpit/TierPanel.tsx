@@ -6,17 +6,29 @@
 // as a faint mono sub-line. The list of recent complaints below is the
 // real DB/SSE-backed data — no UI change to that.
 
-import { Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
+import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui';
 import { ComplaintCard } from './ComplaintCard';
-import type { TierPanelData } from '@/types/cockpit';
+import type { TierPanelData, TierVariant } from '@/types/cockpit';
 
 interface TierPanelProps {
   panel: TierPanelData;
   locale: string;
   emptyText: { title: string; body: string; primary: { label: string; href: string } };
+  showOnlyUnknownTaxonomy?: boolean;
+  unknownPillLabel?: string;
 }
 
-export function TierPanel({ panel, locale, emptyText }: TierPanelProps) {
+export function TierPanel({
+  panel,
+  locale,
+  emptyText,
+  showOnlyUnknownTaxonomy = false,
+  unknownPillLabel,
+}: TierPanelProps) {
+  const variant: TierVariant = panel.tier_variant ?? 'tier1';
+  const visible = showOnlyUnknownTaxonomy
+    ? panel.recent.filter(c => c.flag_unknown_taxonomy === true)
+    : panel.recent;
   return (
     <Card className="border-border">
       <CardHeader className="border-b border-border px-4 py-3">
@@ -24,16 +36,16 @@ export function TierPanel({ panel, locale, emptyText }: TierPanelProps) {
           <h2 className="font-mono text-sm font-semibold tabular text-brand-navy">
             {panel.institution_name}
           </h2>
-          <span className="rounded-sbs border border-brand-cyan/40 bg-brand-cyan/10 px-1.5 py-0.5 font-mono text-2xs font-medium uppercase tracking-wider text-brand-navy">
+          <Badge variant={variant} className="uppercase tracking-wider">
             {panel.tier_label}
-          </span>
+          </Badge>
         </div>
         <p className="mt-1 font-mono text-2xs uppercase tracking-wider text-fg-muted">
           {panel.descriptor}
         </p>
       </CardHeader>
       <CardBody className="space-y-2 p-3">
-        {panel.recent.length === 0 ? (
+        {visible.length === 0 ? (
           <EmptyState
             icon={<span aria-hidden="true">∅</span>}
             title={emptyText.title}
@@ -41,8 +53,13 @@ export function TierPanel({ panel, locale, emptyText }: TierPanelProps) {
             primaryAction={emptyText.primary}
           />
         ) : (
-          panel.recent.map(c => (
-            <ComplaintCard key={c.complaint_id} complaint={c} locale={locale} />
+          visible.map(c => (
+            <ComplaintCard
+              key={c.complaint_id}
+              complaint={c}
+              locale={locale}
+              unknownPillLabel={unknownPillLabel}
+            />
           ))
         )}
       </CardBody>

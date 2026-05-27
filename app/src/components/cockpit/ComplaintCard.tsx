@@ -5,6 +5,12 @@
 // Claude Design artifact: ID in font-mono brand-navy, severity pill,
 // timestamp on the right, motivo / product / channel as a mono foot
 // row with subtle separators.
+//
+// P11 demo-ui-polish overlay: when ``flag_unknown_taxonomy`` is true,
+// the card grows a yellow left border (3px brand-gold), the ID gets
+// an "Unknown term" pill next to it, and the pill carries a native
+// tooltip listing up to three unknown surface forms (with "…" suffix
+// when there are more).
 
 import { Badge } from '@/components/ui';
 import { t, type Locale } from '@/i18n';
@@ -22,9 +28,30 @@ interface ComplaintCardProps {
   complaint: ComplaintCardData;
   locale: string;
   className?: string;
+  unknownPillLabel?: string;
 }
 
-export function ComplaintCard({ complaint, locale, className }: ComplaintCardProps) {
+function unknownTooltip(complaint: ComplaintCardData): string {
+  const terms = complaint.unknown_terms ?? [];
+  if (terms.length === 0) {
+    return '';
+  }
+  const lines = terms.map(
+    term => `${term.field_path}: "${term.original_value}"`,
+  );
+  const total = complaint.unknown_terms_total ?? terms.length;
+  if (total > terms.length) {
+    lines.push('…');
+  }
+  return lines.join('\n');
+}
+
+export function ComplaintCard({
+  complaint,
+  locale,
+  className,
+  unknownPillLabel,
+}: ComplaintCardProps) {
   const i18nLocale = (locale === 'en-US' ? 'en-US' : 'es-PE') as Locale;
   const motivoLabel = t(i18nLocale, 'cockpit.complaint_card.motivo');
   const productoLabel = t(i18nLocale, 'cockpit.complaint_card.producto');
@@ -36,18 +63,27 @@ export function ComplaintCard({ complaint, locale, className }: ComplaintCardPro
     day: '2-digit',
     month: 'short',
   }).format(receivedAt);
+  const flagged = complaint.flag_unknown_taxonomy === true;
+  const pillTitle = flagged ? unknownTooltip(complaint) : '';
 
   return (
     <article
       className={cn(
         'rounded-sbs border border-border-subtle bg-surface p-3 transition-colors hover:border-border',
+        flagged && 'border-l-[3px] border-l-brand-gold',
         className,
       )}
+      data-flag-unknown-taxonomy={flagged ? 'true' : undefined}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs font-semibold tabular text-brand-navy">
           {complaint.complaint_id}
         </span>
+        {flagged && unknownPillLabel ? (
+          <Badge variant="warning" title={pillTitle}>
+            {unknownPillLabel}
+          </Badge>
+        ) : null}
         <Badge variant={SEVERITY_VARIANT[complaint.severity] ?? 'medium'}>
           {complaint.severity.toUpperCase()}
         </Badge>

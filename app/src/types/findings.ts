@@ -79,6 +79,13 @@ export interface AnonymizationPayload {
   status: ToolStatus | null;
 }
 
+export interface TaxonomyNormalization {
+  field_path: string;
+  original_value: string;
+  canonical_value: string;
+  dictionary_version: string;
+}
+
 export interface FindingDetailResponse {
   complaint: {
     complaint_id: string;
@@ -102,7 +109,12 @@ export interface FindingDetailResponse {
     descripcion_resolucion?: string | null;
     estado_reclamo?: string | null;
     monto_pendiente?: string | null;
+    flag_unknown_taxonomy?: boolean;
   };
+  // P11 demo-ui-polish — taxonomy harmonization panel input. Empty
+  // list hides the panel entirely.
+  taxonomy_normalizations?: TaxonomyNormalization[];
+  taxonomy_dictionary_version?: string | null;
   anonymization: AnonymizationPayload | null;
   classification: ClassificationPayload | null;
   features: FeaturesPayload | null;

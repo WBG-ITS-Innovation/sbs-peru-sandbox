@@ -30,6 +30,7 @@ import sys
 import time
 import urllib.parse
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -143,6 +144,79 @@ def main() -> int:
 
         ok = resp.status_code in (200, 201) and trace["complaint_id"]
         out = {"ok": bool(ok), "trace": trace, "receipt": payload}
+        if ok and trace.get("complaint_id"):
+            # Seed the demo's triage / investigation / synthesis agent_runs
+            # against the freshly submitted complaint so /app/demo-journey's
+            # agent-processing stage can render the full WOW moment for
+            # whatever the user just submitted (not only the original
+            # golden id chosen at boot).
+            try:
+                from seed_golden_complaint import (
+                    TRIAGE_OUTPUT, INVESTIGATION_OUTPUT, SYNTHESIS_OUTPUT,
+                    _insert_run, _tool_call, DSN,
+                )
+                from datetime import timedelta
+                import psycopg
+                with psycopg.connect(DSN) as conn, conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM agent_runs WHERE complaint_id=%s AND "
+                        "agent_name IN ('triage','investigation','synthesis')",
+                        (trace["complaint_id"],),
+                    )
+                    t0 = datetime.now(timezone.utc)
+                    triage_started = t0
+                    triage_ended = t0 + timedelta(milliseconds=410)
+                    inv_started = triage_ended + timedelta(milliseconds=50)
+                    inv_ended = inv_started + timedelta(milliseconds=820)
+                    syn_started = inv_ended + timedelta(milliseconds=50)
+                    syn_ended = syn_started + timedelta(milliseconds=540)
+                    _insert_run(
+                        cur, complaint_id=trace["complaint_id"],
+                        agent_name="triage", agent_version="0.1.0",
+                        started_at=triage_started, ended_at=triage_ended,
+                        tool_calls=[_tool_call(
+                            "bert_classifier",
+                            {"classification": "undisclosed-fees-credit", "confidence": 0.87},
+                            triage_started, model_id="bert-classifier-0.1.0",
+                        )],
+                        final_output=TRIAGE_OUTPUT,
+                    )
+                    _insert_run(
+                        cur, complaint_id=trace["complaint_id"],
+                        agent_name="investigation", agent_version="0.1.0",
+                        started_at=inv_started, ended_at=inv_ended,
+                        tool_calls=[
+                            _tool_call("rank_features", {
+                                "top_features": INVESTIGATION_OUTPUT["feature_attribution"],
+                                "model_id": "xgboost-ranker-0.1.0",
+                            }, inv_started),
+                            _tool_call("anomaly_detector",
+                                       INVESTIGATION_OUTPUT["anomaly"],
+                                       inv_started + timedelta(milliseconds=200)),
+                            _tool_call("search_similar_complaints",
+                                       {"items": INVESTIGATION_OUTPUT["similar_complaints"]},
+                                       inv_started + timedelta(milliseconds=400)),
+                            _tool_call("draft_narrative",
+                                       INVESTIGATION_OUTPUT["draft_narrative"],
+                                       inv_started + timedelta(milliseconds=600)),
+                        ],
+                        final_output=INVESTIGATION_OUTPUT,
+                    )
+                    _insert_run(
+                        cur, complaint_id=trace["complaint_id"],
+                        agent_name="synthesis", agent_version="0.1.0",
+                        started_at=syn_started, ended_at=syn_ended,
+                        tool_calls=[_tool_call(
+                            "compose_executive_summary",
+                            SYNTHESIS_OUTPUT["executive_summary"],
+                            syn_started,
+                        )],
+                        final_output=SYNTHESIS_OUTPUT,
+                    )
+                    conn.commit()
+                trace["agents_seeded"] = True
+            except Exception as exc:  # noqa: BLE001
+                trace["agents_seeded_error"] = f"{type(exc).__name__}: {exc}"
         if not ok:
             out["error"] = (
                 f"HTTP {resp.status_code}"

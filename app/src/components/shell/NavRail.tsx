@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import {
   Activity,
   BarChart3,
+  BookOpen,
   ClipboardList,
   FileText,
   History,
@@ -36,6 +37,7 @@ interface NavRailProps {
     approvals: string;
     audit: string;
     demo_journey: string;
+    docs: string;
     analytics: string;
     assistant: string;
     pilot_phase: string;
@@ -54,6 +56,7 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
     { href: '/approvals', icon: ClipboardList, label: labels.approvals },
     { href: '/audit', icon: History, label: labels.audit },
     { href: '/demo-journey', icon: Route, label: labels.demo_journey },
+    { href: '/docs', icon: BookOpen, label: labels.docs },
   ];
   const pilotItems: NavItem[] = [
     { href: '/analytics', icon: BarChart3, label: labels.analytics, pilot: true },

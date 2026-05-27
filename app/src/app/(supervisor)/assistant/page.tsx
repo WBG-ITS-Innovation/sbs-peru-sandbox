@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Send, Sparkles, User } from 'lucide-react';
+import { Sparkles, User } from 'lucide-react';
 
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
+import { LiveAssistantChat } from '@/components/assistant/LiveAssistantChat';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 import { PageHeader } from '@/components/shell/PageHeader';
@@ -30,7 +31,6 @@ export default function AssistantPage() {
 
   const pilotBadge = tr('pilot.badge');
   const previewOnly = tr('assistant.preview_only');
-  const disclaimer = tr('assistant.disclaimer');
   const inputPlaceholder = tr('assistant.input_placeholder');
   const send = tr('assistant.send');
   const beta = tr('assistant.beta');
@@ -104,33 +104,18 @@ export default function AssistantPage() {
             </CardBody>
           </Card>
 
-          <Card className="border-border">
-            <CardBody className="px-4 py-3">
-              <label htmlFor="assistant-input" className="sr-only">
-                {inputPlaceholder}
-              </label>
-              <div className="flex items-start gap-2">
-                <textarea
-                  id="assistant-input"
-                  rows={2}
-                  placeholder={inputPlaceholder}
-                  disabled
-                  aria-disabled="true"
-                  className="flex-1 resize-none rounded-sbs border border-border bg-surface-subtle px-3 py-2 text-sm text-fg-muted disabled:cursor-not-allowed"
-                />
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="inline-flex h-9 items-center justify-center gap-1 rounded-sbs border border-border-strong bg-surface px-3 text-sm text-fg-muted disabled:cursor-not-allowed"
-                >
-                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                  {send}
-                </button>
-              </div>
-              <p className="mt-2 text-2xs text-fg-muted">{disclaimer}</p>
-            </CardBody>
-          </Card>
+          <LiveAssistantChat
+            csrfToken={session.csrfToken}
+            labels={{
+              placeholder: inputPlaceholder,
+              send,
+              thinking: tr('assistant.exchanges.bot_label') + '…',
+              user_label: userLabel,
+              bot_label: botLabel,
+              demo_mode: 'Modo demo · sin API key',
+              powered_by: 'Azure OpenAI',
+            }}
+          />
         </div>
 
         <aside className="space-y-3">

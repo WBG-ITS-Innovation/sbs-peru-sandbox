@@ -1,0 +1,11 @@
+{
+  "complaint_id": "BCO-2026-3231067",
+  "composite_score": 0.74,
+  "anomaly_threshold": 0.7,
+  "classification_label": "undisclosed-fees-credit",
+  "classification_confidence": 0.87,
+  "top_feature": {
+    "name": "narrative_mentions_fee_undisclosed",
+    "contribution": 0.27
+  }
+}

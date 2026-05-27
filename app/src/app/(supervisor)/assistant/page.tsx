@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Info, Send, Sparkles, User } from 'lucide-react';
+import { Send, Sparkles, User } from 'lucide-react';
 
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
@@ -29,7 +29,6 @@ export default function AssistantPage() {
   const tr = (key: string) => t(locale, key);
 
   const pilotBadge = tr('pilot.badge');
-  const previewDisclaimer = tr('pilot.preview_disclaimer');
   const previewOnly = tr('assistant.preview_only');
   const disclaimer = tr('assistant.disclaimer');
   const inputPlaceholder = tr('assistant.input_placeholder');
@@ -77,14 +76,6 @@ export default function AssistantPage() {
 
       <div className="mx-auto grid w-full max-w-7xl gap-3 px-6 py-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-3">
-          <div
-            role="status"
-            className="flex items-center gap-2 rounded-sbs border border-border bg-surface-subtle px-3 py-2 text-xs text-fg-muted"
-          >
-            <Info className="h-3.5 w-3.5 text-brand-gold" aria-hidden="true" />
-            <span>{previewDisclaimer}</span>
-          </div>
-
           <Card className="border-border">
             <CardBody className="space-y-4 px-4 py-4">
               {exchanges.map((ex, i) => (

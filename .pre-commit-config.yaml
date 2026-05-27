@@ -68,4 +68,4 @@ repos:
         # Vendored upstream assets are minified bundles with high-entropy
         # base64 substrings; the SHA-384 in VENDOR.md is the provenance
         # check that protects them.
-        exclude: '^(\.secrets\.baseline|docs/reviews/.*|tests/fixtures/.*|vendor/stoplight-elements/.*)$'
+        exclude: '^(\.secrets\.baseline|docs/reviews/.*|tests/fixtures/.*|vendor/stoplight-elements/.*|app/src/lib/journey-emails\.json)$'

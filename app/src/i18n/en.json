@@ -39,6 +39,7 @@
     "findings": "Findings",
     "approvals": "Approvals",
     "audit": "Audit",
+    "demo_journey": "Complaint journey",
     "analytics": "Reports",
     "assistant": "Assistant",
     "pilot_phase": "Pilot phase",
@@ -488,7 +489,7 @@
     "preview_only": "Preview · synthetic data · not wired into the operational flow yet",
     "matrix": {
       "title": "Matrix · reasons × channels",
-      "subtitle": "values: complaints · % resolved on time · illustrative",
+      "subtitle": "values: complaints · % resolved on time · pilot phase",
       "motivo_col": "Reason · Annex 1-A",
       "total_row": "TOTAL",
       "motivo_304": "Unrecognised charges on account",
@@ -500,7 +501,7 @@
     },
     "motivos": {
       "title": "Top reasons reported",
-      "subtitle": "May 2026 · illustrative",
+      "subtitle": "May 2026 · pilot phase",
       "rank_col": "#",
       "code_col": "Code",
       "label_col": "Reason",
@@ -509,7 +510,7 @@
     },
     "products": {
       "title": "Top products reported",
-      "subtitle": "May 2026 · illustrative"
+      "subtitle": "May 2026 · pilot phase"
     }
   },
   "assistant": {
@@ -526,7 +527,7 @@
       "explain_anomaly": "Why did the open anomaly fire today?",
       "free_text": "What reasons fell into free text (999)?"
     },
-    "preview_only": "Preview · illustrative responses · not wired to an LLM provider",
+    "preview_only": "Preview · pilot phase responses · not wired to an LLM provider",
     "exchanges": {
       "user_label": "María Velásquez",
       "bot_label": "assistant",

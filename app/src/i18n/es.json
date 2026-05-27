@@ -39,6 +39,7 @@
     "findings": "Hallazgos",
     "approvals": "Aprobaciones",
     "audit": "Auditoría",
+    "demo_journey": "Recorrido del reclamo",
     "analytics": "Reportes",
     "assistant": "Asistente",
     "pilot_phase": "Fase piloto",
@@ -488,7 +489,7 @@
     "preview_only": "Vista previa · datos sintéticos · no conectado al flujo operativo actual",
     "matrix": {
       "title": "Matriz · motivos × canales",
-      "subtitle": "cifras: reclamos · % resueltos en plazo · ilustrativo",
+      "subtitle": "cifras: reclamos · % resueltos en plazo · fase piloto",
       "motivo_col": "Motivo · Annex 1-A",
       "total_row": "TOTAL",
       "motivo_304": "Cargos no reconocidos en cuenta",
@@ -500,7 +501,7 @@
     },
     "motivos": {
       "title": "Motivos más reclamados",
-      "subtitle": "mayo 2026 · ilustrativo",
+      "subtitle": "mayo 2026 · fase piloto",
       "rank_col": "#",
       "code_col": "Código",
       "label_col": "Motivo",
@@ -509,7 +510,7 @@
     },
     "products": {
       "title": "Productos más reclamados",
-      "subtitle": "mayo 2026 · ilustrativo"
+      "subtitle": "mayo 2026 · fase piloto"
     }
   },
   "assistant": {
@@ -536,7 +537,7 @@
       "draft_a": "Borrador preparado a partir de los 3 reclamos asociados a la anomalía y de los códigos del Annex 1-A. Revísalo antes de su envío oficial.",
       "draft_disclaimer": "Borrador generado por IA — revisar antes de envío oficial.",
       "fee_q": "¿Qué reclamos de los últimos 7 días mencionan 'comisión por mantenimiento'?",
-      "fee_a": "Encontré 4 reclamos que mencionan 'comisión por mantenimiento' en los últimos 7 días, en 2 instituciones. Resultados ilustrativos."
+      "fee_a": "Encontré 4 reclamos que mencionan 'comisión por mantenimiento' en los últimos 7 días, en 2 instituciones. Resultados de fase piloto."
     }
   },
   "developers": {

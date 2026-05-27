@@ -58,6 +58,7 @@ export default function SupervisorLayout({
     findings: t(locale, 'nav.findings'),
     approvals: t(locale, 'nav.approvals'),
     audit: t(locale, 'nav.audit'),
+    demo_journey: t(locale, 'nav.demo_journey'),
     analytics: t(locale, 'nav.analytics'),
     assistant: t(locale, 'nav.assistant'),
     pilot_phase: t(locale, 'nav.pilot_phase'),

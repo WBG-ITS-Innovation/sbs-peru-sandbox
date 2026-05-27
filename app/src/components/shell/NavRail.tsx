@@ -15,6 +15,7 @@ import {
   ClipboardList,
   FileText,
   History,
+  Route,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ interface NavRailProps {
     findings: string;
     approvals: string;
     audit: string;
+    demo_journey: string;
     analytics: string;
     assistant: string;
     pilot_phase: string;
@@ -51,6 +53,7 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
     { href: '/findings', icon: FileText, label: labels.findings },
     { href: '/approvals', icon: ClipboardList, label: labels.approvals },
     { href: '/audit', icon: History, label: labels.audit },
+    { href: '/demo-journey', icon: Route, label: labels.demo_journey },
   ];
   const pilotItems: NavItem[] = [
     { href: '/analytics', icon: BarChart3, label: labels.analytics, pilot: true },

@@ -55,12 +55,12 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
         className="w-full max-w-sm rounded-sbs border border-border bg-surface px-6 py-8 shadow-lg"
       >
         <div className="mb-5 flex flex-col items-center">
-          <div
-            aria-hidden="true"
-            className="flex h-12 w-12 rotate-45 items-center justify-center rounded-sbs border border-brand-gold bg-brand-navy text-brand-gold"
-          >
-            <span className="-rotate-45 font-serif text-xl font-semibold">S</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/app/sbs-logo.png"
+            alt="SBS"
+            className="h-12 w-auto"
+          />
           <h1
             id="login-title"
             className="mt-3 text-center text-lg font-semibold tracking-tight text-fg"

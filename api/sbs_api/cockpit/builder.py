@@ -20,6 +20,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sbs_api.db.models.agent_run import AgentRun
+from sbs_api.db.models.audit_event import AuditEvent
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.db.models.institution import InstitutionRecord
 
@@ -46,7 +47,8 @@ async def build_cockpit_snapshot(session: AsyncSession) -> dict[str, Any]:
         session,
         institution_id=TIER_1_INSTITUTION_ID,
         institutions=institutions,
-        tier_label="Tier 1",
+        tier_label="Tier 1 NRT",
+        tier_variant="tier1",
         descriptor_template="Near-real-time API · {today} today",
         window_start=window_24h_start,
     )
@@ -54,7 +56,8 @@ async def build_cockpit_snapshot(session: AsyncSession) -> dict[str, Any]:
         session,
         institution_id=TIER_2_INSTITUTION_ID,
         institutions=institutions,
-        tier_label="Tier 2",
+        tier_label="Tier 2 Batch",
+        tier_variant="tier2",
         descriptor_template="Batch upload · {today} last 28d",
         window_start=now - timedelta(days=28),
     )
@@ -84,6 +87,7 @@ async def _build_tier_panel(
     institution_id: str,
     institutions: dict[str, str],
     tier_label: str,
+    tier_variant: str,
     descriptor_template: str,
     window_start: datetime,
 ) -> dict[str, Any]:
@@ -105,13 +109,60 @@ async def _build_tier_panel(
     )
     recent_rows = (await session.execute(recent_q)).scalars().all()
 
+    # P11 demo-ui-polish: per-card unknown_terms tooltip. We pull the
+    # taxonomy-unknown-term audit rows for the cards we are about to
+    # render in one query, group by complaint id, and take the first
+    # three per card. Cheap because RECENT_LIMIT is small (6).
+    unknown_by_complaint = await _load_unknown_terms(
+        session, [c.complaint_id for c in recent_rows]
+    )
+
     return {
         "tier_label": tier_label,
+        "tier_variant": tier_variant,
         "institution_id": institution_id,
         "institution_name": institutions.get(institution_id, institution_id),
         "descriptor": descriptor_template.format(today=window_count),
-        "recent": [_complaint_to_card(c) for c in recent_rows],
+        "recent": [
+            _complaint_to_card(c, unknown_by_complaint.get(c.complaint_id, []))
+            for c in recent_rows
+        ],
     }
+
+
+async def _load_unknown_terms(
+    session: AsyncSession, complaint_ids: list[str]
+) -> dict[str, list[dict[str, str]]]:
+    """Return ``{complaint_id → [{field_path, original_value}, ...]}``.
+
+    Reads ``audit_events`` rows with ``action='taxonomy-unknown-term'``
+    for the supplied complaint ids and keeps the first three per
+    complaint (creation order). The cockpit card uses this as the
+    tooltip body.
+    """
+
+    if not complaint_ids:
+        return {}
+    q = (
+        select(AuditEvent)
+        .where(AuditEvent.action == "taxonomy-unknown-term")
+        .where(AuditEvent.object_id.in_(complaint_ids))
+        .order_by(AuditEvent.id.asc())
+    )
+    rows = (await session.execute(q)).scalars().all()
+    out: dict[str, list[dict[str, str]]] = {}
+    for row in rows:
+        bucket = out.setdefault(row.object_id, [])
+        if len(bucket) >= 3:
+            continue
+        diff = row.diff or {}
+        bucket.append(
+            {
+                "field_path": str(diff.get("field_path", "")),
+                "original_value": str(diff.get("original_value", "")),
+            }
+        )
+    return out
 
 
 async def _build_kpis(
@@ -278,8 +329,11 @@ def _build_cross_source_strip(
     }
 
 
-def _complaint_to_card(c: ComplaintRecord) -> dict[str, Any]:
+def _complaint_to_card(
+    c: ComplaintRecord, unknown_terms: list[dict[str, str]] | None = None
+) -> dict[str, Any]:
     text = c.description_text or ""
+    flag_unknown = bool(getattr(c, "flag_unknown_taxonomy", False))
     return {
         "complaint_id": c.complaint_id,
         "institution_id": c.institution_id,
@@ -289,6 +343,12 @@ def _complaint_to_card(c: ComplaintRecord) -> dict[str, Any]:
         "severity": (c.severity or "MEDIUM").lower(),
         "description_preview": text[:120] + ("…" if len(text) > 120 else ""),
         "source": getattr(c, "source", "api_realtime"),
+        # P11 demo-ui-polish overlay: cockpit cards carry the flag and
+        # the first three unknown surface forms (tooltip-ready). When
+        # the row is clean both fall away to their false / empty defaults.
+        "flag_unknown_taxonomy": flag_unknown,
+        "unknown_terms": unknown_terms or [],
+        "unknown_terms_total": len(unknown_terms or []),
     }
 
 

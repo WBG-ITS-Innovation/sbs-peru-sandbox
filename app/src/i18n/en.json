@@ -114,6 +114,18 @@
       "channels": "Channel contributions",
       "open_findings": "Open related findings"
     },
+    "taxonomy": {
+      "tile_title": "Taxonomy harmonization today",
+      "tile_as_of_prefix": "as of",
+      "tile_summary_one": "{n} normalization across {m} institutions",
+      "tile_summary_many": "{n} normalizations across {m} institutions",
+      "filter_label": "Show only unknown-taxonomy rows",
+      "unknown_pill": "Unknown term"
+    },
+    "tier_badges": {
+      "tier1_nrt": "Tier 1 NRT",
+      "tier2_batch": "Tier 2 Batch"
+    },
     "complaint_card": {
       "motivo": "reason",
       "producto": "product"
@@ -180,10 +192,19 @@
       "narrative_anonymization": "Anonymization policy",
       "narrative_length": "Length",
       "resolution_description": "Resolution description",
+      "resolution_section": "Resolution status",
       "resolution_state": "Complaint state",
       "resolution_type": "Resolution type",
       "resolution_date": "Resolution date",
       "pending_amount": "Pending amount",
+      "taxonomy_title": "Taxonomy harmonization",
+      "taxonomy_show": "Show",
+      "taxonomy_hide": "Hide",
+      "taxonomy_field": "Field",
+      "taxonomy_original": "Original value",
+      "taxonomy_canonical": "Canonical value",
+      "taxonomy_dictionary": "Dictionary",
+      "taxonomy_empty": "No normalizations",
       "classification_top_k": "Top 3 classes",
       "classification_model": "Model",
       "feature_model": "Ranker model",

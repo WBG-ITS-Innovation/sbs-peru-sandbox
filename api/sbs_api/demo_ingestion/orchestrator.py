@@ -195,6 +195,7 @@ async def _insert_complaint_with_retry(
     severity: str,
     received_date: date,
     taxonomy_canonical: dict[str, str],
+    flag_unknown_taxonomy: bool,
 ) -> ComplaintRecord:
     """Insert a ComplaintRecord, retrying on PK collision up to 5 times.
 
@@ -298,6 +299,7 @@ async def _insert_complaint_with_retry(
                 descripcion_resolucion=redacted_descripcion_resolucion,
                 estado_reclamo=estado_reclamo,
                 monto_pendiente=monto_pendiente,
+                flag_unknown_taxonomy=flag_unknown_taxonomy,
             )
             session.add(record)
             await session.flush()
@@ -480,6 +482,7 @@ async def run_demo_ingestion(
         severity=severity,
         received_date=received_date,
         taxonomy_canonical=taxonomy_outcome.canonical,
+        flag_unknown_taxonomy=taxonomy_outcome.flag_unknown_taxonomy,
     )
 
     # Re-add the raw row reference now that the canonical id exists.
@@ -740,6 +743,13 @@ async def run_demo_ingestion(
         "description_preview": _description_preview(narrative_result.redacted_text),
         "source": "api_realtime",
         "flag_unknown_taxonomy": taxonomy_outcome.flag_unknown_taxonomy,
+        # Unknown surface forms — first three only — drive the
+        # cockpit-card tooltip. Empty list when the row is clean.
+        "unknown_terms": [
+            {"field_path": u.field_path, "original_value": u.original_value}
+            for u in taxonomy_outcome.unknown_terms[:3]
+        ],
+        "unknown_terms_total": len(taxonomy_outcome.unknown_terms),
     }
     event_id: int | None = None
     try:

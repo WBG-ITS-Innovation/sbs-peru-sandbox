@@ -5,6 +5,11 @@
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected';
 
+export interface UnknownTermRef {
+  field_path: string;
+  original_value: string;
+}
+
 export interface ComplaintCardData {
   complaint_id: string;
   institution_id: string;
@@ -14,14 +19,31 @@ export interface ComplaintCardData {
   severity: Severity;
   description_preview: string;
   source: string;
+  // P11 demo-ui-polish overlay. Defaults: false / [] / 0. Older snapshots
+  // that predate the migration still render correctly.
+  flag_unknown_taxonomy?: boolean;
+  unknown_terms?: UnknownTermRef[];
+  unknown_terms_total?: number;
 }
+
+export type TierVariant = 'tier1' | 'tier2';
 
 export interface TierPanelData {
   tier_label: string;
+  // P11 demo-ui-polish — drives Badge variant in the panel header and
+  // the ComplaintCard sub-header chip. Older snapshots without this
+  // key fall back to 'tier1'.
+  tier_variant?: TierVariant;
   institution_id: string;
   institution_name: string;
   descriptor: string;
   recent: ComplaintCardData[];
+}
+
+export interface TaxonomyStats {
+  normalizations_today: number;
+  institutions_affected: number;
+  as_of: string;
 }
 
 export interface KpiData {

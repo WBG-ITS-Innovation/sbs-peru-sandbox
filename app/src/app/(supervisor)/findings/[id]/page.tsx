@@ -10,6 +10,7 @@ import { ClassificationPanel } from '@/components/findings/ClassificationPanel';
 import { DraftNarrativeEditor } from '@/components/findings/DraftNarrativeEditor';
 import { FeatureImportancePanel } from '@/components/findings/FeatureImportancePanel';
 import { NarrativePanel } from '@/components/findings/NarrativePanel';
+import { TaxonomyPanel } from '@/components/findings/TaxonomyPanel';
 import { Badge, Card, CardBody, CardHeader, CardTitle } from '@/components/ui';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
@@ -41,13 +42,23 @@ export default async function FindingDetailPage({
     notFound();
   }
 
-  const sourceLabel =
-    detail.complaint.source === 'api_realtime'
-      ? t(locale, 'findings.filters.source_tier1')
-      : t(locale, 'findings.filters.source_tier2');
+  const tierVariant: 'tier1' | 'tier2' =
+    detail.complaint.source === 'api_realtime' ? 'tier1' : 'tier2';
+  const tierLabel =
+    tierVariant === 'tier1'
+      ? t(locale, 'cockpit.tier_badges.tier1_nrt')
+      : t(locale, 'cockpit.tier_badges.tier2_batch');
 
   const latestClassifierRunId =
     detail.agent_runs.find(r => r.agent_name === 'classifier')?.id ?? null;
+
+  const hasResolutionData = Boolean(
+    detail.complaint.estado_reclamo ||
+      detail.complaint.tipo_resolucion ||
+      detail.complaint.fecha_resolucion ||
+      detail.complaint.monto_pendiente ||
+      detail.complaint.descripcion_resolucion,
+  );
 
   return (
     <main className="mx-auto max-w-6xl space-y-4 p-6">
@@ -68,7 +79,9 @@ export default async function FindingDetailPage({
         <CardBody className="grid grid-cols-2 gap-3 text-2xs md:grid-cols-4">
           <Field label={t(locale, 'findings.columns.institution')} value={detail.complaint.institution_name} />
           <Field label={t(locale, 'findings.columns.source')}>
-            <Badge variant="source">{sourceLabel}</Badge>
+            <Badge variant={tierVariant} className="uppercase tracking-wider">
+              {tierLabel}
+            </Badge>
           </Field>
           <Field label={t(locale, 'findings.columns.received_at')}>
             <time className="tabular" dateTime={detail.complaint.received_at}>
@@ -88,45 +101,67 @@ export default async function FindingDetailPage({
           <Field label="Producto" value={detail.complaint.product_category} />
           <Field label="Canal" value={detail.complaint.channel} />
           <Field label="Distrito" value={detail.complaint.complainant_district} />
-          {detail.complaint.estado_reclamo ? (
-            <Field
-              label={t(locale, 'findings.panels.resolution_state')}
-              value={detail.complaint.estado_reclamo}
-            />
-          ) : null}
-          {detail.complaint.tipo_resolucion ? (
-            <Field
-              label={t(locale, 'findings.panels.resolution_type')}
-              value={detail.complaint.tipo_resolucion}
-            />
-          ) : null}
-          {detail.complaint.fecha_resolucion ? (
-            <Field
-              label={t(locale, 'findings.panels.resolution_date')}
-              value={detail.complaint.fecha_resolucion}
-            />
-          ) : null}
-          {detail.complaint.monto_pendiente ? (
-            <Field
-              label={t(locale, 'findings.panels.pending_amount')}
-              value={`S/ ${detail.complaint.monto_pendiente}`}
-            />
-          ) : null}
         </CardBody>
       </Card>
 
-      {detail.complaint.descripcion_resolucion ? (
+      {hasResolutionData ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t(locale, 'findings.panels.resolution_description')}</CardTitle>
+            <CardTitle>{t(locale, 'findings.panels.resolution_section')}</CardTitle>
           </CardHeader>
-          <CardBody>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">
-              {detail.complaint.descripcion_resolucion}
-            </p>
+          <CardBody className="grid grid-cols-2 gap-3 text-2xs md:grid-cols-4">
+            {detail.complaint.estado_reclamo ? (
+              <Field
+                label={t(locale, 'findings.panels.resolution_state')}
+                value={detail.complaint.estado_reclamo}
+              />
+            ) : null}
+            {detail.complaint.tipo_resolucion ? (
+              <Field
+                label={t(locale, 'findings.panels.resolution_type')}
+                value={detail.complaint.tipo_resolucion}
+              />
+            ) : null}
+            {detail.complaint.fecha_resolucion ? (
+              <Field
+                label={t(locale, 'findings.panels.resolution_date')}
+                value={detail.complaint.fecha_resolucion}
+              />
+            ) : null}
+            {detail.complaint.monto_pendiente ? (
+              <Field
+                label={t(locale, 'findings.panels.pending_amount')}
+                value={`S/ ${detail.complaint.monto_pendiente}`}
+              />
+            ) : null}
+            {detail.complaint.descripcion_resolucion ? (
+              <div className="col-span-2 md:col-span-4">
+                <p className="uppercase tracking-wider text-fg-muted">
+                  {t(locale, 'findings.panels.resolution_description')}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-fg">
+                  {detail.complaint.descripcion_resolucion}
+                </p>
+              </div>
+            ) : null}
           </CardBody>
         </Card>
       ) : null}
+
+      <TaxonomyPanel
+        normalizations={detail.taxonomy_normalizations ?? []}
+        dictionaryVersion={detail.taxonomy_dictionary_version ?? null}
+        labels={{
+          title: t(locale, 'findings.panels.taxonomy_title'),
+          show: t(locale, 'findings.panels.taxonomy_show'),
+          hide: t(locale, 'findings.panels.taxonomy_hide'),
+          field: t(locale, 'findings.panels.taxonomy_field'),
+          original: t(locale, 'findings.panels.taxonomy_original'),
+          canonical: t(locale, 'findings.panels.taxonomy_canonical'),
+          dictionary: t(locale, 'findings.panels.taxonomy_dictionary'),
+          empty: t(locale, 'findings.panels.taxonomy_empty'),
+        }}
+      />
 
       <NarrativePanel
         text={detail.complaint.narrative_text}

@@ -13,6 +13,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     ForeignKey,
@@ -84,6 +85,15 @@ class ComplaintRecord(Base):
     # Normalized state — ``atendido`` / ``en_proceso`` / ``pendiente``.
     estado_reclamo: Mapped[str | None] = mapped_column(String(32), nullable=True)
     monto_pendiente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+
+    # P11 demo-ui-polish overlay (migration 20260527_0001): True when
+    # the taxonomy normalization step encountered ≥ 1 unrecognised
+    # surface form in this submission. The cockpit list renders these
+    # rows with a yellow left border + pill + tooltip, and a filter
+    # checkbox flips the cockpit list to show only these rows.
+    flag_unknown_taxonomy: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     __table_args__ = (
         Index(

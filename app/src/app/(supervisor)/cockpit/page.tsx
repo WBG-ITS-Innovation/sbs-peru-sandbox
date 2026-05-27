@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/shell/PageHeader';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
 import { internalGet } from '@/lib/api';
-import type { CockpitSnapshot } from '@/types/cockpit';
+import type { CockpitSnapshot, TaxonomyStats } from '@/types/cockpit';
 
 // Server component: fetches the snapshot via Next.js → FastAPI server-
 // to-server, then hands it to the client wrapper. The client opens an
@@ -27,7 +27,19 @@ export default async function CockpitPage() {
     redirect('/login');
   }
 
-  const snapshot = await internalGet<CockpitSnapshot>('/v1/internal/cockpit');
+  const [snapshot, taxonomyStats] = await Promise.all([
+    internalGet<CockpitSnapshot>('/v1/internal/cockpit'),
+    internalGet<TaxonomyStats>('/v1/internal/cockpit/taxonomy-stats').catch(
+      // The endpoint shipped in the P11 demo-ui-polish overlay; treat a
+      // server that hasn't been redeployed yet as zero rather than a
+      // 500 that hides the cockpit. Counters reset overnight anyway.
+      () => ({
+        normalizations_today: 0,
+        institutions_affected: 0,
+        as_of: new Date().toISOString(),
+      }) satisfies TaxonomyStats,
+    ),
+  ]);
   const locale = currentLocale();
 
   const labels = {
@@ -137,6 +149,14 @@ export default async function CockpitPage() {
         ),
       },
     },
+    taxonomy: {
+      tile_title: t(locale, 'cockpit.taxonomy.tile_title'),
+      tile_as_of_prefix: t(locale, 'cockpit.taxonomy.tile_as_of_prefix'),
+      tile_summary_one: t(locale, 'cockpit.taxonomy.tile_summary_one'),
+      tile_summary_many: t(locale, 'cockpit.taxonomy.tile_summary_many'),
+      filter_label: t(locale, 'cockpit.taxonomy.filter_label'),
+      unknown_pill: t(locale, 'cockpit.taxonomy.unknown_pill'),
+    },
   };
 
   return (
@@ -154,6 +174,7 @@ export default async function CockpitPage() {
       <div className="mx-auto w-full max-w-7xl px-6 py-4">
         <CockpitClient
           initialSnapshot={snapshot}
+          initialTaxonomyStats={taxonomyStats}
           labels={labels}
           csrfToken={session.csrfToken}
         />

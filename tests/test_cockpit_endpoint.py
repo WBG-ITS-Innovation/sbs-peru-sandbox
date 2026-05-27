@@ -55,8 +55,13 @@ async def test_cockpit_returns_snapshot_with_tier_panels(
     assert "generated_at" in body
     assert "kpis" in body
     assert "tier1" in body and "tier2" in body
-    assert body["tier1"]["tier_label"] == "Tier 1"
-    assert body["tier2"]["tier_label"] == "Tier 2"
+    # P11 demo-ui-polish overlay — tier labels widened to "Tier 1 NRT"
+    # / "Tier 2 Batch" and each panel now carries an explicit
+    # ``tier_variant`` so the UI can pick the WBG-palette badge colour.
+    assert body["tier1"]["tier_label"] == "Tier 1 NRT"
+    assert body["tier2"]["tier_label"] == "Tier 2 Batch"
+    assert body["tier1"]["tier_variant"] == "tier1"
+    assert body["tier2"]["tier_variant"] == "tier2"
     assert body["tier1"]["institution_id"] == "SBS-001234"
     assert body["tier2"]["institution_id"] == "SBS-005678"
     assert body["tier2"]["institution_name"] == "COOPAC_DEMO_002"
@@ -102,6 +107,76 @@ async def test_cockpit_returns_snapshot_with_tier_panels(
     assert body["cross_source"]["is_illustrative"] is True
     # KPI strip has a sparkline (24 hourly values).
     assert len(body["kpis"]["complaints_24h_sparkline"]) == 24
+
+
+@pytest.mark.asyncio
+async def test_taxonomy_stats_endpoint_returns_today_window(
+    app_with_secret, internal_secret, test_database_url
+):
+    """GET /v1/internal/cockpit/taxonomy-stats returns ``normalizations_today``
+    and ``institutions_affected`` over the "since 00:00 UTC today" window.
+
+    The endpoint backs the cockpit's "Taxonomy harmonization today" stat
+    tile (P11 demo-ui-polish overlay). The fixture seeds one
+    ``taxonomy-normalized`` audit row against the seeded BANCO_DEMO_001
+    complaint so the counter must be ≥ 1 and the distinct-institution
+    count must be ≥ 1.
+    """
+
+    from datetime import datetime, timezone
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from sbs_api.db.models.audit_event import AuditEvent
+
+    engine = create_async_engine(test_database_url)
+    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
+    async with SessionMaker() as session:
+        session.add(
+            AuditEvent(
+                actor_type="agent",
+                actor_id="live-ingestion-orchestrator",
+                action="taxonomy-normalized",
+                object_type="complaint",
+                object_id="BCO-2026-000001",
+                diff={
+                    "normalizations": [
+                        {
+                            "field_path": "product",
+                            "original_value": "Crédito de consumo",
+                            "canonical_value": "credito_consumo",
+                            "dictionary_version": "taxonomy-v1",
+                        }
+                    ]
+                },
+                meta={"dictionary_version": "taxonomy-v1"},
+                created_at=datetime.now(tz=timezone.utc),
+            )
+        )
+        await session.commit()
+    await engine.dispose()
+
+    transport = ASGITransport(app=app_with_secret)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/v1/internal/cockpit/taxonomy-stats",
+            headers={"Authorization": f"Bearer {internal_secret}"},
+        )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["normalizations_today"] >= 1
+    assert body["institutions_affected"] >= 1
+    # Window honesty: the response carries the as-of timestamp the UI
+    # tile renders. ISO 8601 with offset.
+    assert "T" in body["as_of"]
+
+
+@pytest.mark.asyncio
+async def test_taxonomy_stats_endpoint_rejects_missing_secret(app_with_secret):
+    transport = ASGITransport(app=app_with_secret)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/v1/internal/cockpit/taxonomy-stats")
+    assert response.status_code == 401
 
 
 @pytest.mark.asyncio

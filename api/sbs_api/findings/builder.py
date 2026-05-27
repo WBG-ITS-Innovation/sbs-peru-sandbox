@@ -184,6 +184,9 @@ async def build_finding_detail(
     features = _extract_features(runs)
     anonymizer = _extract_anonymizer(runs)
     narrative_draft = _extract_narrative_draft(runs)
+    taxonomy_normalizations, taxonomy_dictionary_version = (
+        _extract_taxonomy_normalizations(runs)
+    )
 
     latest_draft_row = (
         await session.execute(
@@ -244,10 +247,18 @@ async def build_finding_detail(
                 if getattr(complaint, "monto_pendiente", None) is not None
                 else None
             ),
+            "flag_unknown_taxonomy": bool(
+                getattr(complaint, "flag_unknown_taxonomy", False)
+            ),
         },
         "anonymization": anonymizer,
         "classification": classification,
         "features": features,
+        # P11 demo-ui-polish — top-level convenience for the findings
+        # taxonomy panel. Extracted from the latest live-ingestion
+        # orchestrator agent_run; empty list when nothing was mapped.
+        "taxonomy_normalizations": taxonomy_normalizations,
+        "taxonomy_dictionary_version": taxonomy_dictionary_version,
         "agent_runs": agent_runs_payload,
         "current_narrative": current_narrative,
         "agent_drafted_narrative": narrative_draft,
@@ -327,6 +338,39 @@ def _serialise_agent_run(run: AgentRun) -> dict[str, Any]:
         "final_output": run.final_output,
         "error": run.error,
     }
+
+
+def _extract_taxonomy_normalizations(
+    runs: list[AgentRun],
+) -> tuple[list[dict[str, str]], str | None]:
+    """Return the taxonomy_normalizations list from the latest ingestion run.
+
+    Reads ``final_output.taxonomy_normalizations`` from the most-recent
+    ``live-ingestion-orchestrator`` run. Older complaints (or those
+    ingested before the P11 demo-ready overlay) return ``([], None)``.
+    """
+
+    for run in reversed(runs):
+        if run.agent_name != "live-ingestion-orchestrator":
+            continue
+        output = run.final_output or {}
+        entries = output.get("taxonomy_normalizations") or []
+        # Defensive copy so the caller can't mutate the agent_run row.
+        normalized = [
+            {
+                "field_path": str(e.get("field_path", "")),
+                "original_value": str(e.get("original_value", "")),
+                "canonical_value": str(e.get("canonical_value", "")),
+                "dictionary_version": str(e.get("dictionary_version", "")),
+            }
+            for e in entries
+            if isinstance(e, dict)
+        ]
+        dict_version = (
+            normalized[0]["dictionary_version"] if normalized else None
+        )
+        return normalized, dict_version
+    return [], None
 
 
 def _extract_classification(runs: list[AgentRun]) -> dict[str, Any] | None:

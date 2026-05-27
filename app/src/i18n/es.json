@@ -126,6 +126,11 @@
       "filter_label": "Solo filas con taxonomía desconocida",
       "unknown_pill": "Término desconocido"
     },
+    "agents": {
+      "agent_runs_last_5min": "Ejecuciones de agentes (últimos 5 min)",
+      "triaged_today": "Reclamos clasificados hoy",
+      "high_priority_today": "Rutas alta prioridad hoy"
+    },
     "tier_badges": {
       "tier1_nrt": "Tier 1 NRT",
       "tier2_batch": "Tier 2 Batch"
@@ -209,9 +214,17 @@
       "classification_model": "Modelo",
       "feature_model": "Modelo de ranker",
       "rank_band": "Banda de ranking",
-      "confidence_degraded": "⚠ Confianza degradada — se utilizó la heurística de respaldo."
+      "confidence_degraded": "⚠ Confianza degradada — se usó la heurística de respaldo.",
+      "executive_brief": "Resumen ejecutivo (SBS)",
+      "executive_brief_show": "Mostrar",
+      "executive_brief_hide": "Ocultar",
+      "executive_brief_audience": "Audiencia",
+      "executive_brief_key_points": "Puntos clave",
+      "executive_brief_model": "Modelo",
+      "executive_brief_empty": "Pendiente — síntesis aún no ejecutada."
     },
     "agent_status": {
+      "in_progress": "En curso",
       "success": "Éxito",
       "partial": "Parcial",
       "failed": "Falló",

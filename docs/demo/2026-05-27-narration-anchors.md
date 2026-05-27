@@ -69,3 +69,45 @@ unrecognised` flag.
 > "Everything you have just seen runs on-prem and seeded — no
 > cloud calls, no LLMs. The next prompt opens the agent layer on
 > top of this canonical substrate."
+
+## Agent layer (Part 12 — May 27 overlay)
+
+Window: laptop A on the Findings detail page for BCO-2026-000001,
+all four panels populated.
+
+> "Three real agents calling actual tools, two on deterministic
+> replay. The Triage agent finds the 20% that matter — Diego's
+> phrase from the workshop. Investigation builds the evidence
+> bundle, human reviews before action. Synthesis produces the
+> plain-language brief for the Superintendent."
+
+When Lucía's scripted edit lands on the missing phrase:
+
+> "The draft is deliberately incomplete — the model omitted
+> 'comisión por mantenimiento'. The analyst's first edit fills
+> that gap. The audit chain records the diff, the supervisor
+> approves, and only then is anything sent to the institution.
+> Three layers — agents orchestrate, tools execute, supervisors
+> approve. The supervisor decision is never optional."
+
+When pointing at the cockpit's new agent-stats strip:
+
+> "These three tiles read live from the agent_runs table.
+> Anything that ran in the last five minutes shows up here;
+> anything completed in the last 24 hours rolls into the
+> triaged-today and high-priority counts. The supervisor sees
+> the agent layer's load the same way they see the ingestion
+> load — one cockpit, two layers. The five-minute window is
+> deliberate: the pipeline is synchronous today, so a 'currently
+> running' count would always read zero from the cockpit's
+> point of view — that's an honesty constraint, not a UI gap."
+
+For the scaffolded agents (Taxonomy Harmonizer, Cross-Source
+Correlator) — when the architecture diagram is on screen:
+
+> "Two agents on the diagram are scaffolded — the Taxonomy
+> Harmonizer and the Cross-Source Correlator. Both ship today as
+> replay-driven, returning deterministic outputs for the demo
+> complaint. That's intentional: the architectural slot exists,
+> the contract is locked, and v0.2 turns them into live calls
+> without changing the schema."

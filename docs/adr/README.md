@@ -10,7 +10,7 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 
 | #    | Slug                                  | Status   | Target prompt / Part | One-line description |
 | ---- | ------------------------------------- | -------- | -------------------- | -------------------- |
-| 0001 | three-layer-mcp-a2a-langgraph         | Proposed | Prompt 9 / Part 1    | MCP + A2A + LangGraph three-layer agent architecture |
+| 0001 | three-layer-mcp-a2a-langgraph         | Accepted | Part 12 (Agent Layer) | Three-layer agent architecture (agents / tools / supervisors); the original MCP + A2A + LangGraph stack is rejected in favour of an in-house tool-calling loop. Slug kept verbatim to preserve the anchor; see the file for the supersede note. |
 | 0002 | taxonomy-as-configuration             | Proposed | Part 2               | Anexo 1-A taxonomy as YAML, loaded into Pydantic models, single source of truth |
 | 0003 | api-authentication                    | Superseded | Part 3             | Superseded 2026-05-19 by ADRs 0031 (mTLS), 0032 (OAuth scopes), 0033 (rate limiting), and the ADR 0027 HMAC amendment — the three concerns split into separate ADRs in Prompt 7. |
 | 0004 | error-model-rfc-9457                  | Proposed | Part 3               | RFC 9457 problem+json with stable error codes and type URIs |

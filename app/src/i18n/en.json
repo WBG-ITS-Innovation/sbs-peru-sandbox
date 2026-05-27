@@ -122,6 +122,11 @@
       "filter_label": "Show only unknown-taxonomy rows",
       "unknown_pill": "Unknown term"
     },
+    "agents": {
+      "agent_runs_last_5min": "Agent runs (last 5 min)",
+      "triaged_today": "Complaints triaged today",
+      "high_priority_today": "High-priority routes today"
+    },
     "tier_badges": {
       "tier1_nrt": "Tier 1 NRT",
       "tier2_batch": "Tier 2 Batch"
@@ -209,9 +214,17 @@
       "classification_model": "Model",
       "feature_model": "Ranker model",
       "rank_band": "Rank band",
-      "confidence_degraded": "⚠ Confidence degraded — regex fallback in use."
+      "confidence_degraded": "⚠ Confidence degraded — regex fallback in use.",
+      "executive_brief": "Executive brief (for SBS)",
+      "executive_brief_show": "Show",
+      "executive_brief_hide": "Hide",
+      "executive_brief_audience": "Audience",
+      "executive_brief_key_points": "Key points",
+      "executive_brief_model": "Model",
+      "executive_brief_empty": "Pending — synthesis has not run yet."
     },
     "agent_status": {
+      "in_progress": "In progress",
       "success": "Success",
       "partial": "Partial",
       "failed": "Failed",

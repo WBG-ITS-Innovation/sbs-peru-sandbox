@@ -8,6 +8,7 @@ import { ActionsRow } from '@/components/findings/ActionsRow';
 import { AgentReasoningPanel } from '@/components/findings/AgentReasoningPanel';
 import { ClassificationPanel } from '@/components/findings/ClassificationPanel';
 import { DraftNarrativeEditor } from '@/components/findings/DraftNarrativeEditor';
+import { ExecutiveBriefPanel } from '@/components/findings/ExecutiveBriefPanel';
 import { FeatureImportancePanel } from '@/components/findings/FeatureImportancePanel';
 import { NarrativePanel } from '@/components/findings/NarrativePanel';
 import { TaxonomyPanel } from '@/components/findings/TaxonomyPanel';
@@ -203,6 +204,7 @@ export default async function FindingDetailPage({
         labels={{
           title: t(locale, 'findings.panels.agent_reasoning'),
           status: {
+            in_progress: t(locale, 'findings.agent_status.in_progress'),
             success: t(locale, 'findings.agent_status.success'),
             partial: t(locale, 'findings.agent_status.partial'),
             failed: t(locale, 'findings.agent_status.failed'),
@@ -225,6 +227,19 @@ export default async function FindingDetailPage({
           cancel: t(locale, 'findings.actions.cancel_edit'),
           agent_drafted: t(locale, 'findings.draft_helper.agent_drafted'),
           no_edits_yet: t(locale, 'findings.draft_helper.no_edits_yet'),
+        }}
+      />
+
+      <ExecutiveBriefPanel
+        summary={detail.executive_summary ?? null}
+        labels={{
+          title: t(locale, 'findings.panels.executive_brief'),
+          show: t(locale, 'findings.panels.executive_brief_show'),
+          hide: t(locale, 'findings.panels.executive_brief_hide'),
+          audience: t(locale, 'findings.panels.executive_brief_audience'),
+          key_points: t(locale, 'findings.panels.executive_brief_key_points'),
+          model: t(locale, 'findings.panels.executive_brief_model'),
+          empty: t(locale, 'findings.panels.executive_brief_empty'),
         }}
       />
 

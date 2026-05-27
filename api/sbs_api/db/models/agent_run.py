@@ -40,10 +40,12 @@ class AgentRun(Base):
         String(32), ForeignKey("complaints.complaint_id"), nullable=False
     )
 
-    # kebab-case stable identifier — one of {triage, classifier,
-    # narrative-drafter, cross-source-correlator, query-author}. The schema
-    # permits any kebab-case string; the prose contract enumerates the
-    # current five.
+    # kebab-case stable identifier. The schema permits any
+    # kebab-case string; the prose contract enumerates the current
+    # set. Part 12 agents: {triage, investigation, synthesis,
+    # taxonomy-harmonizer, cross-source-correlator}. Legacy
+    # Prompt-10 agents still present in seeded data: {classifier,
+    # narrative-drafter, query-author, live-ingestion-orchestrator}.
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
 
     # Format: ``<agent_name>-<semver>`` (e.g., ``triage-0.3.1``). The prefix
@@ -60,7 +62,10 @@ class AgentRun(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # One of {success, partial, failed, timeout}. Enforced by check constraint.
+    # One of {in_progress, success, partial, failed, timeout}. Enforced
+    # by check constraint. ``in_progress`` is the in-flight state used
+    # by the Part 12 agent runtime; the four terminal states are the
+    # original Prompt 10 contract.
     status: Mapped[str] = mapped_column(String(16), nullable=False)
 
     # Ordered array of tool-call records. Shape governed by the JSON Schema.
@@ -77,7 +82,7 @@ class AgentRun(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('success', 'partial', 'failed', 'timeout')",
+            "status IN ('in_progress', 'success', 'partial', 'failed', 'timeout')",
             name="ck_agent_runs_status",
         ),
         Index(

@@ -63,16 +63,78 @@ async def build_cockpit_snapshot(session: AsyncSession) -> dict[str, Any]:
     )
 
     kpis = await _build_kpis(session, window_start=window_24h_start)
+    agent_stats = await _build_agent_stats(session, window_start=window_24h_start)
     anomalies = await _build_anomalies(session, institutions=institutions)
     cross_source = _build_cross_source_strip(institutions=institutions, anomalies=anomalies)
 
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "kpis": kpis,
+        "agent_stats": agent_stats,
         "tier1": tier1_panel,
         "tier2": tier2_panel,
         "cross_source": cross_source,
         "anomalies": anomalies,
+    }
+
+
+async def _build_agent_stats(
+    session: AsyncSession, window_start: datetime
+) -> dict[str, int]:
+    """Part 12 stat tiles: agent runs in the last 5 minutes,
+    complaints triaged today, high-priority routes today.
+
+    ``agent_runs_last_5min`` deliberately counts every status. The
+    pipeline is synchronous in the same session as ingestion (see
+    ADR 0001), so by the time the cockpit reads this counter the
+    in-flight rows have all transitioned to a terminal state. The
+    5-minute window keeps the tile alive for the demo cadence
+    without pretending to measure live concurrency. The async
+    dispatch path that would make a true ``agents_running`` count
+    meaningful is a v0.2 work item.
+    """
+    now = datetime.now(tz=timezone.utc)
+    last_5min = now - timedelta(minutes=5)
+    recent_q = (
+        select(func.count())
+        .select_from(AgentRun)
+        .where(AgentRun.started_at >= last_5min)
+    )
+    recent = (await session.execute(recent_q)).scalar_one() or 0
+
+    in_flight_q = (
+        select(func.count())
+        .select_from(AgentRun)
+        .where(AgentRun.status == "in_progress")
+    )
+    in_flight = (await session.execute(in_flight_q)).scalar_one() or 0
+
+    triaged_q = (
+        select(func.count())
+        .select_from(AgentRun)
+        .where(AgentRun.agent_name == "triage")
+        .where(AgentRun.started_at >= window_start)
+    )
+    triaged_today = (await session.execute(triaged_q)).scalar_one() or 0
+
+    invest_q = (
+        select(func.count())
+        .select_from(AgentRun)
+        .where(AgentRun.agent_name == "investigation")
+        .where(AgentRun.started_at >= window_start)
+    )
+    high_priority_today = (await session.execute(invest_q)).scalar_one() or 0
+
+    return {
+        # Number of agent runs started within the last 5 minutes
+        # (terminal + in-flight). The synchronous pipeline means
+        # ``in_flight`` is usually 0 by the time the cockpit polls;
+        # we keep it as a separate field so a future async path can
+        # populate it without a UI rename.
+        "agent_runs_last_5min": int(recent),
+        "agents_in_flight": int(in_flight),
+        "complaints_triaged_today": int(triaged_today),
+        "high_priority_routes_today": int(high_priority_today),
     }
 
 

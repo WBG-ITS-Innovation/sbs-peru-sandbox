@@ -1,0 +1,14 @@
+{
+  "model_id": "replay-triage-v1",
+  "notes": "Demo invariant: BCO-2026-000001 must classify as undisclosed-fees-credit (0.87) and route to investigation.",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "query_dq_results", "arguments": {}},
+        {"name": "query_taxonomy_normalizations", "arguments": {}},
+        {"name": "classify_complaint", "arguments": {}}
+      ]
+    },
+    {"text": "Triage complete: classification undisclosed-fees-credit (0.87); priority high; route to investigation."}
+  ]
+}

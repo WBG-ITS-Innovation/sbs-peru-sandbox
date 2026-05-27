@@ -160,10 +160,12 @@ checker covers the high-value rules that drive the demo's
 
 `agent_runs` carries one row per submission with the anonymizer
 tool_call and the DQ report in `final_output.data_quality`.
-`audit_events` carries five rows per submission with kebab-case
-actions: `demo-complaint-received`, `pii-redacted`,
+`audit_events` carries six rows per submission with kebab-case
+actions: `complaint-received`, `taxonomy-normalized`, `pii-redacted`,
 `canonical-complaint-persisted`, `data-quality-completed`,
-`complaint-triage-emitted`. Each row carries `actor_id`,
+`complaint-triage-emitted`. The demo-ready overlay renamed
+`demo-complaint-received` → `complaint-received` and inserted the
+`taxonomy-normalized` step. Each row carries `actor_id`,
 `created_at`, `object_type`, `object_id`, and a `meta` dict with the
 relevant policy versions (`redaction_policy_version`,
 `dq_policy_version`) and counts. Verified by

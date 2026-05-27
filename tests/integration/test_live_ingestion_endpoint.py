@@ -11,7 +11,7 @@ PII payload through the in-process FastAPI app and asserts:
   on the golden payload), with the anonymizer tool_call and the DQ
   report in final_output. The agent_run validates against the
   existing JSON Schema.
-* Five audit-chain rows recorded in kebab-case.
+* Six audit-chain rows recorded in kebab-case (incl. taxonomy-normalized).
 * The SSE bus received one ``complaint.received`` event whose data is
   PII-free.
 * The Pydantic response envelope round-trips correctly.
@@ -302,13 +302,15 @@ async def test_demo_endpoint_records_five_audit_events(
     finally:
         await engine.dispose()
 
-    # Existing five-event chain stays additive-stable. After P11 DQ
-    # completion, ``dq-rule-violated`` rows may also appear (one per
-    # Annex 1-A rule firing); the assertion below uses set-subset so
-    # the additive new rows don't break it.
+    # Six-event chain after the P11 demo-ready overlay. ``dq-rule-violated``
+    # may appear (one per Annex 1-A rule firing) and
+    # ``taxonomy-unknown-term`` may appear (one per unrecognised value).
+    # The assertion below uses set-subset so the additive new rows don't
+    # break it.
     actions = {r.action for r in rows}
     required_actions = {
-        "demo-complaint-received",
+        "complaint-received",
+        "taxonomy-normalized",
         "pii-redacted",
         "canonical-complaint-persisted",
         "data-quality-completed",
@@ -317,10 +319,8 @@ async def test_demo_endpoint_records_five_audit_events(
     assert required_actions.issubset(actions), (
         f"missing audit actions: {required_actions - actions}"
     )
-    # Any extra actions must be the new dq-rule-violated rows — no
-    # other unannounced types should appear.
     extras = actions - required_actions
-    assert extras.issubset({"dq-rule-violated"}), (
+    assert extras.issubset({"dq-rule-violated", "taxonomy-unknown-term"}), (
         f"unexpected audit actions: {extras}"
     )
     # No raw PII in any audit row (including the new dq-rule-violated rows).

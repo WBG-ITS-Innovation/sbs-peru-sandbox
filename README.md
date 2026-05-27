@@ -43,6 +43,18 @@ bash scripts/run-api.sh          # AUTH_STUB_ENABLED=true by default
 bash scripts/smoke-test.sh
 ```
 
+The API binds `0.0.0.0:8000` by default; the supervisor UI Next.js dev
+server binds `0.0.0.0:3000`. Both are reachable from another machine
+on the same network without further configuration. For a full
+two-laptop sandbox demo (institution sender on one laptop, SBS
+sandbox + cockpit on the other), see
+[docs/demo/2026-05-27-two-laptop-setup.md](docs/demo/2026-05-27-two-laptop-setup.md).
+The browser-facing override is `NEXT_PUBLIC_API_BASE_URL`; the API's
+CORS allow-list (`SBS_API_CORS_ALLOW_ORIGINS`) ships with the
+`localhost`, `*.local`, and `192.168.0.0/16:3000` patterns the demo
+needs and should be tightened to a single literal origin before
+production.
+
 The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's
 auto-generated `/openapi.json`, `/docs`, and `/redoc` are disabled per
 ADR 0028 §6 — the curated YAML is the contract. The running API also

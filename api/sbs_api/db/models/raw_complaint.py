@@ -53,7 +53,11 @@ class RawComplaint(Base):
     raw_narrative: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Optional response_detail (Anexo 1-A DET_RES) — also pre-redaction.
+    # ``raw_response_detail`` is the legacy column name; the P11
+    # demo-ready overlay added the canonical-aligned ``raw_descripcion_resolucion``
+    # alongside it. The orchestrator writes both during the transition.
     raw_response_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_descripcion_resolucion: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     storage_policy: Mapped[str] = mapped_column(
         String(64), nullable=False, default="restricted-demo-pii-v1"

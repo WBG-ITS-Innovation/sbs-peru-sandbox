@@ -104,12 +104,15 @@ sign-off.
 
 Existing five-event chain (unchanged):
 
-1. `demo-complaint-received`
-2. `pii-redacted`
-3. `canonical-complaint-persisted`
-4. `data-quality-completed` — carries the **aggregated** counts for
+1. `complaint-received` (renamed from `demo-complaint-received` in the
+   demo-ready overlay)
+2. `taxonomy-normalized` (new, inserted between schema-validated and
+   pii-redacted by the demo-ready overlay)
+3. `pii-redacted`
+4. `canonical-complaint-persisted`
+5. `data-quality-completed` — carries the **aggregated** counts for
    the legacy six rules. Unchanged shape and meta.
-5. `complaint-triage-emitted`
+6. `complaint-triage-emitted`
 
 New, additive:
 

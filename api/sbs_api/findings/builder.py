@@ -225,6 +225,25 @@ async def build_finding_detail(
             "complainant_district": complaint.complainant_district,
             "narrative_text": complaint.description_text,
             "narrative_length": len(complaint.description_text or ""),
+            # P11 demo-ready overlay — five Annex 1-A resolution-side
+            # fields surfaced to the supervisor UI when the institution
+            # sends them. ``descripcion_resolucion`` is the redacted
+            # text; raw stays in raw_complaints.
+            "fecha_resolucion": (
+                complaint.fecha_resolucion.isoformat()
+                if getattr(complaint, "fecha_resolucion", None)
+                else None
+            ),
+            "tipo_resolucion": getattr(complaint, "tipo_resolucion", None),
+            "descripcion_resolucion": getattr(
+                complaint, "descripcion_resolucion", None
+            ),
+            "estado_reclamo": getattr(complaint, "estado_reclamo", None),
+            "monto_pendiente": (
+                str(complaint.monto_pendiente)
+                if getattr(complaint, "monto_pendiente", None) is not None
+                else None
+            ),
         },
         "anonymization": anonymizer,
         "classification": classification,

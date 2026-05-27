@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 from sbs_api.config import Settings, get_settings
 from sbs_api.db.session import get_sessionmaker
@@ -124,11 +125,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # both `traceparent` and `X-Correlation-Id` headers, which closes
     # the Prompt 6 carry-forward observability gap.
     # Outermost → innermost at request time:
-    #   traceparent → correlation_id → body_size_limit
+    #   cors → traceparent → correlation_id → body_size_limit
     app.add_middleware(BodySizeLimitMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TraceparentMiddleware)
     app.add_middleware(MtlsTransportCaptureMiddleware)
+    _install_cors(app, settings)
 
     install_exception_handlers(app)
 
@@ -149,6 +151,71 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     return app
+
+
+def _install_cors(app: FastAPI, settings: Settings) -> None:
+    """Wire CORS for the two-laptop sandbox demo.
+
+    ``cors_allow_origins`` is comma-separated. Literal entries (e.g.
+    ``http://localhost:3000``) go to ``allow_origins``; wildcard / LAN
+    patterns (``http://*.local:3000``, ``http://192.168.0.0/16:3000``)
+    are translated to a single ``allow_origin_regex`` so the
+    supervisor laptop can reach the API laptop on the demo LAN
+    without us pre-enumerating IPs. Tighten the env var (or set it
+    to a single literal) before production. See
+    docs/demo/2026-05-27-two-laptop-setup.md.
+    """
+
+    raw = (settings.cors_allow_origins or "").strip()
+    if not raw:
+        return
+
+    literal: list[str] = []
+    regex_parts: list[str] = []
+    for entry in (e.strip() for e in raw.split(",")):
+        if not entry:
+            continue
+        if entry.startswith("http://*.local:") or entry.startswith(
+            "https://*.local:"
+        ):
+            scheme, _, tail = entry.partition("://")
+            _, _, port = tail.partition(":")
+            port_re = port or r"\d+"
+            regex_parts.append(
+                rf"{scheme}://[a-zA-Z0-9-]+\.local:{port_re}"
+            )
+        elif "192.168.0.0/16" in entry:
+            scheme, _, tail = entry.partition("://")
+            _, _, port = tail.partition(":")
+            port_re = port or r"\d+"
+            regex_parts.append(
+                rf"{scheme}://192\.168\.\d{{1,3}}\.\d{{1,3}}:{port_re}"
+            )
+        elif "10.0.0.0/8" in entry:
+            scheme, _, tail = entry.partition("://")
+            _, _, port = tail.partition(":")
+            port_re = port or r"\d+"
+            regex_parts.append(rf"{scheme}://10\.\d{{1,3}}\.\d{{1,3}}\.\d{{1,3}}:{port_re}")
+        else:
+            literal.append(entry)
+
+    allow_origin_regex = "|".join(regex_parts) if regex_parts else None
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=literal or [],
+        allow_origin_regex=allow_origin_regex,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=[
+            "ETag",
+            "Idempotency-Replayed",
+            "Location",
+            "Retry-After",
+            "traceparent",
+            "X-Correlation-Id",
+        ],
+    )
 
 
 def _instrument_otel(app: FastAPI) -> None:

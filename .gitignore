@@ -95,3 +95,8 @@ standards-pack/examples/
 # Local demo secrets
 .demo-internal-api-secret
 app/.env.local
+
+# Real SBS Annex 1-A sample — PII-bearing (even with partial
+# pre-anonymization). Operator places the file here locally; never
+# commit. See docs/demo/2026-05-27-demo-ready.md.
+data/sbs_sample/

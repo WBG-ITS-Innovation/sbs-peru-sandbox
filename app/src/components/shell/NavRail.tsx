@@ -14,8 +14,11 @@ import {
   BarChart3,
   BookOpen,
   ClipboardList,
+  Cpu,
   FileText,
   History,
+  LayoutGrid,
+  Radio,
   Route,
   Sparkles,
   type LucideIcon,
@@ -37,6 +40,9 @@ interface NavRailProps {
     approvals: string;
     audit: string;
     demo_journey: string;
+    ingestion: string;
+    processing: string;
+    rr1: string;
     docs: string;
     analytics: string;
     assistant: string;
@@ -52,10 +58,13 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
 
   const primaryItems: NavItem[] = [
     { href: '/cockpit', icon: Activity, label: labels.cockpit },
+    { href: '/ingestion', icon: Radio, label: labels.ingestion },
+    { href: '/processing', icon: Cpu, label: labels.processing },
     { href: '/findings', icon: FileText, label: labels.findings },
     { href: '/approvals', icon: ClipboardList, label: labels.approvals },
     { href: '/audit', icon: History, label: labels.audit },
     { href: '/demo-journey', icon: Route, label: labels.demo_journey },
+    { href: '/rr1', icon: LayoutGrid, label: labels.rr1 },
     { href: '/docs', icon: BookOpen, label: labels.docs },
   ];
   const pilotItems: NavItem[] = [

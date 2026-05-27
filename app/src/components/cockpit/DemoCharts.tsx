@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Info } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -19,7 +20,40 @@ import {
   YAxis,
 } from 'recharts';
 
-import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Tooltip as InfoTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui';
+
+function ChartTitle({ children, info }: { children: React.ReactNode; info: string }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <CardTitle className="flex items-center gap-1.5 text-base">
+        {children}
+        <InfoTooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label="Explanation"
+              className="rounded-full p-0.5 text-fg-muted hover:bg-surface-subtle hover:text-fg"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            {info}
+          </TooltipContent>
+        </InfoTooltip>
+      </CardTitle>
+    </TooltipProvider>
+  );
+}
 
 interface Stats {
   hourly_24h?: Array<{ hour: string; count: number }>;
@@ -78,10 +112,9 @@ export function DemoCharts() {
     <div className="grid gap-3 lg:grid-cols-3">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+          <ChartTitle info="Cuenta de reclamos canónicos persistidos en SBS por hora, durante las últimas 24 horas. Incluye Tier 1 NRT y Tier 2 batch. Fuente: tabla complaints.">
             Reclamos · últimas 24 horas
-          </CardTitle>
+          </ChartTitle>
         </CardHeader>
         <CardBody className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -100,10 +133,9 @@ export function DemoCharts() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+          <ChartTitle info="Reparto porcentual del canal por el que el cliente registró el reclamo: Página web, Vía telefónica, Aplicativo móvil, Oficina, Correo. Codificación Anexo A de la Res. SBS 4036-2022.">
             Distribución por canal de ingreso
-          </CardTitle>
+          </ChartTitle>
         </CardHeader>
         <CardBody className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -141,10 +173,9 @@ export function DemoCharts() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+          <ChartTitle info="Motivos más reportados en los últimos 7 días (canonicalizados al Anexo C). 'Cobros indebidos' es el motivo más frecuente y suele cruzar con tarjetas de crédito y cuentas de ahorro.">
             Top 5 motivos · esta semana
-          </CardTitle>
+          </ChartTitle>
         </CardHeader>
         <CardBody className="h-56">
           <ResponsiveContainer width="100%" height="100%">

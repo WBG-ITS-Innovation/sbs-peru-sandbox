@@ -6,7 +6,7 @@ import { Route } from 'lucide-react';
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
 import { CockpitClient } from '@/components/cockpit/CockpitClient';
-import { DemoCharts } from '@/components/cockpit/DemoCharts';
+import { InsightsBoard } from '@/components/cockpit/InsightsBoard';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
@@ -189,7 +189,7 @@ export default async function CockpitPage() {
         }
       />
       <div className="mx-auto w-full max-w-7xl space-y-4 px-6 py-4">
-        <DemoCharts />
+        <InsightsBoard />
         <CockpitClient
           initialSnapshot={snapshot}
           initialTaxonomyStats={taxonomyStats}

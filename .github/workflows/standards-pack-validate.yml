@@ -1,9 +1,11 @@
 name: standards-pack-validate
 
-# Validate the standards pack v0.1 build on every PR touching the
-# standards pack, the SDK helpers, the OpenAPI spec, or the error
-# catalog. The build is hermetic — runs from the same scripts a
-# maintainer runs locally (ADR 0039 §how-to-verify).
+# Validate the standards pack build on every PR touching the standards
+# pack, the SDK helpers, the OpenAPI spec, or the error catalog. The
+# build is hermetic — runs from the same scripts a maintainer runs
+# locally (ADR 0039 §how-to-verify). The pack version is read from the
+# built manifest.json (single source of truth: PACK_VERSION in
+# scripts/build-standards-pack.sh) so a version bump never breaks CI.
 
 on:
   pull_request:
@@ -71,6 +73,18 @@ jobs:
       - name: build the standards pack
         run: bash scripts/build-standards-pack.sh
 
+      - name: resolve pack version
+        id: pack
+        run: |
+          PACK_VERSION="$(jq -r .version standards-pack/manifest.json)"
+          if [ -z "$PACK_VERSION" ] || [ "$PACK_VERSION" = "null" ]; then
+            echo "could not read .version from standards-pack/manifest.json" >&2
+            exit 1
+          fi
+          echo "version=${PACK_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "PACK_VERSION=${PACK_VERSION}" >> "$GITHUB_ENV"
+          echo "resolved standards-pack version: ${PACK_VERSION}"
+
       - name: run pack-build verification tests
         env:
           PYTHONPATH: ${{ github.workspace }}/api
@@ -88,13 +102,13 @@ jobs:
       - name: verify tarball SHA-256 companion
         run: |
           cd dist/
-          shasum -a 256 -c standards-pack-v0.1.0.tar.gz.sha256
+          shasum -a 256 -c "standards-pack-v${PACK_VERSION}.tar.gz.sha256"
 
       - name: upload tarball artifact
         uses: actions/upload-artifact@v4
         with:
-          name: standards-pack-v0.1.0
+          name: standards-pack-v${{ steps.pack.outputs.version }}
           path: |
-            dist/standards-pack-v0.1.0.tar.gz
-            dist/standards-pack-v0.1.0.tar.gz.sha256
+            dist/standards-pack-v${{ steps.pack.outputs.version }}.tar.gz
+            dist/standards-pack-v${{ steps.pack.outputs.version }}.tar.gz.sha256
           retention-days: 14

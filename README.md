@@ -85,7 +85,7 @@ If you are an institution integrating with the SBS sandbox:
    catalog, hand-maintained webhook-verification helpers, OpenAPI
    Generator recipes, example payloads, and a provenance manifest:
    ```bash
-   make standards-pack    # produces dist/standards-pack-v0.1.0.tar.gz
+   make standards-pack    # produces dist/standards-pack-v0.2.0.tar.gz
    ```
    See [standards-pack/README.md](standards-pack/README.md) for the
    contents and verification steps.

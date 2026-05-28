@@ -4,7 +4,7 @@
 # Populates standards-pack/ from authoritative sources elsewhere in
 # the repository (api/openapi/, sdk-helpers/, error catalog), computes
 # checksums.sha256, writes manifest.json with build-time provenance,
-# and produces dist/standards-pack-v0.1.0.tar.gz + a .sha256 companion.
+# and produces dist/standards-pack-v${PACK_VERSION}.tar.gz + a .sha256 companion.
 #
 # See ADR 0039 (distribution + manifest shape) and ADR 0038 (helper
 # scope). Convenience: `make standards-pack`.

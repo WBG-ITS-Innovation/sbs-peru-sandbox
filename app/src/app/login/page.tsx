@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { authConfig } from '@/auth/config';
+import { PersonaPicker } from '@/components/persona/PersonaPicker';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
 
@@ -95,6 +96,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               {demoButton}
             </Link>
             <p className="mt-2 text-2xs leading-snug text-fg-muted">{demoSubline}</p>
+            <PersonaPicker locale={locale} />
           </div>
         ) : null}
 

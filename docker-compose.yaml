@@ -137,6 +137,8 @@ services:
       # Sandbox admin only. Production secrets come from Helm values.
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin  # pragma: allowlist secret
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin  # pragma: allowlist secret
       # dev-file = in-memory H2 + on-disk persistence under /opt/keycloak/data;
       # sufficient for the demo. Production overlay uses Postgres.
       KC_DB: dev-file

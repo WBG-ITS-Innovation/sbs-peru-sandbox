@@ -800,6 +800,7 @@ async def run_demo_ingestion(
             step(
                 "agent_pipeline_completed",
                 f"route={agent_outcome.route_to} "
+                f"system_signal={'true' if agent_outcome.system_signal else 'false'} "
                 f"triage=ok "
                 f"investigation={'ok' if agent_outcome.investigation else 'skip'} "
                 f"synthesis={'ok' if agent_outcome.synthesis else 'skip'}",

@@ -216,6 +216,16 @@ class ServiceUnavailable(SBSAPIException):
     type_suffix = "SBS-503-001"
 
 
+class CircuitBreakerPaused(SBSAPIException):
+    """Ingestion for this institution is paused by an SBS IT circuit breaker
+    (P-RESHAPE-9). The integrator should retry after SBS resumes ingestion."""
+
+    code = "SBS-503-003"
+    status = 503
+    title = "Ingestion paused for institution"
+    type_suffix = "fi_circuit_breaker_paused"
+
+
 # --- mTLS (ADR 0031) ------------------------------------------------------
 
 

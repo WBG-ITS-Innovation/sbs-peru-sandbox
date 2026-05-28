@@ -100,3 +100,5 @@ app/.env.local
 # pre-anonymization). Operator places the file here locally; never
 # commit. See docs/demo/2026-05-27-demo-ready.md.
 data/sbs_sample/
+.claude/scheduled_tasks.lock
+dev-ca.zip

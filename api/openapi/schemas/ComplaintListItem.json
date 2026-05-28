@@ -64,6 +64,79 @@
       ],
       "title": "Severity",
       "type": "string"
+    },
+    "SupervisoryMetadata": {
+      "additionalProperties": false,
+      "description": "SBS-derived fields populated by the Triage agent — never by the FI.\n\nResponse-side only (P-RESHAPE-9 / standards pack v0.2.0). This block\nis excluded from the FI submission contract (:class:`Complaint` stays\n27 fields, ``extra=forbid``); it gives ``system_signal`` a clean home\non the list view without touching Annex 1-A.",
+      "properties": {
+        "system_signal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "True if Triage detected a system-level signal (outage, fraud, breach indicator).",
+          "title": "System Signal"
+        },
+        "system_signal_reasons": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "OUTAGE_KEYWORD",
+                  "FRAUD_KEYWORD",
+                  "AMOUNT_THRESHOLD",
+                  "REGULATORY_BREACH_INDICATOR"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "System Signal Reasons"
+        },
+        "triage_classified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Triage Classified At"
+        },
+        "validation_verdict": {
+          "anyOf": [
+            {
+              "enum": [
+                "VALID",
+                "RECOVERABLE",
+                "INSUFFICIENT",
+                "INVALID"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Validation Verdict"
+        }
+      },
+      "title": "SupervisoryMetadata",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -102,6 +175,18 @@
     },
     "severity": {
       "$ref": "#/$defs/Severity"
+    },
+    "supervisory_metadata": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SupervisoryMetadata"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "SBS-side fields populated by Triage. Read-only for FIs; excluded from FI submission validation."
     }
   },
   "required": [

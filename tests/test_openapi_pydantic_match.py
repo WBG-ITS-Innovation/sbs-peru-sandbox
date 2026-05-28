@@ -268,7 +268,7 @@ def test_openapi_info_version_matches_schemas(openapi_spec):
     that it matches the BatchManifest schema_version regex (the manifest
     carries the schema version institutions are aligned to)."""
     info_version = openapi_spec["info"]["version"]
-    assert info_version == "0.1.0"
+    assert info_version == "0.2.0"
     # schemas/BatchManifest schema_version is Optional[str], so the pattern
     # is nested under anyOf[0]. Find the non-null branch and pull its
     # pattern.

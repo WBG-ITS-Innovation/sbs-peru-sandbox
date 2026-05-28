@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: SBS SupTech Complaints API
-  version: 0.1.0
+  version: 0.2.0
   summary: Institution-to-regulator complaint reporting against Anexo 1-A.
   description: |
     The SBS SupTech Complaints API is the institution-facing surface through
@@ -981,6 +981,40 @@ components:
         severity: { $ref: "#/components/schemas/Severity" }
         resolution_status: { $ref: "#/components/schemas/ResolutionStatus" }
         received_at: { type: string, format: date-time }
+        supervisory_metadata:
+          $ref: "#/components/schemas/SupervisoryMetadata"
+          description: >-
+            SBS-side fields. Read-only for FIs. Excluded from FI submission
+            validation (the FI submission schema, Complaint, keeps extra:
+            forbid and its 27 locked fields).
+
+    SupervisoryMetadata:
+      type: object
+      additionalProperties: false
+      description: >-
+        SBS-derived fields. Populated by the Triage agent, not by the FI.
+        Response-side only — never part of an FI submission.
+      properties:
+        system_signal:
+          type: boolean
+          description: >-
+            True if Triage detected a system-level signal (outage, fraud,
+            breach indicator).
+        system_signal_reasons:
+          type: array
+          items:
+            type: string
+            enum:
+              - OUTAGE_KEYWORD
+              - FRAUD_KEYWORD
+              - AMOUNT_THRESHOLD
+              - REGULATORY_BREACH_INDICATOR
+        validation_verdict:
+          type: string
+          enum: [VALID, RECOVERABLE, INSUFFICIENT, INVALID]
+        triage_classified_at:
+          type: string
+          format: date-time
 
     ComplaintListResponse:
       type: object

@@ -318,3 +318,137 @@ INSERT INTO complaints (
         'batch'
     )
 ON CONFLICT (complaint_id) DO NOTHING;
+
+-- ===========================================================================
+-- P-RESHAPE-6.5 — fraud-chain seed for the live compose smoke.
+--
+-- Mirrors the conftest fixtures so the social + complaints + INDECOPI
+-- fraud chain reproduces on a running docker-compose stack (not just
+-- testcontainers). All rows are idempotent (ON CONFLICT DO NOTHING) and
+-- time-anchored with now()-relative intervals so the aggregation tick's
+-- real-wall-clock windows (72h social / 24h complaints / 7d INDECOPI)
+-- catch them whenever dev-up.sh runs.
+--
+-- Expected post-tick state on BANCO_DEMO_001 (SBS-001234):
+--   1 FRAUD_EMERGENCE HIGH pattern → Investigation → PRR → SectorBroadcast
+--   in AWAITING_DUAL_APPROVAL targeting the 4 BANCO:TIER_1 peers below.
+-- ===========================================================================
+
+-- 8 cohort peers (mirror RESHAPE-3 conftest): 4 BANCO:TIER_1 (large) +
+-- 4 COOPAC:TIER_2 (mid). The sector broadcast fans out to the 4 BANCO
+-- peers (origin BANCO_DEMO_001 excluded).
+INSERT INTO institutions (
+    institution_id, display_name, onboarded, tier_classification,
+    rate_limit_per_minute, schema_version, permitted_scopes, created_at
+) VALUES
+    ('SBS-100001', 'BANCO_PEER_001',  true, 'large', NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-100002', 'BANCO_PEER_002',  true, 'large', NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-100003', 'BANCO_PEER_003',  true, 'large', NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-100004', 'BANCO_PEER_004',  true, 'large', NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-200001', 'COOPAC_PEER_001', true, 'mid',   NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-200002', 'COOPAC_PEER_002', true, 'mid',   NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-200003', 'COOPAC_PEER_003', true, 'mid',   NULL, 'v0.1.0', ARRAY[]::varchar[], now()),
+    ('SBS-200004', 'COOPAC_PEER_004', true, 'mid',   NULL, 'v0.1.0', ARRAY[]::varchar[], now())
+ON CONFLICT (institution_id) DO NOTHING;
+
+-- Outbound secrets + webhook configs for the 4 BANCO:TIER_1 peers so the
+-- sector broadcast can sign + deliver to them on the running stack.
+INSERT INTO outbound_webhook_secrets (institution_id, kid, active_secret, rotated_at, created_at)
+VALUES
+    ('SBS-100001', 'sandbox-v1', decode('3030303030303030303030303030303030303030303030303030303030303030','hex'), now(), now()),  -- pragma: allowlist secret
+    ('SBS-100002', 'sandbox-v1', decode('3030303030303030303030303030303030303030303030303030303030303030','hex'), now(), now()),  -- pragma: allowlist secret
+    ('SBS-100003', 'sandbox-v1', decode('3030303030303030303030303030303030303030303030303030303030303030','hex'), now(), now()),  -- pragma: allowlist secret
+    ('SBS-100004', 'sandbox-v1', decode('3030303030303030303030303030303030303030303030303030303030303030','hex'), now(), now())   -- pragma: allowlist secret
+ON CONFLICT (institution_id) DO NOTHING;
+
+INSERT INTO institution_webhook_configs (institution_id, callback_url, enabled, created_at)
+VALUES
+    ('SBS-100001', 'http://webhook-listener:8080/sbs-callback', true, now()),
+    ('SBS-100002', 'http://webhook-listener:8080/sbs-callback', true, now()),
+    ('SBS-100003', 'http://webhook-listener:8080/sbs-callback', true, now()),
+    ('SBS-100004', 'http://webhook-listener:8080/sbs-callback', true, now())
+ON CONFLICT (institution_id) DO NOTHING;
+
+-- Brand aliases for social entity resolution (normalized: lower-case,
+-- @ / scheme stripped — matches entity_resolver.normalize_alias).
+INSERT INTO fi_brand_aliases (institution_id, alias_normalized, alias_kind) VALUES
+    ('SBS-001234', 'banco demo',  'DISPLAY_NAME'),
+    ('SBS-001234', 'bancodemo',   'HANDLE'),
+    ('SBS-001234', 'bcodemo.pe',  'DOMAIN'),
+    ('SBS-005678', 'coopac demo', 'DISPLAY_NAME')
+ON CONFLICT DO NOTHING;
+
+-- 14 social signals targeting BANCO_DEMO_001 over the last 72h (phishing
+-- campaign emerging ~48h before the complaint spike). Inserted directly
+-- into the live social_signals table with pre-resolved institution codes
+-- + fraud indicators — build_fraud_windows reads these columns directly.
+INSERT INTO social_signals (
+    signal_id, source, source_post_id, captured_at, post_authored_at,
+    post_text_es, detected_institution_codes, detected_fraud_indicators,
+    engagement_score, raw_url
+)
+SELECT
+    'DEVSEED-SOCIAL-' || lpad(g::text, 4, '0'),
+    'FIXTURE',
+    'devseed-post-' || lpad(g::text, 4, '0'),
+    now() - make_interval(hours => 2 + g * 4),
+    now() - make_interval(hours => 3 + g * 4),
+    'Cuidado: phishing que suplanta a Banco Demo y cobra comisión no autorizada a los clientes.',
+    ARRAY['SBS-001234']::varchar[],
+    ARRAY['PHISHING_KEYWORD','UNAUTHORIZED_FEE_KEYWORD']::varchar[],
+    120 + g,
+    'https://example.invalid/post/' || g
+FROM generate_series(0, 13) AS g
+ON CONFLICT (source, source_post_id) DO NOTHING;
+
+-- 4 fraud-category complaints for BANCO_DEMO_001 in the last 24h (in
+-- addition to the three COBRO_INDEBIDO rows above, which are also in the
+-- fraud category) so the FRAUD_EMERGENCE complaint arm (>= 3 in 24h) fires.
+INSERT INTO complaints (
+    complaint_id, institution_id, received_date, complainant_doc_type,
+    product_category, channel, motivo_code, severity, description_text,
+    description_language, complainant_age_range, complainant_district,
+    submission_method, resolution_status, source, received_at
+)
+SELECT
+    'BCO-FRAUD-' || lpad(g::text, 4, '0'),
+    'SBS-001234',
+    (now() - make_interval(hours => 2 + g))::date,
+    'DNI', 'TARJETA_CREDITO', 'APP_MOVIL', 'OPERACION_NO_RECONOCIDA', 'HIGH',
+    E'Operación no reconocida vinculada a una campaña de suplantación; cargo no autorizado en mi tarjeta.',
+    'es', '35_44', '150100', 'APP_MOVIL', 'pendiente', 'api_realtime',
+    now() - make_interval(hours => 2 + g)
+FROM generate_series(0, 3) AS g
+ON CONFLICT (complaint_id) DO NOTHING;
+
+-- 3 fraud-category INDECOPI cases for BANCO_DEMO_001 in the last 7d
+-- (cross-source corroboration arm).
+INSERT INTO indecopi_cases (case_id, institution_id, complaint_category, opened_at, summary)
+SELECT
+    'DEVSEED-IND-' || g,
+    'SBS-001234',
+    'OPERACION_NO_RECONOCIDA',
+    now() - make_interval(days => 1 + g),
+    'Caso INDECOPI de fraude (semilla de demo).'
+FROM generate_series(0, 2) AS g
+ON CONFLICT (case_id) DO NOTHING;
+
+-- ===========================================================================
+-- P-RESHAPE-8 — DIValeVale Tier-1 enrichment demo.
+-- BCO-2026-000004: narrative "se me cobró mal" (15 chars, < 30) with no
+-- amount → DIValeVale verdict INSUFFICIENT → flagged for enrichment, the
+-- VALIDATION_ENRICHMENT_REQUEST webhook fires when seed_demo.py runs
+-- validation. The row is preserved (no silent loss). Idempotent.
+-- ===========================================================================
+INSERT INTO complaints (
+    complaint_id, institution_id, received_date, complainant_doc_type,
+    product_category, channel, motivo_code, severity, description_text,
+    description_language, complainant_age_range, complainant_district,
+    submission_method, resolution_status, source, received_at
+) VALUES (
+    'BCO-2026-000004', 'SBS-001234', (now())::date, 'DNI',
+    'TARJETA_CREDITO', 'APP_MOVIL', 'COBRO_INDEBIDO', 'MEDIUM',
+    'se me cobró mal',
+    'es', '35_44', '150100', 'APP_MOVIL', 'pendiente', 'api_realtime', now()
+)
+ON CONFLICT (complaint_id) DO NOTHING;

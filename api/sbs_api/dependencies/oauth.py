@@ -116,6 +116,28 @@ def verified_oauth_token_with_scope(*required_scopes: str):
         request: Request,
         mtls_subject: MtlsSubject = Depends(verified_mtls_subject),
     ) -> VerifiedToken:
+        # Dev-only persona stub (P-RESHAPE-8.6): resolve the stub principal
+        # and check the required INSTITUTION scopes against the persona's
+        # scope set. Internal personas hold no institution OAuth scopes, so
+        # this yields 403 (scope enforced) rather than a stub-blind 200.
+        from sbs_api.config import get_settings
+        from sbs_api.dependencies.auth_stub import resolve_stub
+
+        principal = resolve_stub(request, get_settings())
+        if principal is not None:
+            if not required.issubset(principal.scopes):
+                raise TokenScopeInsufficient(
+                    detail=(
+                        f"Stub persona '{principal.username}' lacks required "
+                        f"scope(s) {sorted(required - principal.scopes)}."
+                    )
+                )
+            return VerifiedToken(
+                institution_id=principal.user_id,
+                granted_scopes=principal.scopes,
+                cert_thumbprint="stub",
+            )
+
         token_str = _extract_bearer(request)
         try:
             claims: TokenClaims = verify_token(token_str, key=get_signing_key())

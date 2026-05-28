@@ -411,16 +411,31 @@ def _build_worker_settings_redis() -> RedisSettings:
 class WorkerSettings:
     """arq picks up this class with ``arq sbs_api.workers.batch_worker.WorkerSettings``.
 
-    Functions registered: ``process_batch`` and ``deliver_webhook_for_batch``.
-    arq drives both with exponential backoff; the webhook delivery function
-    has its own bookkeeping for the longer ADR 0035 backoff window.
+    Functions registered: ``process_batch``, ``deliver_webhook_for_batch``,
+    and ``aggregation_tick_job``. ``aggregation_tick_job`` also runs on
+    a 60-second cron so the cockpit's pattern view refreshes without
+    manual enqueue.
     """
 
-    # Late-bound import: webhook.delivery transitively imports the
+    # Late-bound imports: webhook.delivery transitively imports the
     # arq pool, which can re-enter this module during package init.
+    from arq.cron import cron
+
+    from sbs_api.aggregation.tick import aggregation_tick_job
+    from sbs_api.ingestion.social.runner import social_ingestion_job
     from sbs_api.webhook.delivery import deliver_webhook_for_batch
 
-    functions = [process_batch, deliver_webhook_for_batch]
+    functions = [
+        process_batch,
+        deliver_webhook_for_batch,
+        aggregation_tick_job,
+        social_ingestion_job,
+    ]
+    cron_jobs = [
+        cron(aggregation_tick_job, second={0}, run_at_startup=True),
+        # Social ingestion every 5 minutes (P-RESHAPE-6).
+        cron(social_ingestion_job, minute=set(range(0, 60, 5)), run_at_startup=True),
+    ]
     max_tries = _MAX_TRIES
     # arq default retry-with-exponential-backoff: 1s, 2s, 4s, 8s, 16s
     # (powers of 2) — sufficient for sandbox transient errors.

@@ -2,7 +2,9 @@
 
 Three-layer architecture per ADR 0001:
 - Agents orchestrate (this module's ``triage``, ``investigation``,
-  ``synthesis``, ``taxonomy_harmonizer``, ``cross_source_correlator``).
+  ``synthesis``). The ``taxonomy_harmonizer`` and
+  ``cross_source_correlator`` scaffolds were removed in P-RESHAPE-9;
+  their demo cockpit data is now seeded directly.
 - Tools execute (``agents.tools``).
 - Supervisors approve (existing ``approvals`` package).
 

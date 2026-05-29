@@ -13,7 +13,7 @@ import { bi } from '@/lib/bi';
 // every live value is set in useEffect after mount — so server and client
 // markup match and there is no hydration mismatch.
 
-const POLL_MS = 10_000; // 10s cadence (matches nrt_feed default)
+const POLL_MS = 5_000; // 5s cadence (matches nrt_feed default --rate 5)
 const STAGE_MS = 900; // per-step animation when a new complaint arrives
 
 interface Finding {

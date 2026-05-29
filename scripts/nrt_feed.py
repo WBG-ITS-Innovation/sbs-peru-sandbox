@@ -136,7 +136,7 @@ def _build_payload(rng: random.Random, profile: Profile) -> dict:
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     p.add_argument("--api-base", default="http://localhost:8000/v1")
-    p.add_argument("--rate", type=float, default=10.0, help="Seconds between POSTs (default 10).")
+    p.add_argument("--rate", type=float, default=5.0, help="Seconds between POSTs (default 5).")
     p.add_argument("--jitter", type=float, default=2.0, help="Random +/- seconds added to rate (default 2).")
     p.add_argument("--count", type=int, default=0, help="Stop after N complaints (0 = run until Ctrl-C).")
     p.add_argument("--seed", type=int, default=None, help="Optional RNG seed (default: nondeterministic).")

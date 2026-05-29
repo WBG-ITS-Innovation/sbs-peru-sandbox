@@ -283,10 +283,11 @@ export function AggregateTables({ locale }: { locale: Locale }) {
     load();
   }, [load]);
 
-  // Live: re-fetch every 10s so newly-ingested complaints appear without a
-  // manual refresh. Only the row data updates; filters/sort/page are kept.
+  // Live: re-fetch every 5s so newly-ingested complaints appear without a
+  // manual refresh (aligned with the nrt_feed default --rate 5 and the live
+  // banner). Only the row data updates; filters/sort/page are kept.
   useEffect(() => {
-    const id = setInterval(load, 10_000);
+    const id = setInterval(load, 5_000);
     return () => clearInterval(id);
   }, [load]);
 

@@ -25,7 +25,14 @@ import {
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
 import { cn } from '@/lib/cn';
+import { AggregateCharts } from '@/components/persona/AggregateCharts';
 import { DSC_SAMPLE, FRAUD_LABEL_ES, INDECOPI_SAMPLE, SOCIAL_SAMPLE } from '@/lib/source-samples';
+
+interface TrendData {
+  by_month?: { month: string; complaints: number; social: number }[];
+  by_product?: { product_category: string; n_complaints: number }[];
+  period?: { start: string | null; end: string | null } | null;
+}
 
 // View 1 — grouped-aggregate tables wired to GET /v1/internal/aggregates/patterns
 // (via the /app/api/aggregates/patterns BFF). Every number is real, SQL-computed.
@@ -248,9 +255,14 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
   // React state → persists across tab switches, resets on a fresh session.
   const [anonymize, setAnonymize] = useState(false);
   const [page, setPage] = useState(1);
+  const [trend, setTrend] = useState<TrendData | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    fetch('/app/api/aggregates/trend', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d: TrendData) => setTrend(d))
+      .catch(() => undefined);
     fetch(`/app/api/aggregates/patterns?scope=${scope}`, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d: { rows?: PatternRow[] }) => setRows(d.rows ?? []))
@@ -495,6 +507,16 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
           </button>
         ) : null}
       </div>
+
+      {/* Cross-filtered chart row — reads the current scoped+filtered rows */}
+      <AggregateCharts
+        locale={locale}
+        rows={filtered}
+        scope={scope}
+        trend={trend}
+        selectedMotivos={fMotivo}
+        onToggleMotivo={(m) => toggle(fMotivo, setFMotivo, m)}
+      />
 
       {/* B — main table */}
       <Table>

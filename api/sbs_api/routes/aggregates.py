@@ -259,9 +259,34 @@ async def get_aggregate_trend(
         social_month_rows = (
             await session.execute(select(smonth, func.count()).group_by(smonth))
         ).all()
+        product_rows = (
+            await session.execute(
+                select(ComplaintRecord.product_category, func.count())
+                .group_by(ComplaintRecord.product_category)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        period_row = (
+            await session.execute(
+                select(func.min(ComplaintRecord.received_date), func.max(ComplaintRecord.received_date))
+            )
+        ).one()
+        # Real aggregate-agent output: pattern_detections written by the
+        # Investigation/Lupaman aggregation tick. Zero is honest if the tick
+        # has not produced any yet.
+        from sbs_api.db.models.pattern_detection import PatternDetection
+
+        n_patterns = (
+            await session.execute(select(func.count()).select_from(PatternDetection))
+        ).scalar_one()
+        n_patterns_high = (
+            await session.execute(
+                select(func.count()).select_from(PatternDetection).where(PatternDetection.severity_band == "HIGH")
+            )
+        ).scalar_one()
     except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
         log.warning("aggregates.trend.query_failed", exc_info=True)
-        return {"generated_at": generated_at, "by_motivo": [], "by_month": []}
+        return {"generated_at": generated_at, "by_motivo": [], "by_month": [], "by_product": [], "period": None, "n_patterns": 0, "n_patterns_high": 0}
 
     complaints_by_month = {m: n for m, n in complaint_month_rows if m}
     social_by_month = {m: n for m, n in social_month_rows if m}
@@ -274,8 +299,25 @@ async def get_aggregate_trend(
         }
         for m in months
     ]
+    by_product = [
+        {"product_category": p, "n_complaints": n, "pct_of_all": _pct(n, total)}
+        for p, n in product_rows
+        if p
+    ]
+    period = {
+        "start": period_row[0].isoformat() if period_row[0] else None,
+        "end": period_row[1].isoformat() if period_row[1] else None,
+    }
 
-    return {"generated_at": generated_at, "by_motivo": by_motivo, "by_month": by_month}
+    return {
+        "generated_at": generated_at,
+        "by_motivo": by_motivo,
+        "by_month": by_month,
+        "by_product": by_product,
+        "period": period,
+        "n_patterns": n_patterns,
+        "n_patterns_high": n_patterns_high,
+    }
 
 
 @router.get(

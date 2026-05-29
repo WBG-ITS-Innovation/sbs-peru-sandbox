@@ -19,10 +19,10 @@ interface ChatMsg {
 }
 
 const QUICK_PROMPTS = [
-  '¿Qué patrones de fraude hay esta semana?',
+  '¿Cuál es la peor entidad?',
+  '¿Qué institución tiene más backlog?',
   '¿Cuántos reclamos de severidad alta hay?',
-  '¿Qué institución concentra más reclamos?',
-  'Resume el estado de los agregados',
+  '¿Qué patrones de fraude hay esta semana?',
 ];
 
 export function AnalysisAssistant({ locale }: { locale: Locale }) {
@@ -80,7 +80,7 @@ export function AnalysisAssistant({ locale }: { locale: Locale }) {
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">{bi(locale, 'Asistente de Análisis', 'Analysis Assistant')}</p>
-            <p className="text-2xs text-white/70">{bi(locale, 'Análisis sobre los datos reales de reclamos', 'Analysis grounded in real complaint data')}</p>
+            <p className="text-2xs text-white/70">{bi(locale, 'Análisis basado en datos reales de reclamos', 'Analysis based on real complaint data')}</p>
           </div>
         </div>
         <button type="button" onClick={() => setOpen(false)} aria-label={bi(locale, 'Cerrar', 'Close')} className="rounded-sbs p-1 hover:bg-white/10">
@@ -93,8 +93,8 @@ export function AnalysisAssistant({ locale }: { locale: Locale }) {
           <div className="rounded-lg border border-border bg-surface p-3 text-xs text-fg-muted">
             {bi(
               locale,
-              'Hago consultas sobre los datos reales de reclamos (no es un LLM en vivo). Elige una pregunta o escribe la tuya.',
-              'I answer from the real complaint data (not a live LLM). Pick a question or type your own.',
+              'Análisis basado en datos reales de reclamos (no es un LLM en vivo). Pregunta por la peor entidad, el backlog, una institución, una severidad o patrones de fraude — o escribe la tuya.',
+              'Analysis based on real complaint data (not a live LLM). Ask about the worst institution, backlog, a specific institution, a severity or fraud patterns — or type your own.',
             )}
           </div>
         ) : (

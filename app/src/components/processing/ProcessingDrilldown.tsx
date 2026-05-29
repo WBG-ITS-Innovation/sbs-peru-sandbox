@@ -258,6 +258,8 @@ export function ProcessingDrilldown({ locale, complaintId }: Props) {
   const [refreshTick, setRefreshTick] = useState(0);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [hitlToast, setHitlToast] = useState<string | null>(null);
+  const [record, setRecord] = useState<Record<string, unknown> | null>(null);
+  const [recordOpen, setRecordOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -290,6 +292,16 @@ export function ProcessingDrilldown({ locale, complaintId }: Props) {
       window.clearInterval(id);
     };
   }, [complaintId, refreshTick, finding?.agent_runs]);
+
+  // Full canonical complaint record for the "Detalle del reclamo" panel.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/app/api/complaints/${encodeURIComponent(complaintId)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d && !d.error) setRecord(d as Record<string, unknown>); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [complaintId]);
 
   const pipelineByKey = useMemo(() => {
     const map = new Map<string, AuditEvent>();
@@ -357,6 +369,8 @@ export function ProcessingDrilldown({ locale, complaintId }: Props) {
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
       <ComplaintSummaryBar finding={finding} complaintId={complaintId} es={es} />
+
+      <ComplaintDetailPanel record={record} open={recordOpen} onToggle={() => setRecordOpen((o) => !o)} es={es} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
@@ -630,6 +644,105 @@ export function ProcessingDrilldown({ locale, complaintId }: Props) {
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+// Collapsible full-field record view. Default collapsed. Every column from the
+// canonical complaint record is shown; the narrative spans full width.
+const DETAIL_FIELDS: Array<{ key: string; es: string; en: string }> = [
+  { key: 'complaint_id', es: 'ID reclamo', en: 'Complaint ID' },
+  { key: 'institution_id', es: 'Institución (ID)', en: 'Institution (ID)' },
+  { key: 'source', es: 'Origen', en: 'Source' },
+  { key: 'received_date', es: 'Fecha de recepción', en: 'Received date' },
+  { key: 'received_at', es: 'Recibido (timestamp)', en: 'Received at' },
+  { key: 'updated_at', es: 'Actualizado', en: 'Updated at' },
+  { key: 'motivo_code', es: 'Motivo', en: 'Motive' },
+  { key: 'submotivo', es: 'Submotivo', en: 'Submotive' },
+  { key: 'submotivo_2', es: 'Submotivo 2', en: 'Submotive 2' },
+  { key: 'topic', es: 'Topic / tendencia', en: 'Topic / trend' },
+  { key: 'product_category', es: 'Producto', en: 'Product' },
+  { key: 'channel', es: 'Canal de ingreso', en: 'Reception channel' },
+  { key: 'submission_method', es: 'Canal de operación', en: 'Operation channel' },
+  { key: 'severity', es: 'Severidad', en: 'Severity' },
+  { key: 'complainant_doc_type', es: 'Tipo de documento', en: 'Doc type' },
+  { key: 'complainant_age_range', es: 'Rango de edad', en: 'Age range' },
+  { key: 'complainant_district', es: 'Distrito (UBIGEO)', en: 'District (UBIGEO)' },
+  { key: 'description_language', es: 'Idioma', en: 'Language' },
+  { key: 'resolution_status', es: 'Estado', en: 'Status' },
+  { key: 'estado_reclamo', es: 'Estado del reclamo', en: 'Complaint state' },
+  { key: 'tipo_resolucion', es: 'Resultado', en: 'Outcome' },
+  { key: 'fecha_resolucion', es: 'Fecha de resolución', en: 'Resolution date' },
+  { key: 'descripcion_resolucion', es: 'Detalle de resolución', en: 'Resolution detail' },
+  { key: 'monto_pendiente', es: 'Monto pendiente (S/)', en: 'Pending amount (S/)' },
+  { key: 'original_reference_id', es: 'Referencia original', en: 'Original reference' },
+  { key: 'client_submission_id', es: 'ID de envío del cliente', en: 'Client submission ID' },
+  { key: 'raw_complaint_id', es: 'ID crudo (raw)', en: 'Raw complaint ID' },
+  { key: 'etag_version', es: 'Versión ETag', en: 'ETag version' },
+  { key: 'flag_unknown_taxonomy', es: 'Taxonomía desconocida', en: 'Unknown taxonomy' },
+];
+
+function fmtVal(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  return String(v);
+}
+
+function ComplaintDetailPanel(props: {
+  record: Record<string, unknown> | null;
+  open: boolean;
+  onToggle: () => void;
+  es: boolean;
+}) {
+  const { record, open, onToggle, es } = props;
+  const known = new Set(DETAIL_FIELDS.map((f) => f.key));
+  const extraKeys = record ? Object.keys(record).filter((k) => !known.has(k) && k !== 'description_text') : [];
+  return (
+    <Card>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
+      >
+        <span className="flex items-center gap-2 text-base font-semibold text-brand-navy">
+          {open ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+          {es ? 'Detalle del reclamo' : 'Complaint detail'}
+        </span>
+        <span className="text-2xs text-fg-muted">
+          {record ? (es ? 'todos los campos del registro canónico' : 'all canonical record fields') : (es ? 'cargando…' : 'loading…')}
+        </span>
+      </button>
+      {open ? (
+        <CardBody className="pt-0">
+          {!record ? (
+            <p className="text-xs text-fg-muted">{es ? 'No disponible.' : 'Not available.'}</p>
+          ) : (
+            <>
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                {DETAIL_FIELDS.filter((f) => f.key in record).map((f) => (
+                  <div key={f.key} className="flex items-baseline justify-between gap-2 border-b border-border-subtle py-1">
+                    <dt className="text-2xs uppercase tracking-wide text-fg-subtle">{es ? f.es : f.en}</dt>
+                    <dd className="truncate font-mono text-xs text-fg" title={fmtVal(record[f.key])}>{fmtVal(record[f.key])}</dd>
+                  </div>
+                ))}
+                {extraKeys.map((k) => (
+                  <div key={k} className="flex items-baseline justify-between gap-2 border-b border-border-subtle py-1">
+                    <dt className="text-2xs uppercase tracking-wide text-fg-subtle">{k}</dt>
+                    <dd className="truncate font-mono text-xs text-fg" title={fmtVal(record[k])}>{fmtVal(record[k])}</dd>
+                  </div>
+                ))}
+              </dl>
+              {'description_text' in record ? (
+                <div className="mt-3">
+                  <p className="text-2xs uppercase tracking-wide text-fg-subtle">{es ? 'Narrativa (canónica, redactada)' : 'Narrative (canonical, redacted)'}</p>
+                  <p className="mt-1 whitespace-pre-wrap rounded-sbs border border-border-subtle bg-surface-subtle/40 p-2 text-xs text-fg">{fmtVal(record.description_text)}</p>
+                </div>
+              ) : null}
+            </>
+          )}
+        </CardBody>
+      ) : null}
+    </Card>
+  );
+}
 
 function ComplaintSummaryBar(props: { finding: Finding | null; complaintId: string; es: boolean }) {
   const c = props.finding?.complaint;

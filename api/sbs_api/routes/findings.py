@@ -87,6 +87,42 @@ async def get_finding_detail(
     return detail
 
 
+# -- GET /v1/internal/complaints/{id} ---------------------------------------
+
+
+@router.get(
+    "/complaints/{complaint_id}",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_complaint_record(
+    complaint_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Full canonical complaint record — every column, for the processing
+    detail's "Detalle del reclamo" view. ``description_text`` is the canonical
+    (PII-redacted) narrative; the raw text is never in this table."""
+    from decimal import Decimal
+
+    from sbs_api.db.models.complaint import ComplaintRecord
+
+    record = (
+        await session.execute(
+            select(ComplaintRecord).where(ComplaintRecord.complaint_id == complaint_id)
+        )
+    ).scalar_one_or_none()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    out: dict[str, Any] = {}
+    for col in ComplaintRecord.__table__.columns:
+        value = getattr(record, col.name)
+        if hasattr(value, "isoformat"):
+            value = value.isoformat()
+        elif isinstance(value, Decimal):
+            value = float(value)
+        out[col.name] = value
+    return out
+
+
 # -- POST /v1/internal/findings/{id}/draft ----------------------------------
 
 

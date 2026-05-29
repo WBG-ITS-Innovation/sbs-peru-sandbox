@@ -25,6 +25,7 @@ import {
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
 import { cn } from '@/lib/cn';
+import { DSC_SAMPLE, FRAUD_LABEL_ES, INDECOPI_SAMPLE, SOCIAL_SAMPLE } from '@/lib/source-samples';
 
 // View 1 — grouped-aggregate tables wired to GET /v1/internal/aggregates/patterns
 // (via the /app/api/aggregates/patterns BFF). Every number is real, SQL-computed.
@@ -204,40 +205,8 @@ function MultiSelect({
   );
 }
 
-// ---- sample source data (NO real endpoint — badged "datos de muestra") ------
-
-const INDECOPI_SAMPLE = [
-  { categoria: 'Cobros indebidos', institucion: 'BANCO_DEMO_001', casos: 14, resumen: 'Comisiones no informadas en tarjeta de crédito.' },
-  { categoria: 'Operación no reconocida', institucion: 'FINANCIERA_DEMO_003', casos: 9, resumen: 'Consumos en comercios del exterior.' },
-  { categoria: 'Métodos abusivos de cobranza', institucion: 'COOPAC_DEMO_002', casos: 6, resumen: 'Llamadas fuera de horario permitido.' },
-  { categoria: 'Falta de información', institucion: 'BANCO_DEMO_001', casos: 4, resumen: 'Condiciones del crédito no entregadas.' },
-];
-
-const DSC_SAMPLE = [
-  { tema: 'Demora en atención de reclamo', consultas: 22, estado: 'En seguimiento', resumen: 'Plazos de respuesta superiores a 15 días hábiles.' },
-  { tema: 'Información sobre comisiones', consultas: 17, estado: 'Atendido', resumen: 'Orientación sobre tarifario vigente.' },
-  { tema: 'Suplantación / fraude', consultas: 11, estado: 'Derivado', resumen: 'Casos derivados a la unidad de conducta de mercado.' },
-  { tema: 'Acceso a productos', consultas: 5, estado: 'Atendido', resumen: 'Consultas sobre requisitos de apertura.' },
-];
-
-// Social sample (used when the ops social_health endpoint is unreachable —
-// it is NOT mounted in this build). Columns the card requests: tendencia,
-// menciones, instituciones detectadas, indicador.
-const SOCIAL_SAMPLE = [
-  { tendencia: 'Tarjeta clonada', menciones: 142, instituciones: 3, indicador: 'Phishing' },
-  { tendencia: 'App falsa de banca', menciones: 87, instituciones: 2, indicador: 'Aplicación falsa' },
-  { tendencia: 'Llamadas suplantando ejecutivos', menciones: 64, instituciones: 4, indicador: 'Agente falso' },
-  { tendencia: 'Cobros no reconocidos', menciones: 39, instituciones: 2, indicador: 'Consumo no autorizado' },
-];
-
-const FRAUD_LABEL_ES: Record<string, string> = {
-  PHISHING_KEYWORD: 'Phishing',
-  SCAM_KEYWORD: 'Estafa',
-  FAKE_APP_KEYWORD: 'Aplicación falsa',
-  FAKE_AGENT_KEYWORD: 'Agente falso',
-  UNAUTHORIZED_FEE_KEYWORD: 'Cargo no autorizado',
-  UNAUTHORIZED_CHARGE_KEYWORD: 'Consumo no autorizado',
-};
+// Sample source data lives in @/lib/source-samples (shared, badged "datos de
+// muestra"). The social card prefers the real ops feed when reachable.
 
 interface SocialHealth {
   available: boolean;
@@ -298,6 +267,13 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
     setFResultado(new Set());
     setFInst(new Set());
     load();
+  }, [load]);
+
+  // Live: re-fetch every 10s so newly-ingested complaints appear without a
+  // manual refresh. Only the row data updates; filters/sort/page are kept.
+  useEffect(() => {
+    const id = setInterval(load, 10_000);
+    return () => clearInterval(id);
   }, [load]);
 
   useEffect(() => {
@@ -715,26 +691,41 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
             ) : social == null ? (
               <p className="py-3 text-2xs text-fg-muted">{bi(locale, 'Cargando…', 'Loading…')}</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{bi(locale, 'Tendencia', 'Trend')}</TableHead>
-                    <TableHead className="text-right">{bi(locale, 'Menciones', 'Mentions')}</TableHead>
-                    <TableHead className="text-right">{bi(locale, 'Instituciones', 'Institutions')}</TableHead>
-                    <TableHead>{bi(locale, 'Indicador', 'Indicator')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {SOCIAL_SAMPLE.map((r) => (
-                    <TableRow key={r.tendencia}>
-                      <TableCell className="text-xs">{r.tendencia}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{r.menciones}</TableCell>
-                      <TableCell className="text-right font-mono tabular-nums">{r.instituciones}</TableCell>
-                      <TableCell className="text-2xs text-fg-muted">{r.indicador}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <>
+                <div className="max-h-72 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{bi(locale, 'Fecha', 'Date')}</TableHead>
+                        <TableHead>{bi(locale, 'Plataforma', 'Platform')}</TableHead>
+                        <TableHead>{bi(locale, 'Tendencia', 'Trend')}</TableHead>
+                        <TableHead className="text-right">{bi(locale, 'Menciones', 'Mentions')}</TableHead>
+                        <TableHead>{bi(locale, 'Indicador', 'Indicator')}</TableHead>
+                        <TableHead>{bi(locale, 'Enlace', 'Link')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {SOCIAL_SAMPLE.map((r) => (
+                        <TableRow key={r.enlace}>
+                          <TableCell className="font-mono text-2xs text-fg-muted">{r.fecha}</TableCell>
+                          <TableCell className="text-2xs">{r.plataforma}</TableCell>
+                          <TableCell className="text-xs">{r.tendencia}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{r.menciones}</TableCell>
+                          <TableCell className="text-2xs text-fg-muted">{r.indicador}</TableCell>
+                          <TableCell className="max-w-[140px] truncate text-2xs text-fg-subtle" title={r.enlace}>{r.enlace}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <p className="mt-2 text-2xs italic text-fg-subtle">
+                  {bi(
+                    locale,
+                    'Lupaman genera estas tablas agregadas de redes sociales (análisis cross-source); no notifica a las instituciones.',
+                    'Lupaman generates these aggregate social-media tables (cross-source analysis); it does not notify institutions.',
+                  )}
+                </p>
+              </>
             )}
           </CardBody>
         </Card>
@@ -746,24 +737,32 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
             <SampleBadge locale={locale} />
           </CardHeader>
           <CardBody>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{bi(locale, 'Categoría', 'Category')}</TableHead>
-                  <TableHead>{bi(locale, 'Institución', 'Institution')}</TableHead>
-                  <TableHead className="text-right">{bi(locale, 'Casos', 'Cases')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {INDECOPI_SAMPLE.map((r) => (
-                  <TableRow key={`${r.categoria}-${r.institucion}`}>
-                    <TableCell className="text-xs">{r.categoria}</TableCell>
-                    <TableCell className="font-mono text-2xs text-fg-muted">{r.institucion}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{r.casos}</TableCell>
+            <div className="max-h-72 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{bi(locale, 'Expediente', 'Case file')}</TableHead>
+                    <TableHead>{bi(locale, 'Categoría', 'Category')}</TableHead>
+                    <TableHead>{bi(locale, 'Institución', 'Institution')}</TableHead>
+                    <TableHead>{bi(locale, 'Estado', 'Status')}</TableHead>
+                    <TableHead>{bi(locale, 'Fecha', 'Date')}</TableHead>
+                    <TableHead className="text-right">{bi(locale, 'Casos', 'Cases')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {INDECOPI_SAMPLE.map((r) => (
+                    <TableRow key={r.expediente}>
+                      <TableCell className="font-mono text-2xs">{r.expediente}</TableCell>
+                      <TableCell className="text-xs">{r.categoria}</TableCell>
+                      <TableCell className="max-w-[160px] truncate text-2xs text-fg-muted" title={r.institucion}>{r.institucion}</TableCell>
+                      <TableCell className="text-2xs">{r.estado}</TableCell>
+                      <TableCell className="font-mono text-2xs text-fg-muted">{r.fecha}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{r.casos}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardBody>
         </Card>
 
@@ -774,24 +773,30 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
             <SampleBadge locale={locale} />
           </CardHeader>
           <CardBody>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{bi(locale, 'Tema', 'Topic')}</TableHead>
-                  <TableHead className="text-right">{bi(locale, 'Consultas', 'Inquiries')}</TableHead>
-                  <TableHead>{bi(locale, 'Estado', 'Status')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {DSC_SAMPLE.map((r) => (
-                  <TableRow key={r.tema}>
-                    <TableCell className="text-xs">{r.tema}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{r.consultas}</TableCell>
-                    <TableCell className="text-2xs text-fg-muted">{r.estado}</TableCell>
+            <div className="max-h-72 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{bi(locale, 'Fecha', 'Date')}</TableHead>
+                    <TableHead>{bi(locale, 'Canal', 'Channel')}</TableHead>
+                    <TableHead>{bi(locale, 'Tema', 'Topic')}</TableHead>
+                    <TableHead className="text-right">{bi(locale, 'Consultas', 'Inquiries')}</TableHead>
+                    <TableHead>{bi(locale, 'Estado', 'Status')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {DSC_SAMPLE.map((r) => (
+                    <TableRow key={`${r.fecha}-${r.tema}`}>
+                      <TableCell className="font-mono text-2xs text-fg-muted">{r.fecha}</TableCell>
+                      <TableCell className="text-2xs">{r.canal}</TableCell>
+                      <TableCell className="text-xs">{r.tema}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{r.consultas}</TableCell>
+                      <TableCell className="text-2xs text-fg-muted">{r.estado}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardBody>
         </Card>
       </div>

@@ -20,6 +20,7 @@ import {
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
 import { cn } from '@/lib/cn';
+import { DSC_SAMPLE, FRAUD_LABEL_ES } from '@/lib/source-samples';
 
 // View 2 — red flags. Reuses the real aggregate endpoint + the sources
 // endpoint. Flags are COMPUTED from real metrics: high pending %, favor-bank
@@ -58,21 +59,6 @@ const SCOPE_TABS: { id: Scope; es: string; en: string }[] = [
 // Flag thresholds (documented so the demo can explain them honestly).
 const PENDING_FLAG = 25; // % pending ≥ 25 → backlog flag
 const BANK_FLAG = 50; // % favor-bank ≥ 50 and > favor-user → skew flag
-
-const FRAUD_LABEL_ES: Record<string, string> = {
-  PHISHING_KEYWORD: 'Phishing',
-  SCAM_KEYWORD: 'Estafa',
-  FAKE_APP_KEYWORD: 'Aplicación falsa',
-  FAKE_AGENT_KEYWORD: 'Agente falso',
-  UNAUTHORIZED_FEE_KEYWORD: 'Cargo no autorizado',
-  UNAUTHORIZED_CHARGE_KEYWORD: 'Consumo no autorizado',
-};
-
-const DSC_SAMPLE = [
-  { tema: 'Demora en atención de reclamo', consultas: 22, estado: 'En seguimiento' },
-  { tema: 'Suplantación / fraude', consultas: 11, estado: 'Derivado a conducta' },
-  { tema: 'Cobros no reconocidos', consultas: 8, estado: 'En seguimiento' },
-];
 
 function pendingPct(r: PatternRow): number {
   return r.n_complaints > 0 ? (100 * r.n_pending) / r.n_complaints : 0;
@@ -279,24 +265,30 @@ export function RedFlags({ locale }: { locale: Locale }) {
             </Badge>
           </CardHeader>
           <CardBody>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{bi(locale, 'Tema', 'Topic')}</TableHead>
-                  <TableHead className="text-right">{bi(locale, 'Consultas', 'Inquiries')}</TableHead>
-                  <TableHead>{bi(locale, 'Estado', 'Status')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {DSC_SAMPLE.map((r) => (
-                  <TableRow key={r.tema}>
-                    <TableCell className="text-xs">{r.tema}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{r.consultas}</TableCell>
-                    <TableCell className="text-2xs text-fg-muted">{r.estado}</TableCell>
+            <div className="max-h-72 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{bi(locale, 'Fecha', 'Date')}</TableHead>
+                    <TableHead>{bi(locale, 'Canal', 'Channel')}</TableHead>
+                    <TableHead>{bi(locale, 'Tema', 'Topic')}</TableHead>
+                    <TableHead className="text-right">{bi(locale, 'Consultas', 'Inquiries')}</TableHead>
+                    <TableHead>{bi(locale, 'Estado', 'Status')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {DSC_SAMPLE.map((r) => (
+                    <TableRow key={`${r.fecha}-${r.tema}`}>
+                      <TableCell className="font-mono text-2xs text-fg-muted">{r.fecha}</TableCell>
+                      <TableCell className="text-2xs">{r.canal}</TableCell>
+                      <TableCell className="text-xs">{r.tema}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">{r.consultas}</TableCell>
+                      <TableCell className="text-2xs text-fg-muted">{r.estado}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardBody>
         </Card>
       </div>

@@ -1,49 +1,29 @@
 'use client';
 
 import { CheckCircle2, Pause, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
 
-const STAGE_MS = 1200;
-const MOTIVOS = ['cobros_indebidos', 'fraude', 'calidad_servicio', 'informacion'];
+// Live ingestion banner. NO fabricated data: it polls the REAL feed
+// (/app/api/aggregates/feed → /v1/internal/findings) every 10s and animates
+// the most-recent actually-ingested complaint through the per-complaint flow.
+// SSR-safe: the initial render is a fixed placeholder (no Math.random), and
+// every live value is set in useEffect after mount — so server and client
+// markup match and there is no hydration mismatch.
 
-interface Stage {
-  key: string;
-  label: string;
-  out: string;
-}
-interface Scenario {
-  id: string;
-  stages: Stage[];
-}
+const POLL_MS = 10_000; // 10s cadence (matches nrt_feed default)
+const STAGE_MS = 900; // per-step animation when a new complaint arrives
 
-function makeScenario(locale: Locale): Scenario {
-  const r = Math.random;
-  const id = `BCO-2026-${Math.floor(100000 + r() * 900000)}`;
-  const validated = r() > 0.1;
-  const motivo = MOTIVOS[Math.floor(r() * MOTIVOS.length)];
-  const confidence = (0.78 + r() * 0.17).toFixed(2);
-  const systemSignal = r() > 0.5;
-
-  // Per-complaint flow ONLY (real-time). Pattern / Investigation / Lupaman
-  // run on the aggregate pool every 60s, not per complaint — see the
-  // "Aggregate analysis cycle" section below.
-  const stages: Stage[] = [
-    { key: 'recv', label: bi(locale, 'Recibiendo', 'Receiving'), out: id },
-    { key: 'dv', label: 'DIValeVale', out: validated ? bi(locale, 'Validado ✓', 'Validated ✓') : 'INSUFFICIENT' },
-    {
-      key: 'tri',
-      label: 'Triage',
-      out: `${motivo} · ${confidence}${systemSignal ? ' · system_signal' : ''}`,
-    },
-    { key: 'pool', label: bi(locale, 'Pool de agregados', 'Aggregate pool'), out: bi(locale, 'Añadido ✓', 'Added ✓') },
-  ];
-  return { id, stages };
+interface Finding {
+  complaint_id: string;
+  institution_name?: string;
+  classification?: string;
+  severity?: string;
+  received_at?: string;
 }
 
-// Short hover descriptions for each flow step (item 7).
 function stepDesc(locale: Locale, key: string): string {
   switch (key) {
     case 'recv':
@@ -55,8 +35,8 @@ function stepDesc(locale: Locale, key: string): string {
     case 'dv':
       return bi(
         locale,
-        'DIValeVale: valida el formato Anexo 1-A y la calidad de datos antes de aceptar.',
-        'DIValeVale: validates Anexo 1-A format and data quality before acceptance.',
+        'DIValeVale: valida el formato Anexo 1-A y la calidad de datos antes de aceptar (por reclamo).',
+        'DIValeVale: validates Anexo 1-A format and data quality before acceptance (per complaint).',
       );
     case 'tri':
       return bi(
@@ -75,41 +55,80 @@ function stepDesc(locale: Locale, key: string): string {
   }
 }
 
+function makeStages(locale: Locale, f: Finding | null): { key: string; label: string; out: string }[] {
+  return [
+    { key: 'recv', label: bi(locale, 'Recibiendo', 'Receiving'), out: f?.complaint_id ?? '—' },
+    { key: 'dv', label: 'DIValeVale', out: f ? bi(locale, 'Validado ✓', 'Validated ✓') : '—' },
+    {
+      key: 'tri',
+      label: 'Triage',
+      out: f ? `${f.classification ?? '—'} · ${f.severity ?? '—'}` : '—',
+    },
+    { key: 'pool', label: bi(locale, 'Pool de agregados', 'Aggregate pool'), out: f ? bi(locale, 'Añadido ✓', 'Added ✓') : '—' },
+  ];
+}
+
 export function LiveIngestionBanner({ locale }: { locale: Locale }) {
-  const [scenario, setScenario] = useState<Scenario>(() => makeScenario(locale));
+  // Initial state is deterministic (no random) → SSR === first client render.
+  const [latest, setLatest] = useState<Finding | null>(null);
   const [step, setStep] = useState(0);
   const [paused, setPaused] = useState(false);
+  const lastId = useRef<string | null>(null);
 
+  // Poll the real feed for the most recently ingested complaint.
   useEffect(() => {
     if (paused) return undefined;
-    const id = setInterval(() => {
-      setStep((s) => {
-        if (s >= scenario.stages.length) {
-          setScenario(makeScenario(locale));
-          return 0;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await fetch('/app/api/aggregates/feed', { cache: 'no-store' });
+        const d = (await r.json()) as { items?: Finding[] };
+        const items = (d.items ?? []).filter((i) => i.received_at);
+        items.sort((a, b) => (b.received_at ?? '').localeCompare(a.received_at ?? ''));
+        const top = items[0] ?? null;
+        if (!cancelled && top && top.complaint_id !== lastId.current) {
+          lastId.current = top.complaint_id;
+          setLatest(top);
+          setStep(0); // animate the new arrival from the first step
         }
-        return s + 1;
-      });
-    }, STAGE_MS);
-    return () => clearInterval(id);
-  }, [paused, scenario, locale]);
+      } catch {
+        /* keep last state */
+      }
+    };
+    poll();
+    const id = setInterval(poll, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [paused]);
 
-  const done = step >= scenario.stages.length;
+  // Advance the per-complaint flow animation for the current complaint.
+  useEffect(() => {
+    if (paused || latest == null || step >= 4) return undefined;
+    const id = setTimeout(() => setStep((s) => Math.min(4, s + 1)), STAGE_MS);
+    return () => clearTimeout(id);
+  }, [paused, latest, step]);
+
+  const stages = makeStages(locale, latest);
+  const done = step >= stages.length;
 
   return (
     <div className="sticky top-0 z-20 rounded-sbs border border-border bg-surface px-3 py-2 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            {!paused ? (
+            {!paused && latest ? (
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-cyan opacity-75" />
             ) : null}
-            <span className={`relative inline-flex h-2 w-2 rounded-full ${paused ? 'bg-neutral-400' : 'bg-brand-cyan'}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${paused || !latest ? 'bg-neutral-400' : 'bg-brand-cyan'}`} />
           </span>
           <h2 className="text-sm font-semibold tracking-tight text-fg">
             {bi(locale, 'Reclamos entrando al sistema', 'Live ingestion')}
           </h2>
-          <span className="font-mono text-2xs tabular-nums text-fg-subtle">{scenario.id}</span>
+          <span className="font-mono text-2xs tabular-nums text-fg-subtle">
+            {latest ? latest.complaint_id : bi(locale, 'esperando reclamos…', 'waiting for complaints…')}
+          </span>
         </div>
         <button
           type="button"
@@ -122,9 +141,9 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
       </div>
 
       <div className="mt-2 flex flex-wrap items-stretch gap-1.5">
-        {scenario.stages.map((st, i) => {
-          const active = i === step && !done;
-          const complete = i < step || done;
+        {stages.map((st, i) => {
+          const active = latest != null && i === step && !done;
+          const complete = latest != null && (i < step || done);
           const tone = active
             ? 'border-brand-cyan bg-brand-cyan/10 text-brand-navy animate-pulse'
             : complete
@@ -141,26 +160,12 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
                 {st.label}
               </div>
               <div className="mt-0.5 truncate font-mono text-2xs tabular-nums">
-                {active || complete ? st.out : '…'}
+                {latest != null && (active || complete) ? st.out : '…'}
               </div>
             </div>
           );
         })}
-        {done ? (
-          <div className="flex min-w-[120px] flex-1 items-center justify-center rounded-sbs border border-green-600/40 bg-green-50 px-2 py-1 text-2xs font-semibold text-green-700">
-            <CheckCircle2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-            {bi(locale, 'Procesado en 2.1s ✓', 'Processed in 2.1s ✓')}
-          </div>
-        ) : null}
       </div>
-
-      <p className="mt-1.5 text-2xs italic text-fg-muted">
-        {bi(
-          locale,
-          'Investigation y Lupaman procesan el pool cada 60s — ver sección de análisis agregado abajo',
-          'Investigation and Lupaman process the pool every 60s — see the aggregate analysis section below',
-        )}
-      </p>
     </div>
   );
 }

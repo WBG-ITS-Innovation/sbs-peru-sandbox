@@ -19,6 +19,7 @@ tier_classification mapping is the documented adaptation.
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable
@@ -38,11 +39,16 @@ class SizeTier(str, Enum):
     TIER_3 = "TIER_3"  # small
 
 
+# Leading keyword → segment. Covers both the legacy code form
+# (BANCO_DEMO_001) and realistic spaced names (Banco Nuevo Horizonte;
+# Cooperativa de Ahorro …; Caja Los Andes).
 _SEGMENT_PREFIX = {
     "BANCO": InstitutionSegment.BANCO,
     "FINANCIERA": InstitutionSegment.FINANCIERA,
     "CMAC": InstitutionSegment.CMAC,
+    "CAJA": InstitutionSegment.CMAC,
     "COOPAC": InstitutionSegment.COOPAC,
+    "COOPERATIVA": InstitutionSegment.COOPAC,
 }
 
 _TIER_FROM_CLASSIFICATION = {
@@ -74,7 +80,10 @@ class Cohort:
 def _segment_from_display_name(display_name: str) -> InstitutionSegment:
     if not display_name:
         raise CohortAssignmentError("display_name required for segment derivation")
-    head = display_name.split("_", 1)[0].upper()
+    # Leading token, splitting on the first space OR underscore so both the
+    # legacy code form (BANCO_DEMO_001) and realistic names (Banco Nuevo
+    # Horizonte del Perú) resolve to the same segment keyword.
+    head = re.split(r"[ _]", display_name.strip(), maxsplit=1)[0].upper()
     return _SEGMENT_PREFIX.get(head, InstitutionSegment.OTHER)
 
 

@@ -108,6 +108,7 @@ async def get_aggregate_patterns(
                 InstitutionRecord.tier_classification,
                 ComplaintRecord.motivo_code,
                 ComplaintRecord.submotivo,
+                ComplaintRecord.submotivo_2,
                 ComplaintRecord.topic,
                 func.count().label("n_complaints"),
                 func.count()
@@ -130,6 +131,7 @@ async def get_aggregate_patterns(
                 InstitutionRecord.tier_classification,
                 ComplaintRecord.motivo_code,
                 ComplaintRecord.submotivo,
+                ComplaintRecord.submotivo_2,
                 ComplaintRecord.topic,
             )
         )
@@ -153,20 +155,22 @@ async def get_aggregate_patterns(
         dims: dict[str, Any] = {
             "motivo_code": r.motivo_code,
             "submotivo": r.submotivo,
+            "submotivo_2": r.submotivo_2,
             "topic": r.topic,
         }
         if scope == "entity":
             dims["institution_id"] = r.institution_id
-            key = (r.institution_id, r.motivo_code, r.submotivo, r.topic)
+            dims["institution_name"] = r.display_name
+            key = (r.institution_id, r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
         elif scope == "group":
             coh = cohort_cache.get(r.institution_id)
             if coh is None:
                 coh = _cohort_for(r.display_name, r.tier_classification)
                 cohort_cache[r.institution_id] = coh
             dims.update(coh)
-            key = (coh["cohort_id"], r.motivo_code, r.submotivo, r.topic)
+            key = (coh["cohort_id"], r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
         else:  # all
-            key = (r.motivo_code, r.submotivo, r.topic)
+            key = (r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
 
         b = buckets.get(key)
         if b is None:

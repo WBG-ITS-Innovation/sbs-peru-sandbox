@@ -107,16 +107,68 @@ SUBMOTIVOS: dict[str, list[str]] = {
     "OTRO": ["otro motivo", "no clasificado"],
 }
 
-# Optional second level — empty list ⇒ submotivo_2 always NULL for that motivo.
+# Optional second level — clustered descriptive phrases (full sentences, the
+# kind a clustering model would surface). Each motivo has a SMALL pool, so the
+# same phrase is REUSED across many complaints (deterministically by
+# complaint_id) — clusters, not unique-per-row. A real clustering / classifier
+# step replaces these maps in production. Empty list ⇒ submotivo_2 stays NULL.
 SUBMOTIVOS_2: dict[str, list[str]] = {
-    "COBRO_INDEBIDO": ["sin aviso previo", "monto duplicado", "tras cancelación del producto"],
-    "OPERACION_NO_RECONOCIDA": ["comercio en el extranjero", "monto fraccionado", "fuera de horario habitual"],
-    "DEMORA_ATENCION": ["supera plazo regulatorio", "sin número de caso", "reiterado"],
-    "INCUMPLIMIENTO_CONTRATO": ["diferencia mayor a 1 punto", "aplicado retroactivamente"],
-    "CALIDAD_SERVICIO": ["canal digital", "canal presencial"],
-    "INFORMACION_INCORRECTA": ["en app móvil", "en estado físico"],
-    "PUBLICIDAD_ENGANOSA": ["campaña vigente", "letra pequeña"],
-    "OTRO": [],
+    "COBRO_INDEBIDO": [
+        "Cobro de comisión de mantenimiento no informada al momento de la apertura de la cuenta",
+        "Cargo recurrente por un servicio que el cliente afirma haber cancelado previamente",
+        "Comisión por operación en cajero de otra red aplicada sin aviso previo al cliente",
+        "Cobro de seguro asociado al producto que el cliente declara no haber contratado",
+        "Membresía anual de tarjeta cargada pese a la promoción de exoneración vigente",
+    ],
+    "OPERACION_NO_RECONOCIDA": [
+        "Consumo con tarjeta en comercio del extranjero que el titular no reconoce",
+        "Retiro en cajero automático realizado fuera del horario habitual del cliente",
+        "Compra por internet no reconocida posterior a un posible robo de datos",
+        "Transferencia interbancaria no autorizada hacia la cuenta de un tercero desconocido",
+    ],
+    "DEMORA_ATENCION": [
+        "Reclamo sin respuesta tras superar el plazo regulatorio de quince días hábiles",
+        "Demora en la reversión del cargo pese a reiterados requerimientos del cliente",
+        "Bloqueo de tarjeta solicitado por fraude que no se ejecutó a tiempo",
+        "Solicitud de desembolso de crédito aprobado que permanece pendiente varias semanas",
+    ],
+    "INCUMPLIMIENTO_CONTRATO": [
+        "Tasa de interés aplicada distinta a la pactada en el contrato firmado",
+        "Cláusula de penalidad aplicada de forma retroactiva sin comunicación previa al cliente",
+        "Beneficio ofrecido durante la contratación que la entidad finalmente no otorgó",
+    ],
+    "CALIDAD_SERVICIO": [
+        "Trato inadecuado del personal de la agencia durante la atención del reclamo",
+        "Información contradictoria entregada por distintos canales sobre el mismo caso",
+        "Canal digital no disponible de forma reiterada al intentar gestionar el producto",
+    ],
+    "INFORMACION_INCORRECTA": [
+        "Estado de cuenta con un saldo que no coincide con los movimientos reales",
+        "Información de tasa o comisión en la app distinta a la del contrato",
+        "Reporte a central de riesgo con datos que el cliente considera erróneos",
+    ],
+    "PUBLICIDAD_ENGANOSA": [
+        "Promoción de cero comisiones difundida que no se respetó al activar el producto",
+        "Oferta de tasa preferencial que no se aplicó al formalizar el crédito",
+    ],
+    "OTRO": [
+        "Caso sin categoría definida que requiere revisión manual del analista",
+    ],
+    # Freeform motivo codes present in the demo data (lowercase, not in the enum).
+    "transacciones_no_procesadas": [
+        "Operación que figura como exitosa pero cuyo monto fue descontado sin completarse",
+        "Transferencia que salió de la cuenta y nunca llegó al destinatario indicado",
+        "Pago en comercio rechazado en pantalla pero igualmente cargado a la cuenta",
+        "Retiro por cajero no entregado pese a registrarse como operación realizada",
+    ],
+    "error_datos_usuario": [
+        "Datos personales del cliente registrados con errores que impiden la gestión",
+        "Información de contacto desactualizada que bloquea la atención del reclamo",
+    ],
+    "cobros_indebidos": [
+        "Cobro de comisión no informada al momento de la apertura del producto",
+        "Cargo recurrente por un servicio que el cliente afirma haber dado de baja",
+    ],
 }
 
 TOPICS: dict[str, list[str]] = {

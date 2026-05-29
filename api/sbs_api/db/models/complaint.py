@@ -104,7 +104,8 @@ class ComplaintRecord(Base):
     # dimensions to group by. All nullable: a complaint with no classifier
     # output (or an in-flight case) stays NULL.
     submotivo: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    submotivo_2: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Wider: holds full clustered descriptive phrases (migration 20260529_0002).
+    submotivo_2: Mapped[str | None] = mapped_column(String(255), nullable=True)
     topic: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     __table_args__ = (

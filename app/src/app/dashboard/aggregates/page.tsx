@@ -1,3 +1,4 @@
+import { AggregateTables } from '@/components/persona/AggregateTables';
 import { AggregatesView } from '@/components/persona/AggregatesView';
 import { currentLocale } from '@/i18n/server';
 
@@ -10,5 +11,12 @@ export const dynamic = 'force-dynamic';
 
 export default function DashboardAggregatesPage() {
   const locale = currentLocale();
-  return <AggregatesView locale={locale} />;
+  return (
+    <>
+      <div className="mx-auto w-full max-w-screen-2xl p-4 pb-0">
+        <AggregateTables locale={locale} />
+      </div>
+      <AggregatesView locale={locale} />
+    </>
+  );
 }

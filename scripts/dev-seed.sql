@@ -24,14 +24,18 @@ INSERT INTO institutions (
     schema_version,
     permitted_scopes,
     created_at
+-- display_name values are SYNTHETIC, fictional Peruvian-style institution
+-- names (NOT real banks). The leading word (Banco / Cooperativa / Financiera)
+-- is what peer_risk.cohorts derives the segment from, so it must stay a real
+-- segment keyword. institution_id codes are immutable (FKs depend on them).
 ) VALUES
-    ('SBS-001234', 'BANCO_DEMO_001',      true, 'large', NULL, 'v0.1.0',
+    ('SBS-001234', 'Banco Nuevo Horizonte del Perú',     true, 'large', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now()),
-    ('SBS-005678', 'COOPAC_DEMO_002',     true, 'small', NULL, 'v0.1.0',
+    ('SBS-005678', 'Cooperativa de Ahorro Coopac Andes Centro', true, 'small', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now()),
-    ('SBS-009012', 'FINANCIERA_DEMO_003', true, 'small', NULL, 'v0.1.0',
+    ('SBS-009012', 'Financiera Surandina del Perú',      true, 'small', NULL, 'v0.1.0',
         ARRAY['complaints:write', 'complaints:read', 'batch:upload', 'status:read']::varchar[],
         now())
 ON CONFLICT (institution_id) DO NOTHING;

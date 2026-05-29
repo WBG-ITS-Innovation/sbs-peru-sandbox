@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 'use client';
 
-import { AlertTriangle, Building2, ChevronLeft, ChevronRight, Link2 } from 'lucide-react';
+import { AlertTriangle, Building2, ChevronLeft, ChevronRight, FileDown, Link2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts';
 
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
+import { generateBriefPdf } from '@/lib/brief-pdf';
 import { cn } from '@/lib/cn';
 import { DSC_SAMPLE, FRAUD_LABEL_ES } from '@/lib/source-samples';
 
@@ -32,6 +33,7 @@ type Scope = 'entity' | 'group' | 'all';
 interface PatternRow {
   motivo_code: string;
   submotivo: string | null;
+  submotivo_2?: string | null;
   topic: string | null;
   institution_id?: string;
   institution_name?: string;
@@ -39,8 +41,13 @@ interface PatternRow {
   n_complaints: number;
   n_pending: number;
   n_resolved: number;
+  n_favor_user: number;
+  n_favor_bank: number;
+  n_favor_partial: number;
   pct_favor_user: number | null;
   pct_favor_bank: number | null;
+  pct_partial: number | null;
+  complaint_ids?: string[];
 }
 
 interface Sources {
@@ -78,6 +85,8 @@ export function RedFlags({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [tileFilter, setTileFilter] = useState<'all' | 'highrisk' | 'corr' | 'topinst'>('all');
+  const [period, setPeriod] = useState<{ start: string | null; end: string | null } | null>(null);
+  const [briefingId, setBriefingId] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,6 +104,23 @@ export function RedFlags({ locale }: { locale: Locale }) {
       .then((d: Sources) => setSources(d))
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    fetch('/app/api/aggregates/trend', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d: { period?: { start: string | null; end: string | null } }) => setPeriod(d.period ?? null))
+      .catch(() => undefined);
+  }, []);
+
+  async function downloadBrief(r: Flagged) {
+    const id = `${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo ?? ''}`;
+    setBriefingId(id);
+    try {
+      await generateBriefPdf(r, { period });
+    } finally {
+      setBriefingId(null);
+    }
+  }
 
   const correlationInsts = useMemo(() => {
     if (!sources) return new Set<string>();
@@ -311,6 +337,7 @@ export function RedFlags({ locale }: { locale: Locale }) {
               <TableHead className="text-right">{bi(locale, '% pendiente', '% pending')}</TableHead>
               <TableHead className="text-right">{bi(locale, '% favor entidad', '% favor bank')}</TableHead>
               <TableHead>{bi(locale, 'Alertas', 'Flags')}</TableHead>
+              <TableHead className="text-right">{bi(locale, 'Brief', 'Brief')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -325,6 +352,24 @@ export function RedFlags({ locale }: { locale: Locale }) {
                 <TableCell className="text-right font-mono tabular-nums text-[#9a6f00]">{pendingPct(r).toFixed(1)}%</TableCell>
                 <TableCell className="text-right font-mono tabular-nums text-red-700">{r.pct_favor_bank == null ? '—' : `${r.pct_favor_bank.toFixed(1)}%`}</TableCell>
                 <TableCell><div className="flex flex-wrap gap-1">{r.flags.map(flagBadge)}</div></TableCell>
+                <TableCell className="text-right">
+                  {(() => {
+                    const id = `${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo ?? ''}`;
+                    const busy = briefingId === id;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => downloadBrief(r)}
+                        disabled={busy}
+                        title={bi(locale, 'Generar brief PDF con los datos reales de este patrón', 'Generate a PDF brief from this pattern’s real data')}
+                        className="inline-flex items-center gap-1 rounded-sbs border border-border bg-surface px-2 py-1 text-2xs font-medium text-brand-navy hover:bg-surface-subtle disabled:opacity-50"
+                      >
+                        <FileDown className="h-3 w-3" aria-hidden="true" />
+                        {busy ? bi(locale, 'Generando…', 'Generating…') : bi(locale, 'Brief', 'Brief')}
+                      </button>
+                    );
+                  })()}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

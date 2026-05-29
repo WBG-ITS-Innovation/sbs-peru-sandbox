@@ -401,11 +401,11 @@ export function RedFlags({ locale }: { locale: Locale }) {
                         type="button"
                         onClick={() => downloadBrief(r)}
                         disabled={busy}
-                        title={bi(locale, 'Generar brief PDF con los datos reales de este patrón', 'Generate a PDF brief from this pattern’s real data')}
+                        title={bi(locale, 'Reclamito · genera el brief PDF con los datos reales de este patrón', 'Reclamito · generates the PDF brief from this pattern’s real data')}
                         className="inline-flex items-center gap-1 rounded-sbs border border-border bg-surface px-2 py-1 text-2xs font-medium text-brand-navy hover:bg-surface-subtle disabled:opacity-50"
                       >
                         <FileDown className="h-3 w-3" aria-hidden="true" />
-                        {busy ? bi(locale, 'Generando…', 'Generating…') : bi(locale, 'Brief', 'Brief')}
+                        {busy ? bi(locale, 'Generando…', 'Generating…') : bi(locale, 'Reclamito · Brief', 'Reclamito · Brief')}
                       </button>
                     );
                   })()}

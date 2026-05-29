@@ -240,6 +240,26 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
           </div>
         </div>
       </div>
+
+      {/* Agent legend — one-line hover description per agent (incl. Reclamito). */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border-subtle pt-2">
+        <span className="text-2xs font-semibold uppercase tracking-wide text-fg-subtle">{bi(locale, 'Agentes', 'Agents')}</span>
+        {([
+          ['DIValeVale', bi(locale, 'Validador por reclamo: valida el formato Anexo 1-A y la calidad de datos antes de aceptar.', 'Per-complaint validator: checks Anexo 1-A format and data quality before acceptance.')],
+          ['Triage', bi(locale, 'Clasifica el motivo y detecta señales del sistema (clasificador basado en reglas; BERT en producción).', 'Classifies the motive and detects system signals (rules-based classifier; BERT in production).')],
+          ['Investigation', bi(locale, 'Escanea el pool y eleva concentraciones (motivo × institución) sobre el umbral a patrones.', 'Scans the pool and raises (motive × institution) concentrations above threshold into patterns.')],
+          ['Lupaman', bi(locale, 'Cruza reclamos + INDECOPI + redes sociales para detectar fraude emergente.', 'Cross-references complaints + INDECOPI + social media to detect emerging fraud.')],
+          ['Reclamito', bi(locale, 'Genera el brief PDF de un patrón bajo demanda, con los datos reales computados.', 'Generates a pattern’s PDF brief on demand, from the real computed data.')],
+        ] as const).map(([name, desc]) => (
+          <span
+            key={name}
+            title={desc}
+            className="cursor-help rounded-sbs border border-border bg-surface-subtle px-2 py-0.5 text-2xs font-medium text-brand-navy hover:border-brand-cyan"
+          >
+            {name}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

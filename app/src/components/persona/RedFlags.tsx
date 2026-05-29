@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Building2, ChevronLeft, ChevronRight, Link2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from 'recharts';
 
 import {
   Badge,
@@ -68,11 +69,16 @@ interface Flagged extends PatternRow {
   flags: string[];
 }
 
+const PAGE_SIZE = 15;
+
 export function RedFlags({ locale }: { locale: Locale }) {
   const [scope, setScope] = useState<Scope>('entity');
   const [rows, setRows] = useState<PatternRow[]>([]);
   const [sources, setSources] = useState<Sources | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [tileFilter, setTileFilter] = useState<'all' | 'highrisk' | 'corr' | 'topinst'>('all');
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -116,6 +122,70 @@ export function RedFlags({ locale }: { locale: Locale }) {
     out.sort((a, b) => b.flags.length - a.flags.length || b.n_complaints - a.n_complaints);
     return out;
   }, [rows, scope, correlationInsts]);
+
+  // Tile metrics — all computed from the real flagged set.
+  const metrics = useMemo(() => {
+    const highRisk = flagged.filter((r) => r.flags.includes('bank') || r.flags.includes('corr'));
+    const corr = flagged.filter((r) => r.flags.includes('corr'));
+    const byInst = new Map<string, number>();
+    for (const r of flagged) {
+      const k = (scope === 'group' ? r.cohort_id : r.institution_name ?? r.institution_id) ?? '—';
+      byInst.set(k, (byInst.get(k) ?? 0) + r.n_complaints);
+    }
+    const top = [...byInst.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+    return {
+      highRiskCount: highRisk.length,
+      corrCount: corr.length,
+      corrInsts: [...new Set(corr.map((r) => r.institution_name ?? r.institution_id ?? '—'))],
+      topInst: top ? { name: top[0], n: top[1] } : null,
+    };
+  }, [flagged, scope]);
+
+  // Flags-by-type chart (computed from flagged).
+  const flagsByType = useMemo(() => {
+    let backlog = 0, bank = 0, corr = 0;
+    for (const r of flagged) {
+      if (r.flags.includes('pending')) backlog += 1;
+      if (r.flags.includes('bank')) bank += 1;
+      if (r.flags.includes('corr')) corr += 1;
+    }
+    return [
+      { tipo: bi(locale, 'Backlog', 'Backlog'), n: backlog },
+      { tipo: bi(locale, 'Sesgo entidad', 'Bank skew'), n: bank },
+      { tipo: bi(locale, 'Social+INDECOPI', 'Social+INDECOPI'), n: corr },
+    ];
+  }, [flagged, locale]);
+
+  const flagsBySource = useMemo(
+    () => [
+      { fuente: bi(locale, 'Reclamos', 'Complaints'), n: flagged.length },
+      { fuente: bi(locale, 'Social', 'Social'), n: sources?.social_total ?? 0 },
+      { fuente: 'INDECOPI', n: (sources?.indecopi ?? []).reduce((a, c) => a + c.n, 0) },
+    ],
+    [flagged, sources, locale],
+  );
+
+  // Apply the active tile filter, then paginate.
+  const tileFiltered = useMemo(() => {
+    if (tileFilter === 'highrisk') return flagged.filter((r) => r.flags.includes('bank') || r.flags.includes('corr'));
+    if (tileFilter === 'corr') return flagged.filter((r) => r.flags.includes('corr'));
+    if (tileFilter === 'topinst' && metrics.topInst) {
+      const t = metrics.topInst.name;
+      return flagged.filter((r) => ((scope === 'group' ? r.cohort_id : r.institution_name ?? r.institution_id) ?? '—') === t);
+    }
+    return flagged;
+  }, [flagged, tileFilter, metrics, scope]);
+
+  const totalRows = tileFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = tileFiltered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const pickTile = (f: 'highrisk' | 'corr' | 'topinst') => {
+    setTileFilter((cur) => (cur === f ? 'all' : f));
+    setPage(1);
+    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const showInst = scope !== 'all';
   const instHeader = scope === 'group' ? bi(locale, 'Cohorte', 'Cohort') : bi(locale, 'Entidad', 'Entity');
@@ -161,39 +231,124 @@ export function RedFlags({ locale }: { locale: Locale }) {
         )}
       </p>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showInst ? <TableHead>{instHeader}</TableHead> : null}
-            <TableHead>{bi(locale, 'Motivo', 'Motive')}</TableHead>
-            <TableHead>{bi(locale, 'Submotivo', 'Submotive')}</TableHead>
-            <TableHead className="text-right">{bi(locale, 'N°', 'N°')}</TableHead>
-            <TableHead className="text-right">{bi(locale, '% pendiente', '% pending')}</TableHead>
-            <TableHead className="text-right">{bi(locale, '% favor entidad', '% favor bank')}</TableHead>
-            <TableHead>{bi(locale, 'Alertas', 'Flags')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {flagged.map((r, i) => (
-            <TableRow key={`${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo}-${i}`}>
-              {showInst ? (
-                <TableCell className="text-2xs text-fg">{scope === 'group' ? r.cohort_id : r.institution_name ?? r.institution_id}</TableCell>
-              ) : null}
-              <TableCell className="text-xs">{r.motivo_code}</TableCell>
-              <TableCell className="text-xs text-fg-muted">{r.submotivo ?? '—'}</TableCell>
-              <TableCell className="text-right font-mono tabular-nums">{r.n_complaints}</TableCell>
-              <TableCell className="text-right font-mono tabular-nums text-[#9a6f00]">{pendingPct(r).toFixed(1)}%</TableCell>
-              <TableCell className="text-right font-mono tabular-nums text-red-700">{r.pct_favor_bank == null ? '—' : `${r.pct_favor_bank.toFixed(1)}%`}</TableCell>
-              <TableCell><div className="flex flex-wrap gap-1">{r.flags.map(flagBadge)}</div></TableCell>
+      {/* Alert tiles — clickable, filter + scroll to the table */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {([
+          { id: 'highrisk', Icon: AlertTriangle, label: bi(locale, 'Patrones de alto riesgo', 'High-risk patterns'), value: metrics.highRiskCount, brief: bi(locale, 'Sesgo a favor de la entidad o correlación cross-source.', 'Bank-favor skew or cross-source correlation.') },
+          { id: 'topinst', Icon: Building2, label: bi(locale, 'Entidad más señalada', 'Top flagged institution'), value: metrics.topInst?.name ?? '—', brief: metrics.topInst ? bi(locale, `${metrics.topInst.n} reclamos en patrones marcados.`, `${metrics.topInst.n} complaints across flagged patterns.`) : bi(locale, 'Sin datos.', 'No data.') },
+          { id: 'corr', Icon: Link2, label: bi(locale, 'Correlaciones cross-source', 'Cross-source correlations'), value: metrics.corrCount, brief: metrics.corrInsts.length ? bi(locale, `Social + INDECOPI: ${metrics.corrInsts.join(', ')}.`, `Social + INDECOPI: ${metrics.corrInsts.join(', ')}.`) : bi(locale, 'Sin correlaciones (solo alcance por entidad).', 'No correlations (entity scope only).') },
+        ] as const).map((t) => {
+          const Icon = t.Icon;
+          const active = tileFilter === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => pickTile(t.id)}
+              className={cn(
+                'rounded-sbs border border-l-4 bg-surface px-3 py-2 text-left transition-colors hover:bg-surface-subtle',
+                active ? 'border-l-red-600 ring-1 ring-red-300' : 'border-l-red-600',
+              )}
+            >
+              <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-red-700">
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                {t.label}
+              </div>
+              <div className="mt-0.5 truncate text-base font-semibold tabular-nums text-brand-navy">{t.value}</div>
+              <div className="text-2xs leading-snug text-fg-muted">{t.brief}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Flag charts */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Card className="p-2">
+          <h3 className="mb-1 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">{bi(locale, 'Alertas por tipo', 'Flags by type')}</h3>
+          <div className="h-[160px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={flagsByType} layout="vertical" margin={{ top: 2, right: 12, bottom: 0, left: 6 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 9 }} />
+                <YAxis type="category" dataKey="tipo" tick={{ fontSize: 9 }} width={110} />
+                <RTooltip />
+                <Bar dataKey="n" radius={[0, 2, 2, 0]}>
+                  {flagsByType.map((d) => <Cell key={d.tipo} fill="#b91c1c" />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card className="p-2">
+          <h3 className="mb-1 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">{bi(locale, 'Señales por fuente (real)', 'Signals by source (real)')}</h3>
+          <div className="h-[160px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={flagsBySource} layout="vertical" margin={{ top: 2, right: 12, bottom: 0, left: 6 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 9 }} />
+                <YAxis type="category" dataKey="fuente" tick={{ fontSize: 9 }} width={110} />
+                <RTooltip />
+                <Bar dataKey="n" radius={[0, 2, 2, 0]} fill="#002244" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <div ref={tableRef}>
+        {tileFilter !== 'all' ? (
+          <button type="button" onClick={() => setTileFilter('all')} className="mb-1 text-2xs text-fg-link underline">
+            {bi(locale, '× Quitar filtro de tile', '× Clear tile filter')}
+          </button>
+        ) : null}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {showInst ? <TableHead>{instHeader}</TableHead> : null}
+              <TableHead>{bi(locale, 'Motivo', 'Motive')}</TableHead>
+              <TableHead>{bi(locale, 'Submotivo', 'Submotive')}</TableHead>
+              <TableHead className="text-right">{bi(locale, 'N°', 'N°')}</TableHead>
+              <TableHead className="text-right">{bi(locale, '% pendiente', '% pending')}</TableHead>
+              <TableHead className="text-right">{bi(locale, '% favor entidad', '% favor bank')}</TableHead>
+              <TableHead>{bi(locale, 'Alertas', 'Flags')}</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {flagged.length === 0 ? (
+          </TableHeader>
+          <TableBody>
+            {pageRows.map((r, i) => (
+              <TableRow key={`${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo}-${i}`}>
+                {showInst ? (
+                  <TableCell className="text-2xs text-fg">{scope === 'group' ? r.cohort_id : r.institution_name ?? r.institution_id}</TableCell>
+                ) : null}
+                <TableCell className="text-xs">{r.motivo_code}</TableCell>
+                <TableCell className="text-xs text-fg-muted">{r.submotivo ?? '—'}</TableCell>
+                <TableCell className="text-right font-mono tabular-nums">{r.n_complaints}</TableCell>
+                <TableCell className="text-right font-mono tabular-nums text-[#9a6f00]">{pendingPct(r).toFixed(1)}%</TableCell>
+                <TableCell className="text-right font-mono tabular-nums text-red-700">{r.pct_favor_bank == null ? '—' : `${r.pct_favor_bank.toFixed(1)}%`}</TableCell>
+                <TableCell><div className="flex flex-wrap gap-1">{r.flags.map(flagBadge)}</div></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {totalRows === 0 ? (
         <p className="py-4 text-center text-xs text-fg-muted">
           {loading ? bi(locale, 'Cargando…', 'Loading…') : bi(locale, 'Sin patrones marcados en este alcance.', 'No flagged patterns in this scope.')}
         </p>
-      ) : null}
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-mono text-2xs tabular-nums text-fg-muted">
+            {bi(locale, `${totalRows} patrones marcados · pág. ${safePage}/${totalPages}`, `${totalRows} flagged patterns · page ${safePage}/${totalPages}`)}
+          </span>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1} className="flex items-center gap-0.5 rounded-sbs border border-border bg-surface px-2 py-1 text-2xs disabled:opacity-40">
+              <ChevronLeft className="h-3 w-3" aria-hidden="true" />{bi(locale, 'Anterior', 'Prev')}
+            </button>
+            <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="flex items-center gap-0.5 rounded-sbs border border-border bg-surface px-2 py-1 text-2xs disabled:opacity-40">
+              {bi(locale, 'Siguiente', 'Next')}<ChevronRight className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Per-source tables */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

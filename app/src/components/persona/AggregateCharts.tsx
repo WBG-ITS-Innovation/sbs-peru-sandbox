@@ -111,14 +111,21 @@ export function AggregateCharts({
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 9 }} />
             <YAxis type="category" dataKey="motivo_code" tick={{ fontSize: 8 }} width={120} />
-            <RTooltip />
-            <Bar dataKey="n" radius={[0, 2, 2, 0]}>
+            <RTooltip cursor={{ fill: 'rgba(0,159,218,0.06)' }} />
+            <Bar
+              dataKey="n"
+              radius={[0, 2, 2, 0]}
+              cursor="pointer"
+              background={{ fill: 'rgba(148,163,184,0.10)', radius: 2 }}
+              onClick={(d: { motivo_code?: string; payload?: { motivo_code?: string } }) => {
+                const code = d?.payload?.motivo_code ?? d?.motivo_code;
+                if (code) onToggleMotivo(code);
+              }}
+            >
               {byMotivo.map((d) => (
                 <Cell
                   key={d.motivo_code}
                   fill={selectedMotivos.has(d.motivo_code) ? GOLD : d.motivo_code === topMotivo ? CYAN : NAVY}
-                  cursor="pointer"
-                  onClick={() => onToggleMotivo(d.motivo_code)}
                 />
               ))}
             </Bar>

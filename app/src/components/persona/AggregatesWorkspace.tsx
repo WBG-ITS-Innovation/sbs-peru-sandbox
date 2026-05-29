@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { AggregateTables } from '@/components/persona/AggregateTables';
 import { AggregatesDocs } from '@/components/persona/AggregatesDocs';
 import { AggregatesGraphs } from '@/components/persona/AggregatesGraphs';
+import { AnalysisAssistant } from '@/components/persona/AnalysisAssistant';
 import { LiveIngestionBanner } from '@/components/persona/LiveIngestionBanner';
 import { RedFlags } from '@/components/persona/RedFlags';
 import type { Locale } from '@/i18n';
@@ -72,6 +73,8 @@ export function AggregatesWorkspace({ locale }: { locale: Locale }) {
       {tab === 'graficos' ? <AggregatesGraphs locale={locale} onPickMotivo={pickMotivo} /> : null}
       {tab === 'alertas' ? <RedFlags locale={locale} /> : null}
       {tab === 'docs' ? <AggregatesDocs locale={locale} /> : null}
+
+      <AnalysisAssistant locale={locale} />
     </div>
   );
 }

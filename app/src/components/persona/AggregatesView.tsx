@@ -238,28 +238,8 @@ const AGENT_LEVEL: Record<string, { es: string; en: string; tone: string }> = {
   'insight-chatbot': { es: 'BAJO DEMANDA', en: 'ON-DEMAND', tone: 'border-border bg-surface-subtle text-fg-muted' },
 };
 
-function smartAnswer(question: string): string {
-  const s = question.toLowerCase();
-  if (/fraud/.test(s)) {
-    return "Detecté 3 patrones de fraude HIGH severity esta semana, todos en BANCO:TIER_1. El más crítico es 'llamadas suplantando ejecutivos del banco' con 8 reclamos contribuyentes. Lupaman ya redactó una difusión sectorial a los 4 bancos pares del cohorte (en espera de aprobación). [Ver difusión →]";
-  }
-  if (/banco_demo_001|banco demo 001/.test(s)) {
-    return 'BANCO_DEMO_001 tiene actualmente: 23 reclamos en los últimos 7 días, 2 patrones HIGH activos (cobros indebidos, calidad servicio), 1 brief en cola de aprobación de María. Su posición percentil dentro de BANCO:TIER_1 es 78 (sobre la mediana). [Ver detalle →]';
-  }
-  if (/cobros|indebidos/.test(s)) {
-    return "El motivo 'cobros indebidos' (M-3.2) representa 18% del volumen total esta semana, concentrado en BANCO_DEMO_001 (12 reclamos) y COOPAC_DEMO_002 (4). El brief correspondiente está redactado y en cola. Patrón típico: comisiones no divulgadas en estados de cuenta sin comunicación previa al cliente.";
-  }
-  if (/compara|tier/.test(s)) {
-    return 'BANCO:TIER_1 (4 bancos) muestra mediana de 14 reclamos/banco/semana, p90 de 28. TIER_2 (8 bancos) muestra mediana 6, p90 14. La dispersión TIER_1 está 30% sobre el rango histórico de 90 días.';
-  }
-  if (/tendencia|patr/.test(s)) {
-    return 'Top 3 patrones esta semana: (1) Cobros indebidos en BANCO_DEMO_001 (severity 0.92), (2) Fraude emergente cohort BANCO:TIER_1 (0.92), (3) Calidad servicio FINANCIERA_DEMO_003 (0.75). Investigation agent activado en los 3, briefs redactados, esperando aprobación supervisora.';
-  }
-  if (/qué eres|que eres|what are you|ayuda|help/.test(s)) {
-    return "Soy el asistente de análisis del sistema SBS-WBG SupTech. Puedo responder preguntas sobre patrones, instituciones, motivos, cohortes, y briefs activos. Ejemplos: 'patrones de fraude esta semana', 'estado de BANCO_DEMO_001', 'compara TIER_1 con TIER_2'. Mi alcance depende de tu rol — actualmente eres Analista.";
-  }
-  return 'Consulta procesada. Buscando en datos actuales… [Aquí podría aparecer una respuesta basada en contexto del dashboard, pero requiere LLM conectado. Modo replay activado.] Por favor reformula con términos como: patrón, banco, motivo, cohorte, brief, fraude, tendencia.';
-}
+// smartAnswer() (a keyword if/else of canned strings) was removed — the
+// floating widget's ask() now POSTs to the real /app/api/aggregates/chat.
 
 const QUICK_PROMPTS = [
   '¿Qué patrones de fraude hay esta semana?',
@@ -340,17 +320,28 @@ export function AggregatesView({ locale }: { locale: Locale }) {
     };
   }, [load]);
 
-  function ask(question: string) {
+  async function ask(question: string) {
     const q = question.trim();
     if (!q || chatPending) return;
     setInput('');
     setMessages((p) => [...p, { role: 'user', text: q }]);
     setChatPending(true);
-    // 800ms "thinking" before the keyword-driven answer renders.
-    setTimeout(() => {
-      setMessages((p) => [...p, { role: 'assistant', text: smartAnswer(q) }]);
+    // Real, data-grounded answer from /app/api/aggregates/chat. The loading
+    // state tracks the actual fetch — no fixed "thinking" timer.
+    try {
+      const r = await fetch('/app/api/aggregates/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: q }),
+        cache: 'no-store',
+      });
+      const d = (await r.json()) as { answer?: string };
+      setMessages((p) => [...p, { role: 'assistant', text: d.answer ?? bi(locale, 'Sin respuesta.', 'No answer.') }]);
+    } catch {
+      setMessages((p) => [...p, { role: 'assistant', text: bi(locale, 'Asistente no disponible.', 'Assistant unavailable.') }]);
+    } finally {
       setChatPending(false);
-    }, 800);
+    }
   }
 
   // Derived aggregates from real findings.

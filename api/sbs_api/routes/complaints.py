@@ -72,30 +72,7 @@ from sbs_api.models.responses import (
 from sbs_api.observability.logging import get_logger
 from sbs_api.state_machine.resolution_status import is_allowed
 
-# Internal cockpit-action deps (P-RESHAPE-8.5) — the analyst's per-complaint
-# action verbs use the internal persona-scope chain, not the institution
-# edge chain the ingestion routes above use.
-from fastapi import HTTPException
-from pydantic import BaseModel, Field
-
-from sbs_api.auth.persona_scopes import (
-    COMPLAINT_FLAG,
-    COMPLAINT_REQUEST_ENRICHMENT,
-    primary_persona,
-)
-from sbs_api.db.models.persona_audit import PersonaAudit
-from sbs_api.dependencies.persona import requires_scope
-from sbs_api.routes._internal_auth import verify_internal_secret
-
 router = APIRouter(tags=["Ingestion (Tier 1)"])
-
-_FLAG = requires_scope(COMPLAINT_FLAG)
-_REQUEST_ENRICHMENT = requires_scope(COMPLAINT_REQUEST_ENRICHMENT)
-
-
-class _ComplaintActionRequest(BaseModel):
-    actor_user_id: str = Field(min_length=1, max_length=128)
-    rationale: str = Field(min_length=20, max_length=2_000)
 
 _logger = get_logger(__name__)
 
@@ -206,12 +183,6 @@ async def create_complaint(
         raise ResourceNotFound(
             detail="institution_id in body does not match the authenticated caller."
         )
-
-    # Circuit breaker (P-RESHAPE-9): SBS IT can PAUSE ingestion for one FI
-    # during an incident → 503 fi_circuit_breaker_paused.
-    from sbs_api.ingestion.circuit_breaker import assert_ingestion_allowed
-
-    await assert_ingestion_allowed(session, token.institution_id)
 
     # Idempotency: build context from the raw body so the hash matches across
     # equivalent JSON serialisations.
@@ -478,77 +449,3 @@ async def patch_complaint_status(
 
     response.headers["ETag"] = compute_etag(record.complaint_id, record.etag_version)
     return _orm_to_complaint_dict(record)
-
-
-# --- Analyst per-complaint actions (P-RESHAPE-8.5) -------------------------
-
-
-async def _complaint_or_404(session: AsyncSession, complaint_id: str) -> ComplaintRecord:
-    record = (
-        await session.execute(
-            select(ComplaintRecord).where(
-                ComplaintRecord.complaint_id == complaint_id
-            )
-        )
-    ).scalar_one_or_none()
-    if record is None:
-        raise HTTPException(status_code=404, detail="Complaint not found")
-    return record
-
-
-@router.post(
-    "/complaints/{complaint_id}/flag",
-    status_code=201,
-    dependencies=[Depends(verify_internal_secret)],
-)
-async def flag_complaint_for_review(
-    complaint_id: str,
-    body: _ComplaintActionRequest,
-    roles: frozenset[str] = Depends(_FLAG),
-    session: AsyncSession = Depends(get_session),
-):
-    """Analyst flags a complaint for closer review. Records an audited
-    action; downstream review workflow is deferred."""
-    await _complaint_or_404(session, complaint_id)
-    persona = primary_persona(roles) or "unknown"
-    session.add(
-        PersonaAudit(
-            actor_user_id=body.actor_user_id,
-            persona=persona,
-            action="complaint-flagged",
-            target_type="COMPLAINT",
-            target_id=complaint_id,
-            rationale=body.rationale,
-        )
-    )
-    await session.commit()
-    return {"complaint_id": complaint_id, "status": "FLAGGED"}
-
-
-@router.post(
-    "/complaints/{complaint_id}/request_enrichment",
-    status_code=201,
-    dependencies=[Depends(verify_internal_secret)],
-)
-async def request_complaint_enrichment(
-    complaint_id: str,
-    body: _ComplaintActionRequest,
-    roles: frozenset[str] = Depends(_REQUEST_ENRICHMENT),
-    session: AsyncSession = Depends(get_session),
-):
-    """Analyst requests the institution enrich a thin complaint. Records an
-    audited action; the automated DIValeVale enrichment cycle is separate."""
-    await _complaint_or_404(session, complaint_id)
-    persona = primary_persona(roles) or "unknown"
-    session.add(
-        PersonaAudit(
-            actor_user_id=body.actor_user_id,
-            persona=persona,
-            action="complaint-enrichment-requested",
-            target_type="COMPLAINT",
-            target_id=complaint_id,
-            rationale=body.rationale,
-        )
-    )
-    await session.commit()
-    return {"complaint_id": complaint_id, "status": "ENRICHMENT_REQUESTED"}

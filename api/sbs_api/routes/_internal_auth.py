@@ -14,25 +14,15 @@ from __future__ import annotations
 import secrets
 from typing import Iterable
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException
 
 from sbs_api.config import Settings, get_settings
 
 
 def verify_internal_secret(
-    request: Request,
     authorization: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> None:
-    # Dev-only persona stub: a `Bearer stub:<persona>` token authenticates
-    # for internal routes without the shared secret (gated on
-    # auth_stub_enabled + environment==dev). Raises 401 on an unknown
-    # stub persona. See dependencies/auth_stub.py.
-    from sbs_api.dependencies.auth_stub import resolve_stub
-
-    if resolve_stub(request, settings) is not None:
-        return
-
     expected = settings.internal_api_secret
     if not expected:
         raise HTTPException(status_code=404, detail="Not Found")

@@ -143,17 +143,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     _instrument_otel(app)
 
-    _stub_accepted = settings.auth_stub_enabled and settings.environment == "dev"
     get_logger(__name__).info(
         "app_started",
         api_version=settings.api_version,
         environment=settings.environment,
         auth_stub_enabled=settings.auth_stub_enabled,
-        stub_tokens=(
-            "accepted (dev + auth_stub_enabled)"
-            if _stub_accepted
-            else "rejected (real JWT path only)"
-        ),
     )
 
     return app

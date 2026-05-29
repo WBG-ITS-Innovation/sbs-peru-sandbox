@@ -51,19 +51,7 @@
       },
       {
         "name": "sbs:conduct:head",
-        "description": "Jorge-equivalent. CAD / CSD / Market Conduct unit head; final approval + override authority.",
-        "composite": false,
-        "clientRole": false
-      },
-      {
-        "name": "sbs:superintendent",
-        "description": "Sergio-equivalent. Executive aggregate views only — NO per-complaint data, NO raw narrative (P-RESHAPE-5).",
-        "composite": false,
-        "clientRole": false
-      },
-      {
-        "name": "sbs:sbs_it",
-        "description": "Rosa-equivalent. Platform operations telemetry only — NO business data of any kind (P-RESHAPE-5).",
+        "description": "Jorge-equivalent. CAD / CSD / Market Conduct unit head; approvals authority.",
         "composite": false,
         "clientRole": false
       }
@@ -117,38 +105,6 @@
         }
       ],
       "realmRoles": ["sbs:conduct:head", "default-roles-sbs-demo"]
-    },
-    {
-      "username": "sergio@sbs.gob.pe",
-      "email": "sergio@sbs.gob.pe",
-      "firstName": "Sergio",
-      "lastName": "Velarde",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "sergio-demo-2026",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["sbs:superintendent", "default-roles-sbs-demo"]
-    },
-    {
-      "username": "rosa@sbs.gob.pe",
-      "email": "rosa@sbs.gob.pe",
-      "firstName": "Rosa",
-      "lastName": "Salazar",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "rosa-demo-2026",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["sbs:sbs_it", "default-roles-sbs-demo"]
     }
   ],
   "clients": [

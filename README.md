@@ -15,15 +15,6 @@ See [docs/adr/](docs/adr/) for architectural decisions.
 
 In active development. See [docs/PLAN.md](docs/PLAN.md) for current state.
 
-Current backend state (P-RESHAPE-9): six cockpit agents — three FI-facing
-character cards (DIValeVale, Reclamito, Lupaman) and three internal
-(Triage, Investigation, Insight Chatbot) — surfaced through one
-persona-scoped monitoring API. Five SBS personas (Analyst, Supervisor,
-Unit Head, Superintendent, SBS IT), each with its own action surface; see
-[docs/personas/README.md](docs/personas/README.md). The institution-facing
-contract is OpenAPI **v0.2.0** (additive `SupervisoryMetadata` on the list
-response; FI submission contract unchanged).
-
 ## Quickstart
 
 A fresh clone reaches a working signed-request stack in three commands:
@@ -85,7 +76,7 @@ If you are an institution integrating with the SBS sandbox:
    catalog, hand-maintained webhook-verification helpers, OpenAPI
    Generator recipes, example payloads, and a provenance manifest:
    ```bash
-   make standards-pack    # produces dist/standards-pack-v0.2.0.tar.gz
+   make standards-pack    # produces dist/standards-pack-v0.1.0.tar.gz
    ```
    See [standards-pack/README.md](standards-pack/README.md) for the
    contents and verification steps.

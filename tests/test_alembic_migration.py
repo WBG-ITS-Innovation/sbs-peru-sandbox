@@ -31,29 +31,6 @@ async def _drop_schema(test_database_url: str) -> None:
         # their parents. CASCADE handles indirect dependents.
         for table in (
             "alembic_version",
-            "fi_circuit_breakers",
-            "persona_tasks",
-            "manual_findings",
-            "digest_audit",
-            "incident_annotations",
-            "enrichment_requests",
-            "validation_batches",
-            "validation_audit",
-            "chatbot_messages",
-            "chatbot_sessions",
-            "sector_broadcast_audit",
-            "sector_broadcast_deliveries",
-            "sector_broadcasts",
-            "fi_brand_aliases",
-            "social_signals_fixture",
-            "social_signals",
-            "persona_audit",
-            "persona_assignments",
-            "fi_brief_audit",
-            "fi_briefs",
-            "peer_risk_analyses",
-            "pattern_detections",
-            "indecopi_cases",
             "agent_feedback",
             "supervisory_observations",
             "pending_approvals",
@@ -158,33 +135,11 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
         "supervisory_observations",
         "agent_feedback",
         "raw_complaints",
-        "pattern_detections",
-        "indecopi_cases",
-        "peer_risk_analyses",
-        "fi_briefs",
-        "fi_brief_audit",
-        "persona_assignments",
-        "persona_audit",
-        "social_signals",
-        "social_signals_fixture",
-        "fi_brand_aliases",
-        "sector_broadcasts",
-        "sector_broadcast_deliveries",
-        "sector_broadcast_audit",
-        "chatbot_sessions",
-        "chatbot_messages",
-        "validation_audit",
-        "validation_batches",
-        "enrichment_requests",
-        "persona_tasks",
-        "manual_findings",
-        "digest_audit",
-        "incident_annotations",
-        "fi_circuit_breakers",
         "alembic_version",
     }
     missing = expected - tables
     assert not missing, f"missing tables: {missing}"
-    # P-RESHAPE-9 added the fi_circuit_breakers table on top of
-    # P-RESHAPE-8.5's task-inbox + action-surface tables.
-    assert version_num == "20260528_0009"
+    # Part 12 added an additive migration that bumps the head past the
+    # P11 demo-ui-polish overlay. The exact head string is recorded in
+    # api/migrations/versions/ alongside the down-revision chain.
+    assert version_num == "20260527_0001_agents_status"

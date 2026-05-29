@@ -49,7 +49,7 @@ def built_pack(tmp_path_factory) -> dict:
         )
 
     pack_dir = REPO_ROOT / "standards-pack"
-    tarball = REPO_ROOT / "dist" / "standards-pack-v0.2.0.tar.gz"
+    tarball = REPO_ROOT / "dist" / "standards-pack-v0.1.0.tar.gz"
     sha256_file = pathlib.Path(str(tarball) + ".sha256")
     manifest_path = pack_dir / "manifest.json"
     manifest_schema_path = pack_dir / "manifest.schema.json"
@@ -169,7 +169,7 @@ def test_manifest_has_documented_fields(built_pack):
     m = built_pack["manifest"]
     assert m["manifest_schema_version"] == "0.1.0"
     assert m["name"] == "sbs-complaints-standards-pack"
-    assert m["version"] == "0.2.0"
+    assert m["version"] == "0.1.0"
     assert m["status"] == "sandbox"
     assert m["license"] == "LicenseRef-sandbox-pending-legal-review"
     assert m["webhook_signature_version"] == "v1"
@@ -264,7 +264,7 @@ def test_valid_batch_manifest_example_validates_against_pydantic_model(built_pac
 def test_openapi_spec_in_pack_is_well_formed_yaml(built_pack):
     """The frozen OpenAPI spec inside the pack is parseable YAML 3.1."""
 
-    spec_path = built_pack["pack_dir"] / "openapi" / "sbs-complaints-v0.2.yaml"
+    spec_path = built_pack["pack_dir"] / "openapi" / "sbs-complaints-v0.1.yaml"
     spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
     assert spec.get("openapi", "").startswith("3.1")
 

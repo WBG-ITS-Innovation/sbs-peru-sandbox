@@ -1,5 +1,7 @@
 import { safeGet } from '@/auth/persona-server';
+import { AggregationStrip, type Tile } from '@/components/persona/AggregationStrip';
 import { InsightChatbotPanel } from '@/components/persona/InsightChatbotPanel';
+import { InsightsPanel, type Insight } from '@/components/persona/InsightsPanel';
 import { ActionBar, AgentGrid, FindingsTable, Section } from '@/components/persona/primitives';
 import { Badge } from '@/components/ui';
 import type { Locale } from '@/i18n';
@@ -50,6 +52,65 @@ export async function SupervisorDashboard({
   ]);
 
   const fiAgents = agents.agents.filter((a) => a.is_fi_facing);
+  const highCount = findings.items.filter((f) => {
+    const s = f.severity.toLowerCase();
+    return s === 'high' || s === 'alta';
+  }).length;
+
+  const tiles: Tile[] = [
+    {
+      label: bi(locale, 'Briefs pendientes', 'Briefs awaiting approval'),
+      value: briefs.total,
+      tone: briefs.total > 0 ? 'amber' : 'green',
+    },
+    {
+      label: bi(locale, 'Patrones', 'Patterns'),
+      value: findings.items.length,
+      tone: 'neutral',
+    },
+    {
+      label: bi(locale, 'Severidad alta', 'High severity'),
+      value: highCount,
+      tone: highCount > 0 ? 'red' : 'green',
+      trend: highCount > 0 ? 'up' : 'flat',
+    },
+    {
+      label: bi(locale, 'Agentes de cara a IF', 'FI-facing agents'),
+      value: fiAgents.length,
+      tone: 'neutral',
+    },
+  ];
+
+  const insights: Insight[] = [
+    {
+      tone: highCount > 0 ? 'red' : 'green',
+      headline: bi(
+        locale,
+        `${highCount} patrones de severidad alta en las IF asignadas`,
+        `${highCount} HIGH-severity patterns across assigned FIs`,
+      ),
+      body: bi(
+        locale,
+        'Outliers de riesgo entre pares que pueden requerir un brief a la institución.',
+        'Peer-risk outliers that may warrant a brief to the institution.',
+      ),
+      meta: `${findings.items.length} ${bi(locale, 'patrones', 'patterns')}`,
+    },
+    {
+      tone: briefs.total > 0 ? 'amber' : 'green',
+      headline: bi(
+        locale,
+        `${briefs.total} brief(s) esperando tu firma`,
+        `${briefs.total} brief(s) awaiting your sign-off`,
+      ),
+      body: bi(
+        locale,
+        'Aprueba o delega los briefs de Reclamito antes del SLA del equipo.',
+        'Approve or delegate Reclamito briefs before the team SLA.',
+      ),
+      meta: `${briefs.total} ${bi(locale, 'pendientes', 'pending')}`,
+    },
+  ];
 
   return (
     <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -62,6 +123,10 @@ export async function SupervisorDashboard({
             {bi(locale, 'Panorama de patrones de las IF asignadas', 'Pattern landscape for assigned FIs')}
           </p>
         </header>
+
+        <AggregationStrip tiles={tiles} />
+
+        <InsightsPanel title={bi(locale, 'Insights', 'Insights')} insights={insights} />
 
         <Section
           title={bi(locale, 'Briefs pendientes de aprobación', 'Briefs awaiting sign-off')}

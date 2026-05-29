@@ -1,5 +1,8 @@
 import { safeGet } from '@/auth/persona-server';
+import { ActionButton } from '@/components/persona/ActionButton';
+import { AggregationStrip, type Tile } from '@/components/persona/AggregationStrip';
 import { InsightChatbotPanel } from '@/components/persona/InsightChatbotPanel';
+import { InsightsPanel, type Insight } from '@/components/persona/InsightsPanel';
 import { ActionBar, AgentGrid, Section } from '@/components/persona/primitives';
 import { Badge } from '@/components/ui';
 import type { Locale } from '@/i18n';
@@ -24,6 +27,16 @@ interface PatternSummary {
 interface TopPatternsResponse {
   items: PatternSummary[];
 }
+interface CohortItem {
+  cohort_id: string;
+  band: string;
+  high_pattern_count: number;
+  why_es?: string;
+}
+interface CohortHealthResponse {
+  items: CohortItem[];
+  banner_es?: string;
+}
 
 export async function SuperintendentDashboard({
   persona,
@@ -32,7 +45,7 @@ export async function SuperintendentDashboard({
   persona: PersonaConfig;
   locale: Locale;
 }) {
-  const [digest, broadcasts, actions, agents, suggested] = await Promise.all([
+  const [digest, broadcasts, actions, agents, suggested, cohorts] = await Promise.all([
     safeGet<TopPatternsResponse>(persona, '/v1/internal/exec/top_patterns_summary', { items: [] }),
     safeGet<SectorBroadcastSummary>(persona, '/v1/internal/exec/sector_broadcasts', {
       awaiting_co_approval: 0,
@@ -51,7 +64,74 @@ export async function SuperintendentDashboard({
       { persona: persona.role, questions: [] },
       { asUser: true },
     ),
+    safeGet<CohortHealthResponse>(persona, '/v1/internal/exec/cohort_health', { items: [] }),
   ]);
+
+  const redCohorts = cohorts.items.filter((c) => c.band === 'RED');
+  const secondaryAction = actions.actions.find(
+    (a) => a.action_id === 'approve_sector_broadcast_secondary',
+  );
+
+  const tiles: Tile[] = [
+    {
+      label: bi(locale, 'Broadcasts co-aprobación', 'Broadcasts awaiting co-approval'),
+      value: broadcasts.awaiting_co_approval,
+      tone: broadcasts.awaiting_co_approval > 0 ? 'red' : 'green',
+      trend: broadcasts.awaiting_co_approval > 0 ? 'up' : 'flat',
+    },
+    {
+      label: bi(locale, 'Cohortes en ROJO', 'Cohorts in RED'),
+      value: redCohorts.length,
+      tone: redCohorts.length > 0 ? 'red' : 'green',
+    },
+    {
+      label: bi(locale, 'Patrones en digest', 'Patterns in digest'),
+      value: digest.items.length,
+      tone: 'neutral',
+    },
+    {
+      label: bi(locale, 'Agentes de cara a IF', 'FI-facing agents'),
+      value: agents.agents.length,
+      tone: 'neutral',
+    },
+  ];
+
+  const insights: Insight[] = [
+    {
+      tone: redCohorts.length > 0 ? 'red' : 'green',
+      headline:
+        redCohorts.length > 0
+          ? bi(
+              locale,
+              `Cohorte ${redCohorts[0].cohort_id} pasó a ROJO esta semana`,
+              `Cohort ${redCohorts[0].cohort_id} moved to RED this week`,
+            )
+          : bi(locale, 'Todas las cohortes en verde', 'All cohorts green'),
+      body:
+        redCohorts.length > 0
+          ? bi(
+              locale,
+              redCohorts[0].why_es ?? 'Riesgo de conducta elevado en la cohorte.',
+              'Elevated conduct risk in the cohort.',
+            )
+          : bi(locale, 'Sin patrones de severidad alta esta semana.', 'No HIGH-severity patterns this week.'),
+      meta: `${redCohorts.length} ${bi(locale, 'cohortes en rojo', 'cohorts red')}`,
+    },
+    {
+      tone: broadcasts.awaiting_co_approval > 0 ? 'amber' : 'green',
+      headline: bi(
+        locale,
+        `${broadcasts.awaiting_co_approval} alerta(s) sectorial(es) esperan tu co-aprobación`,
+        `${broadcasts.awaiting_co_approval} sector broadcast(s) await your co-approval`,
+      ),
+      body: bi(
+        locale,
+        'Como segundo aprobador puedes co-aprobar una alerta sectorial. Revisa la lista de aprobaciones abajo.',
+        'As the second approver you can co-approve a sector broadcast. Review the approvals list below.',
+      ),
+      meta: `${broadcasts.awaiting_co_approval} ${bi(locale, 'pendientes', 'pending')}`,
+    },
+  ];
 
   return (
     <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -64,6 +144,17 @@ export async function SuperintendentDashboard({
             {bi(locale, 'Vista ejecutiva · solo agregados', 'Executive view · aggregates only')}
           </p>
         </header>
+
+        <AggregationStrip tiles={tiles} />
+
+        <Section
+          title={bi(locale, 'Agentes de cara a las IF (agregado)', 'FI-facing agents (aggregate)')}
+          locale={locale}
+        >
+          <AgentGrid agents={agents.agents} locale={locale} />
+        </Section>
+
+        <InsightsPanel title={bi(locale, 'Insights', 'Insights')} insights={insights} />
 
         <Section
           title={bi(locale, 'Resumen semanal (vista previa)', 'Weekly digest preview')}
@@ -126,7 +217,17 @@ export async function SuperintendentDashboard({
                       {b.threat_indicators.join(' · ')}
                     </div>
                   </div>
-                  <Badge variant="pending">{b.status}</Badge>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Badge variant="pending">{b.status}</Badge>
+                    {secondaryAction ? (
+                      <ActionButton
+                        action={secondaryAction}
+                        locale={locale}
+                        presetTargetId={b.broadcast_id}
+                        presetLabel={bi(locale, 'Co-aprobar', 'Co-approve')}
+                      />
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -136,12 +237,6 @@ export async function SuperintendentDashboard({
           </div>
         </Section>
 
-        <Section
-          title={bi(locale, 'Agentes de cara a las IF (agregado)', 'FI-facing agents (aggregate)')}
-          locale={locale}
-        >
-          <AgentGrid agents={agents.agents} locale={locale} />
-        </Section>
       </div>
 
       <div className="space-y-4">

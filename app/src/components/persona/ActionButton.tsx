@@ -20,36 +20,40 @@ import type { ActionDef } from '@/types/persona-dashboards';
 interface ActionButtonProps {
   action: ActionDef;
   locale: Locale;
+  /** Pre-fill the parameterised target (e.g. a broadcast id) and hide the input. */
+  presetTargetId?: string;
+  /** Override the trigger button label. */
+  presetLabel?: string;
 }
 
 // Generic action button: opens a modal that enforces the registry's
 // minimum-rationale length, collects a target id when the endpoint is
 // parameterised, then POSTs through the server action. The backend
 // response (success or problem+json detail) is shown inline.
-export function ActionButton({ action, locale }: ActionButtonProps) {
+export function ActionButton({ action, locale, presetTargetId, presetLabel }: ActionButtonProps) {
   const [open, setOpen] = useState(false);
   const [rationale, setRationale] = useState('');
   const [summary, setSummary] = useState('');
-  const [targetId, setTargetId] = useState('');
+  const [targetId, setTargetId] = useState(presetTargetId ?? '');
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const label = bi(locale, action.label_es, action.label_en);
+  const label = presetLabel ?? bi(locale, action.label_es, action.label_en);
   const description = action.description_es
     ? bi(locale, action.description_es, action.description_en ?? '')
     : '';
   const minChars = action.requires_rationale_chars ?? 0;
-  const needsTarget = action.endpoint.includes('{');
+  const needsTarget = action.endpoint.includes('{') && !presetTargetId;
   const isPropose = action.action_id === 'propose_pattern';
 
   const rationaleOk = rationale.trim().length >= minChars;
-  const targetOk = !needsTarget || targetId.trim().length > 0;
+  const targetOk = needsTarget ? targetId.trim().length > 0 : true;
   const canSubmit = rationaleOk && targetOk && !pending;
 
   function reset() {
     setRationale('');
     setSummary('');
-    setTargetId('');
+    setTargetId(presetTargetId ?? '');
     setResult(null);
   }
 
@@ -65,7 +69,7 @@ export function ActionButton({ action, locale }: ActionButtonProps) {
       if (res.ok) {
         setRationale('');
         setSummary('');
-        setTargetId('');
+        setTargetId(presetTargetId ?? '');
       }
     });
   }

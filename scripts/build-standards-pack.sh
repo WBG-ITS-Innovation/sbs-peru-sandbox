@@ -4,7 +4,7 @@
 # Populates standards-pack/ from authoritative sources elsewhere in
 # the repository (api/openapi/, sdk-helpers/, error catalog), computes
 # checksums.sha256, writes manifest.json with build-time provenance,
-# and produces dist/standards-pack-v${PACK_VERSION}.tar.gz + a .sha256 companion.
+# and produces dist/standards-pack-v0.1.0.tar.gz + a .sha256 companion.
 #
 # See ADR 0039 (distribution + manifest shape) and ADR 0038 (helper
 # scope). Convenience: `make standards-pack`.
@@ -23,7 +23,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 cd "$REPO_ROOT"
 
 PACK_NAME="sbs-complaints-standards-pack"
-PACK_VERSION="0.2.0"
+PACK_VERSION="0.1.0"
 MANIFEST_SCHEMA_VERSION="0.1.0"
 WEBHOOK_SIGNATURE_VERSION="v1"
 API_MIN_VERSION="0.1.0"
@@ -82,11 +82,11 @@ mkdir -p \
 # --- OpenAPI spec ------------------------------------------------------------
 
 log "copying OpenAPI spec"
-# The OpenAPI filename carries the spec's major.minor (v0.2) — distinct
+# The OpenAPI filename carries the spec's major.minor (v0.1) — distinct
 # from the pack's semver (PACK_VERSION). The spec version moves with the
 # wire contract; the pack version moves with the publication.
 cp api/openapi/sbs-api-v1.yaml \
-   "$STANDARDS_PACK_DIR/openapi/sbs-complaints-v0.2.yaml"
+   "$STANDARDS_PACK_DIR/openapi/sbs-complaints-v0.1.yaml"
 
 # --- JSON Schemas -----------------------------------------------------------
 
@@ -161,7 +161,7 @@ cat > "$STANDARDS_PACK_DIR/manifest.json" <<EOF
   "contains": ["openapi", "schemas", "catalogs", "sdk-helpers", "examples", "recipes"],
   "attestation": {
     "type": "none",
-    "rationale": "v0.2 sandbox release. SLSA + cosign attestation land with OCI artifact distribution per ADR 0039."
+    "rationale": "v0.1 sandbox release. SLSA + cosign attestation land at v0.2 with OCI artifact distribution per ADR 0039."
   }
 }
 EOF

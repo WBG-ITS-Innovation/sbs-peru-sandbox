@@ -243,21 +243,6 @@ async def verified_mtls_subject(
     * the HMAC institution_id cross-check (ADR 0027 amendment)
     """
 
-    # Dev-only persona stub (P-RESHAPE-8.6): a `Bearer stub:<persona>`
-    # token short-circuits the mTLS layer with a synthetic subject so the
-    # OAuth dependency can run its persona-scope check (which yields 403
-    # for a persona lacking an institution scope). Gated on
-    # auth_stub_enabled + environment==dev.
-    from sbs_api.dependencies.auth_stub import resolve_stub
-
-    principal = resolve_stub(request, settings)
-    if principal is not None:
-        return MtlsSubject(
-            institution_id=principal.user_id,
-            cn=principal.username,
-            cert_thumbprint="stub",
-        )
-
     if settings.disable_mtls_for_tests:
         # Tests that don't exercise the mTLS layer should override this
         # dependency directly. The escape hatch returns a sentinel that

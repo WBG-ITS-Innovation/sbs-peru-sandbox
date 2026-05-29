@@ -17,6 +17,7 @@ import {
   Cpu,
   FileText,
   History,
+  Layers,
   LayoutGrid,
   Radio,
   Route,
@@ -31,6 +32,7 @@ interface NavItem {
   icon: LucideIcon;
   label: string;
   pilot?: boolean;
+  alert?: boolean;
 }
 
 interface NavRailProps {
@@ -49,6 +51,7 @@ interface NavRailProps {
     pilot_phase: string;
     primary_label: string;
     role_indicator: string;
+    aggregates?: string;
   };
   roleLabel: string;
 }
@@ -66,13 +69,19 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
     { href: '/demo-journey', icon: Route, label: labels.demo_journey },
     { href: '/rr1', icon: LayoutGrid, label: labels.rr1 },
     { href: '/docs', icon: BookOpen, label: labels.docs },
+    {
+      href: '/cockpit/aggregates',
+      icon: Layers,
+      label: labels.aggregates ?? 'Agregados y Agentes',
+      alert: true,
+    },
   ];
   const pilotItems: NavItem[] = [
     { href: '/analytics', icon: BarChart3, label: labels.analytics, pilot: true },
     { href: '/assistant', icon: Sparkles, label: labels.assistant, pilot: true },
   ];
 
-  const renderItem = ({ href, icon: Icon, label, pilot }: NavItem) => {
+  const renderItem = ({ href, icon: Icon, label, pilot, alert }: NavItem) => {
     const active = pathname === href || pathname.startsWith(`${href}/`);
     return (
       <Link
@@ -97,6 +106,12 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
           <span
             aria-hidden="true"
             className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full border border-brand-navy bg-brand-gold"
+          />
+        ) : null}
+        {alert ? (
+          <span
+            aria-hidden="true"
+            className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-brand-navy bg-red-600"
           />
         ) : null}
         <span

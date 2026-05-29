@@ -1,0 +1,16 @@
+{
+  "model_id": "replay-correlator-v1",
+  "turns": [
+    {
+      "tool_calls": [
+        {"name": "compute_anomaly_score", "arguments": {}},
+        {"name": "search_similar_complaints", "arguments": {"limit": 5}}
+      ]
+    },
+    {"text": "Correlator complete."}
+  ],
+  "final_output_override": {
+    "cross_source_signals": [],
+    "correlation_strength": 0.0
+  }
+}

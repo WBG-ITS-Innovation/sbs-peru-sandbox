@@ -1,6 +1,5 @@
-import Link from 'next/link';
-
 import { activePersona } from '@/auth/persona-server';
+import { SwitchPersona } from '@/components/persona/SwitchPersona';
 import { LanguageToggle } from '@/components/shell/LanguageToggle';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
@@ -38,12 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               toggle: t(locale, 'nav.language_toggle'),
             }}
           />
-          <Link
-            href="/login"
-            className="rounded-sbs border border-fg-inverted/30 px-2.5 py-1 text-xs font-medium hover:bg-white/10"
-          >
-            {bi(locale, 'Cambiar persona', 'Switch persona')}
-          </Link>
+          <SwitchPersona locale={locale} />
         </div>
       </header>
       <main className="flex-1">{children}</main>

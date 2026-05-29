@@ -48,6 +48,24 @@ DEFAULT_SCRIPTS: dict[str, list[dict[str, Any]]] = {
         },
         {"text": "synthesis-complete"},
     ],
+    "taxonomy-harmonizer": [
+        {
+            "tool_calls": [
+                {"name": "query_audit_chain", "arguments": {}},
+                {"name": "log_taxonomy_unknown", "arguments": {}},
+            ]
+        },
+        {"text": "harmonizer-complete"},
+    ],
+    "cross-source-correlator": [
+        {
+            "tool_calls": [
+                {"name": "compute_anomaly_score", "arguments": {}},
+                {"name": "search_similar_complaints", "arguments": {}},
+            ]
+        },
+        {"text": "correlator-complete"},
+    ],
 }
 
 

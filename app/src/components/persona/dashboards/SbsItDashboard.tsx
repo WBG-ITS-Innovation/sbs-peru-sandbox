@@ -1,5 +1,7 @@
 import { safeGet } from '@/auth/persona-server';
-import { ActionBar, AgentGrid, KpiTile, Section } from '@/components/persona/primitives';
+import { AggregationStrip, type Tile } from '@/components/persona/AggregationStrip';
+import { InsightsPanel, type Insight } from '@/components/persona/InsightsPanel';
+import { ActionBar, AgentGrid, Section } from '@/components/persona/primitives';
 import { Badge } from '@/components/ui';
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
@@ -46,7 +48,72 @@ export async function SbsItDashboard({
     }),
   ]);
 
-  const deliveredOk = webhooks.by_status.delivered ?? 0;
+  const avgSuccess =
+    health.items.length > 0
+      ? health.items.reduce((s, a) => s + a.success_rate_24h, 0) / health.items.length
+      : 1;
+  const successPct = Math.round(avgSuccess * 100);
+  const worstAgent = [...health.items].sort((a, b) => a.success_rate_24h - b.success_rate_24h)[0];
+  const maxLag = lag.items.reduce((m, i) => Math.max(m, i.lag_hours), 0);
+  const anyRedLag = lag.items.some((i) => i.status === 'RED');
+  const anyAmberLag = lag.items.some((i) => i.status === 'AMBER');
+
+  const tiles: Tile[] = [
+    {
+      label: bi(locale, 'Éxito de agentes 24h', 'Agent success 24h'),
+      value: `${successPct}%`,
+      tone: successPct >= 95 ? 'green' : successPct >= 85 ? 'amber' : 'red',
+    },
+    {
+      label: bi(locale, 'Webhooks fallidos', 'Failed webhooks'),
+      value: webhooks.last_failures.length,
+      tone: webhooks.last_failures.length > 0 ? 'red' : 'green',
+    },
+    {
+      label: bi(locale, 'Retraso máx. ingesta', 'Max ingestion lag'),
+      sublabel: bi(locale, 'horas', 'hours'),
+      value: maxLag.toFixed(1),
+      tone: anyRedLag ? 'red' : anyAmberLag ? 'amber' : 'green',
+    },
+    {
+      label: bi(locale, 'Errores recientes', 'Recent errors'),
+      value: errors.errors.length,
+      tone: errors.errors.length > 3 ? 'red' : errors.errors.length > 0 ? 'amber' : 'green',
+    },
+  ];
+
+  const insights: Insight[] = [
+    {
+      tone: worstAgent && worstAgent.success_rate_24h < 0.9 ? 'amber' : 'green',
+      headline: worstAgent
+        ? bi(
+            locale,
+            `Agente ${worstAgent.agent}: ${Math.round(worstAgent.success_rate_24h * 100)}% de éxito 24h`,
+            `Agent ${worstAgent.agent}: ${Math.round(worstAgent.success_rate_24h * 100)}% success 24h`,
+          )
+        : bi(locale, 'Agentes sin datos', 'No agent data'),
+      body: bi(
+        locale,
+        'Es la tasa de éxito más baja entre los agentes. Sin incidentes anotados aún.',
+        'This is the lowest success rate across agents. No incidents annotated yet.',
+      ),
+      meta: `${health.items.length} ${bi(locale, 'agentes', 'agents')}`,
+    },
+    {
+      tone: anyRedLag ? 'red' : anyAmberLag ? 'amber' : 'green',
+      headline: bi(
+        locale,
+        `Retraso de ingesta máximo: ${maxLag.toFixed(1)}h`,
+        `Max ingestion lag: ${maxLag.toFixed(1)}h`,
+      ),
+      body: bi(
+        locale,
+        'Instituciones por encima de su cadencia esperada de envío.',
+        'Institutions above their expected submission cadence.',
+      ),
+      meta: `${lag.items.length} ${bi(locale, 'instituciones', 'institutions')} · ${webhooks.last_failures.length} ${bi(locale, 'fallos webhook', 'webhook failures')}`,
+    },
+  ];
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-4">
@@ -59,28 +126,16 @@ export async function SbsItDashboard({
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <KpiTile
-          label={bi(locale, 'Webhooks entregados', 'Webhooks delivered')}
-          value={`${deliveredOk}/${webhooks.total}`}
-          locale={locale}
-        />
-        <KpiTile
-          label={bi(locale, 'Fallos de webhook', 'Webhook failures')}
-          value={webhooks.last_failures.length}
-          locale={locale}
-        />
-        <KpiTile
-          label={bi(locale, 'Profundidad de colas', 'Queue depth')}
-          value={Object.values(queues.queues).join(', ') || '—'}
-          locale={locale}
-        />
-        <KpiTile
-          label={bi(locale, 'Errores recientes', 'Recent errors')}
-          value={errors.errors.length}
-          locale={locale}
-        />
-      </div>
+      <AggregationStrip tiles={tiles} />
+
+      <InsightsPanel title={bi(locale, 'Insights', 'Insights')} insights={insights} />
+
+      <Section
+        title={bi(locale, 'Monitoreo de agentes (técnico)', 'Agent monitoring (technical)')}
+        locale={locale}
+      >
+        <AgentGrid agents={agents.agents} locale={locale} opsView />
+      </Section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Section title={bi(locale, 'Retraso de ingesta', 'Ingestion lag')} locale={locale}>
@@ -169,19 +224,18 @@ export async function SbsItDashboard({
             {webhooks.last_failures.length === 0 ? (
               <p className="text-fg-subtle">{bi(locale, 'Sin fallos recientes.', 'No recent failures.')}</p>
             ) : null}
+            <div className="flex items-center justify-between border-t border-border-subtle pt-1">
+              <dt className="text-fg-muted">{bi(locale, 'Profundidad de colas', 'Queue depth')}</dt>
+              <dd className="font-mono text-fg">
+                {Object.values(queues.queues).join(', ') || '—'}
+              </dd>
+            </div>
           </dl>
         </Section>
       </div>
 
       <Section title={bi(locale, 'Acciones de remediación', 'Remediation actions')} locale={locale}>
         <ActionBar actions={actions.actions} locale={locale} />
-      </Section>
-
-      <Section
-        title={bi(locale, 'Monitoreo de agentes (técnico)', 'Agent monitoring (technical)')}
-        locale={locale}
-      >
-        <AgentGrid agents={agents.agents} locale={locale} opsView />
       </Section>
     </div>
   );

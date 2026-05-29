@@ -38,7 +38,6 @@ from sbs_api.models.responses import (
     HealthStatus,
     InstitutionStatus,
     ProblemDetail,
-    SupervisoryMetadata,
     VersionInfo,
 )
 
@@ -71,6 +70,5 @@ __all__ = [
     "HealthStatus",
     "InstitutionStatus",
     "ProblemDetail",
-    "SupervisoryMetadata",
     "VersionInfo",
 ]

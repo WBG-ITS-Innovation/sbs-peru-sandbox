@@ -1,0 +1,38 @@
+**Ingestion**
+    - Update so that if claim is of poor quality, it is rejected with a reason or ingested with a flag (preferred option)
+    - Determine plan for frequency of ingestion (NRT could help curb issues preventively)
+- Demo tier 2 batch ingestion
+    - Add setup/onboarding frequency settings on developer portal upon logging in as a bank
+    - What timestamp should be looked into (fecha de reclamo, solucion de reclamo) to incorporate a compliant into the trends analysis?
+    - Make sure complaints that are updated reflect on the system live (updated data)
+
+**Complaint-level analysis**
+    - Exclude the complaints that don't have a lot of information in the live analysis, add them later on
+    - Analysis of the market to understand what is going on overall
+    - Understand what the institution is doing with its customers
+    - Add different dimensions of patterns, not just based on motivo
+
+**Patterns/trends/analysis**
+- Make sure all filters are included on all pages
+- Fix the human guardrails
+- Regenerate the persona-level dashboard
+- Fix the links to the complaints (404)
+- Analysis of the responses/resolutions to understand trends of whether the cases were closed in favor of the financial institutions or the customers
+- (For SBS) what do they want to see in terms of data asap as supervisors
+- Matching between the output of the agents vs the observations during the inspections
+- create a dashboard (output of reclamito) that has visuals connected to those tables with the output:
+tab 1 has table 1 entity-level motivo | submotivo | submotivo 2 (they are using regex to capture that, maybe we acn use the LLM) | topic or trend | #compliants | % out of all complaints | % of complaints in favor of the user | % of complaints in favor of the bank
+tab 2: same but by groups of banks like big 4, coopac etc
+tab 2: same table but across all entities
+
+then a table with social trends, topic 1, topic 2 and those percentages (findings of lupaman)
+
+then a table for indecopi
+then a table for SBS DSC, citizen assistance department
+- also a view of red flags based on db claims, social media, indecopi, sbs, narratory framework with three tabs (similar to above) and with motivo level but other tables for social media, indecopi, sbs dsc
+
+**Overall structure**
+- Separate ingestion from compliant-level data from data summaries
+- Separate the flows as documentation vs clean output in each section
+- complaint-level AND aggregates Logs of agents and pipelines need to appear clean
+- we need the personas to really work so its not overwhelming to have everything

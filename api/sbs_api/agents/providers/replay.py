@@ -1,11 +1,10 @@
 """ReplayProvider — load pre-recorded turn sequences from disk.
 
-The real agents (triage, investigation, synthesis) fall back to it
-when the runtime is asked for deterministic behaviour on a known
-fixture complaint (e.g. the demo invariant test for BCO-2026-000001).
-The taxonomy-harmonizer and cross-source-correlator scaffold agents
-that used this provider for demo output were removed in P-RESHAPE-9;
-ReplayProvider itself remains a valid testing primitive.
+For the May 27 demo, two scaffolded agents (taxonomy-harmonizer,
+cross-source-correlator) use this provider end-to-end. The real
+agents also fall back to it when the runtime is asked for
+deterministic behaviour on a known fixture complaint (e.g. the demo
+invariant test for BCO-2026-000001).
 
 Fixture layout: ``fixtures/replay/<agent_name>/<complaint_id>.json``.
 The file shape is the same as the mock script — a list of turns —

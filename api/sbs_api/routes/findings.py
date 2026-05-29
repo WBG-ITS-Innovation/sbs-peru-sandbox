@@ -16,21 +16,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import uuid
-
 from sbs_api.audit import record_audit_event
-from sbs_api.auth.persona_scopes import (
-    PATTERN_DEFER,
-    PATTERN_DELEGATE,
-    ROLE_ANALYST,
-    primary_persona,
-)
 from sbs_api.db.models.complaint_narrative_draft import ComplaintNarrativeDraft
 from sbs_api.db.models.pending_approval import PendingApproval
-from sbs_api.db.models.persona_audit import PersonaAudit
-from sbs_api.db.models.persona_task import PersonaTask
 from sbs_api.dependencies.db import get_session
-from sbs_api.dependencies.persona import requires_scope
 from sbs_api.findings import (
     FindingsFilters,
     build_finding_detail,
@@ -41,9 +30,6 @@ from sbs_api.routes._internal_auth import current_roles, verify_internal_secret
 from sbs_api.sse import get_bus
 
 router = APIRouter(prefix="/internal", tags=["Internal"])
-
-_DELEGATE = requires_scope(PATTERN_DELEGATE)
-_DEFER = requires_scope(PATTERN_DEFER)
 
 
 # -- GET /v1/internal/findings ----------------------------------------------
@@ -270,88 +256,3 @@ async def send_to_approvals(
         audit_event_id=audit.id,
         idempotent_replay=False,
     )
-
-
-# --- Supervisor pattern actions (P-RESHAPE-8.5) ---------------------------
-
-
-class DelegateRequest(BaseModel):
-    actor_user_id: str = Field(min_length=1, max_length=128)
-    assigned_to_user_id: str | None = Field(default=None, max_length=128)
-    rationale: str = Field(min_length=30, max_length=2_000)
-
-
-class DeferRequest(BaseModel):
-    actor_user_id: str = Field(min_length=1, max_length=128)
-    rationale: str = Field(min_length=20, max_length=2_000)
-
-
-@router.post(
-    "/findings/{finding_id}/delegate",
-    status_code=201,
-    dependencies=[Depends(verify_internal_secret)],
-)
-async def delegate_pattern(
-    finding_id: str,
-    body: DelegateRequest,
-    roles: frozenset[str] = Depends(_DELEGATE),
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """Supervisor delegates a pattern to an analyst — creates a
-    PATTERN_DELEGATION task in the analyst inbox."""
-    persona = primary_persona(roles) or "unknown"
-    task_id = str(uuid.uuid4())
-    session.add(
-        PersonaTask(
-            task_id=task_id,
-            created_by_user_id=body.actor_user_id,
-            created_by_persona=persona,
-            assigned_to_user_id=body.assigned_to_user_id,
-            assigned_to_persona=ROLE_ANALYST,
-            task_type="PATTERN_DELEGATION",
-            ref_type="FINDING",
-            ref_id=finding_id,
-            rationale=body.rationale,
-            state="OPEN",
-        )
-    )
-    session.add(
-        PersonaAudit(
-            actor_user_id=body.actor_user_id,
-            persona=persona,
-            action="pattern-delegated",
-            target_type="FINDING",
-            target_id=finding_id,
-            rationale=body.rationale,
-        )
-    )
-    await session.commit()
-    return {"task_id": task_id, "state": "OPEN", "task_type": "PATTERN_DELEGATION"}
-
-
-@router.post(
-    "/findings/{finding_id}/defer",
-    status_code=201,
-    dependencies=[Depends(verify_internal_secret)],
-)
-async def defer_pattern(
-    finding_id: str,
-    body: DeferRequest,
-    roles: frozenset[str] = Depends(_DEFER),
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """Supervisor defers a pattern. Records an audited action; the
-    deferral workflow (re-surface timer) is deferred."""
-    persona = primary_persona(roles) or "unknown"
-    session.add(
-        PersonaAudit(
-            actor_user_id=body.actor_user_id,
-            persona=persona,
-            action="pattern-deferred",
-            target_type="FINDING",
-            target_id=finding_id,
-            rationale=body.rationale,
-        )
-    )
-    await session.commit()
-    return {"finding_id": finding_id, "status": "DEFERRED"}

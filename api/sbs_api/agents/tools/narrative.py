@@ -6,7 +6,7 @@ demo's scripted analyst edit lands on a real gap — that is the
 locked demo invariant.
 
 summarize_for_executive collapses the evidence bundle to plain
-Spanish for Sergio (Superintendent) or María (Supervisor lead).
+Spanish for Sergio (Superintendent) or Mariela (Supervisor lead).
 """
 
 from __future__ import annotations
@@ -93,7 +93,7 @@ class SummarizeForExecutiveTool(Tool):
     description = (
         "Collapse the evidence bundle into a plain-Spanish executive "
         "summary. Audience: 'superintendent' (Sergio) or 'supervisor' "
-        "(María)."
+        "(Mariela)."
     )
     version = "summarize-v1"
     parameters = {

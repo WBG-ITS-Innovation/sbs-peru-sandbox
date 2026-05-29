@@ -179,38 +179,6 @@ class ComplaintCreated(BaseModel):
     )
 
 
-class SupervisoryMetadata(BaseModel):
-    """SBS-derived fields populated by the Triage agent — never by the FI.
-
-    Response-side only (P-RESHAPE-9 / standards pack v0.2.0). This block
-    is excluded from the FI submission contract (:class:`Complaint` stays
-    27 fields, ``extra=forbid``); it gives ``system_signal`` a clean home
-    on the list view without touching Annex 1-A.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    system_signal: bool | None = Field(
-        default=None,
-        description=(
-            "True if Triage detected a system-level signal (outage, fraud, "
-            "breach indicator)."
-        ),
-    )
-    system_signal_reasons: list[
-        Literal[
-            "OUTAGE_KEYWORD",
-            "FRAUD_KEYWORD",
-            "AMOUNT_THRESHOLD",
-            "REGULATORY_BREACH_INDICATOR",
-        ]
-    ] | None = Field(default=None)
-    validation_verdict: Literal[
-        "VALID", "RECOVERABLE", "INSUFFICIENT", "INVALID"
-    ] | None = Field(default=None)
-    triage_classified_at: datetime | None = Field(default=None)
-
-
 class ComplaintListItem(BaseModel):
     """One row of ``GET /v1/complaints`` list response.
 
@@ -230,13 +198,6 @@ class ComplaintListItem(BaseModel):
     severity: Severity
     resolution_status: ResolutionStatus
     received_at: datetime
-    supervisory_metadata: SupervisoryMetadata | None = Field(
-        default=None,
-        description=(
-            "SBS-side fields populated by Triage. Read-only for FIs; excluded "
-            "from FI submission validation."
-        ),
-    )
 
 
 class ComplaintListResponse(BaseModel):

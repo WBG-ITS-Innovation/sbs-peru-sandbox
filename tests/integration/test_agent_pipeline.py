@@ -1,15 +1,12 @@
 """Agent pipeline integration test — exercises the full chain end-to-end.
 
-Seeds a complaint, runs the Triage → (optional) Investigation → Synthesis
-chain, then asserts:
-- One agent_run row exists per agent that actually ran, ordered by
-  started_at.
+Seeds a complaint, runs the Triage → Investigation → Synthesis chain,
+then asserts:
+- One agent_run row exists per agent, ordered by started_at.
 - Audit chain carries agent-run-started + agent-run-completed per agent.
 - Findings detail endpoint surfaces classification + features + draft +
   executive_summary populated from the new agent rows.
-- The BCO-2026-000001 demo invariants hold (system_signal-bearing
-  narrative drives Investigation + Synthesis).
-- A clean complaint (no system_signal) stops at Triage.
+- The BCO-2026-000001 demo invariants hold.
 """
 
 from __future__ import annotations
@@ -40,20 +37,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "docs" / "schemas" / "agent_run.schema.json"
 
 DEMO_ID = "BCO-2026-000001"
-CLEAN_ID = "BCO-2026-000099"
-
-# Narrative chosen so the deterministic system_signal detector fires on
-# the FRAUD_KEYWORD rule ("múltiples cargos no autorizados"). Triage's
-# replay fixture still classifies this complaint as undisclosed-fees-credit
-# (0.87) — the classification and the system signal are independent.
-_DEMO_NARRATIVE_WITH_SIGNAL = (
-    "Cliente reclama múltiples cargos no autorizados en su tarjeta de crédito; "
-    "solicita reversa inmediata y revisión del estado de cuenta."
-)
-
-_CLEAN_NARRATIVE = (
-    "Cliente solicita devolución de comisión por mantenimiento del mes anterior."
-)
 
 
 def _validator():
@@ -61,14 +44,7 @@ def _validator():
     return jsonschema.Draft202012Validator(schema)
 
 
-async def _seed_complaint(
-    session: AsyncSession,
-    complaint_id: str,
-    *,
-    narrative: str = _DEMO_NARRATIVE_WITH_SIGNAL,
-    motivo_code: str = "OPERACION_NO_RECONOCIDA",
-    product_category: str = "TARJETA_CREDITO",
-) -> None:
+async def _seed_complaint(session: AsyncSession, complaint_id: str) -> None:
     inst = (
         await session.execute(
             select(InstitutionRecord).where(
@@ -97,15 +73,17 @@ async def _seed_complaint(
                 institution_id="SBS-001234",
                 received_date=date(2026, 5, 27),
                 complainant_doc_type="DNI",
-                product_category=product_category,
-                channel="AGENCIA",
-                motivo_code=motivo_code,
+                product_category="credit-card",
+                channel="branch",
+                motivo_code="undisclosed-fee",
                 severity="HIGH",
-                description_text=narrative,
+                description_text=(
+                    "Cliente reclama cargos no informados en su tarjeta."
+                ),
                 description_language="es",
                 complainant_age_range="35-44",
                 complainant_district="150101",
-                submission_method="APP_MOVIL",
+                submission_method="api",
                 source="api_realtime",
                 received_at=datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc),
             )
@@ -148,10 +126,7 @@ async def test_pipeline_writes_three_real_agent_runs(test_database_url, db_schem
     assert len(triage) == 1
     assert len(investigation) == 1
     assert len(synthesis) == 1
-    assert outcome.system_signal is True
-    assert outcome.system_signal_reasons  # at least one reason code emitted
-    # Triage's own routing decision is informational only.
-    assert outcome.route_to in {"info-only", "review", "reject"}
+    assert outcome.route_to == "investigation"
 
     # Ordering: triage finished before investigation, investigation before synthesis.
     assert triage[0].ended_at <= investigation[0].started_at
@@ -237,54 +212,6 @@ async def test_pipeline_demo_invariants_with_replay_provider(
     assert syn is not None
     text = syn["executive_summary"]["text"]
     assert text and len(text) > 30
-
-
-@pytest.mark.asyncio
-async def test_clean_complaint_stops_at_triage(
-    test_database_url, db_schema, monkeypatch
-):
-    """A complaint with no system_signal must not invoke Investigation.
-
-    Per the May-2026 cockpit reshape, the per-complaint Investigation
-    invocation path is gone. Only a triage row should exist for this
-    complaint, and ``outcome.investigation`` must be None.
-    """
-    monkeypatch.setenv("SBS_API_MODEL_PROVIDER", "mock")
-    reset_provider_cache()
-
-    engine = create_async_engine(test_database_url)
-    SessionMaker = async_sessionmaker(engine, expire_on_commit=False)
-    try:
-        async with SessionMaker() as session:
-            await _seed_complaint(
-                session,
-                CLEAN_ID,
-                narrative=_CLEAN_NARRATIVE,
-                motivo_code="COBRO_INDEBIDO",
-                product_category="TARJETA_CREDITO",
-            )
-            outcome = await run_agent_pipeline(
-                session, complaint_id=CLEAN_ID, provider=MockProvider()
-            )
-            await session.commit()
-
-            rows = (
-                await session.execute(
-                    select(AgentRun)
-                    .where(AgentRun.complaint_id == CLEAN_ID)
-                    .order_by(AgentRun.started_at)
-                )
-            ).scalars().all()
-    finally:
-        await engine.dispose()
-
-    assert outcome.system_signal is False
-    assert outcome.system_signal_reasons == []
-    assert outcome.investigation is None
-    assert outcome.synthesis is None
-
-    names = [r.agent_name for r in rows]
-    assert names == ["triage"]
 
 
 @pytest.mark.asyncio

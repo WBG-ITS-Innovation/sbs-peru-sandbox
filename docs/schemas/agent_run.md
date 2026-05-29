@@ -153,7 +153,7 @@ The seed script lives under `scripts/seed_demo_narrative.py` (Prompt 10 WS0). Th
 
 | `agent_name` | Required keys | Notes |
 | --- | --- | --- |
-| `triage` | `route_to`, `priority`, `system_signal`, `system_signal_reasons` | `route_to` ∈ {`info-only`, `review`, `reject`} — informational only; `priority` ∈ {`low`, `medium`, `high`}; `system_signal` is the boolean the orchestrator uses to gate Investigation; `system_signal_reasons` is an array of enum codes (`OUTAGE_KEYWORD`, `FRAUD_KEYWORD`, `AMOUNT_THRESHOLD`, `REGULATORY_BREACH_INDICATOR`) — never raw narrative excerpts. |
+| `triage` | `route`, `severity_hint`, `reason` | `route` ∈ {`classifier`, `cross-source-correlator`, `narrative-drafter`, `discard`}; `severity_hint` ∈ {`low`, `medium`, `high`, `critical`}; `reason` is a one-sentence rationale rendered in the audit row. |
 | `classifier` | `classification`, `confidence`, `sub_patterns` | `classification` is an Annex 1-A code; `confidence` ∈ [0, 1]; `sub_patterns` is an array of `{label, evidence_span}` for patterns not in Annex 1-A but surfaced (e.g., `comisión por mantenimiento`). `confidence_degraded: true` is added when partial-run regex fallback supplied the label. |
 | `narrative-drafter` | `draft_text`, `language`, `evidence_refs` | `draft_text` is the analyst-editable summary shown on Findings; `language` is `es-PE` or `en-US`; `evidence_refs` is an array of `{tool_name, tool_call_index}` pointing back into `tool_calls` so the UI can highlight cited evidence. |
 | `cross-source-correlator` | `composite_score`, `threshold`, `channel_contributions`, `anomaly_flag` | `composite_score` and `threshold` ∈ [0, 1]; `channel_contributions` is an array of `{channel, value, contribution}` where `channel` ∈ {`complaints`, `social`, `indecopi`, `plavia`, `internal`}; `anomaly_flag` triggers the cockpit anomaly card. |
@@ -168,4 +168,3 @@ Every object in the JSON Schema sets `additionalProperties: false`. Every change
 ## Revision history
 
 - 2026-05-22 — v1 introduced as the Prompt 10 ↔ Prompt 12 integration gate.
-- 2026-05-27 — `triage.final_output` carries `system_signal` (boolean) and `system_signal_reasons` (array of enum codes). Investigation is gated on `system_signal == true`; the per-complaint Investigation invocation path is removed. Additive change — keys are new and optional for older runs.

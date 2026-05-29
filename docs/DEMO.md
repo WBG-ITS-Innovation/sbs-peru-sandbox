@@ -31,11 +31,11 @@ Open the case file. Show: the cluster of related complaints, the temporal patter
 
 > "Five specialist agents collaborated on this. Each runs its own LangGraph internally. They speak A2A to each other and MCP to the shared tool layer. The Investigation Agent pulled regulatory citations from Resolución 04036-2022 itself. None of this is hard-coded — these are agents reasoning over the data."
 
-**Beat 4 — Jorge's two lenses (60 seconds)**
+**Beat 4 — Mariela's two lenses (60 seconds)**
 
 Switch to Radar dashboard — prudential view, institution-level risk scores trending. The three flagged institutions are climbing. Switch to Alarm — conduct view, incident-level spike on the investment product category.
 
-> "Jorge's two supervisory lenses, same data, different vantage points. Prudential supervision sees institutional risk concentration. Market conduct sees the consumer harm pattern. Both views feed the same decision."
+> "Mariela's two supervisory lenses, same data, different vantage points. Prudential supervision sees institutional risk concentration. Market conduct sees the consumer harm pattern. Both views feed the same decision."
 
 **Beat 5 — Human-in-the-loop (60 seconds)**
 

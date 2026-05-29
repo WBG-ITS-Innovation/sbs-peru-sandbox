@@ -1,0 +1,29 @@
+**Ingestion**
+	- Update so that if claim is of poor quality, it is rejected with a reason or ingested with a flag (preferred option)
+    - Determine plan for frequency of ingestion (NRT could help curb issues preventively)
+	- Demo tier 2 batch ingestion
+    - Add setup/onboarding frequency settings on developer portal upon logging in as a bank
+    - What timestamp should be looked into (fecha de reclamo, solucion de reclamo) to incorporate a compliant into the trends analysis?
+    - Make sure complaints that are updated reflect on the system live (updated data)
+
+**Complaint-level analysis**
+    - Exclude the complaints that don't have a lot of information in the live analysis, add them later on
+    - Analysis of the market to understand what is going on overall
+    - Understand what the institution is doing with its customers
+    - Add different dimensions of patterns, not just based on motivo
+
+
+
+**Patterns/trends/analysis**
+- Make sure all filters are included on all pages
+- Fix the human guardrails
+- Regenerate the persona-level dashboard
+- Fix the links to the complaints (404)
+- Analysis of the responses/resolutions to understand trends of whether the cases were closed in favor of the financial institutions or the customers
+- (For SBS) what do they want to see in terms of data asap as supervisors
+- Matching between the output of the agents vs the observations during the inspections
+
+**Overall structure**
+- Separate ingestion from compliant-level data from data summaries
+- Separate the flows as documentation vs clean output in each section
+- Logs need to appear clean

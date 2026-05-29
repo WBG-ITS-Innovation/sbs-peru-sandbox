@@ -194,29 +194,6 @@ async def db_schema(test_database_url):
     from datetime import date
 
     async with SessionMaker() as session:
-        # P-RESHAPE-3: 8 synthetic peer institutions so PRR percentile
-        # computations have a meaningful cohort.  4 in BANCO:TIER_1
-        # (peers of BANCO_DEMO_001) and 4 in COOPAC:TIER_2 (peers of
-        # COOPAC_DEMO_002). The "mid" tier maps to TIER_2 in cohorts.py.
-        _peer_institutions = [
-            InstitutionRecord(
-                institution_id=f"SBS-10{i:04d}",
-                display_name=f"BANCO_PEER_{i:03d}",
-                onboarded=True,
-                tier_classification="large",
-                schema_version="v0.1.0",
-            )
-            for i in range(1, 5)
-        ] + [
-            InstitutionRecord(
-                institution_id=f"SBS-20{i:04d}",
-                display_name=f"COOPAC_PEER_{i:03d}",
-                onboarded=True,
-                tier_classification="mid",
-                schema_version="v0.1.0",
-            )
-            for i in range(1, 5)
-        ]
         session.add_all(
             [
                 InstitutionRecord(
@@ -231,28 +208,14 @@ async def db_schema(test_database_url):
                     institution_id="SBS-005678",
                     display_name="COOPAC_DEMO_002",
                     onboarded=True,
-                    tier_classification="mid",
+                    tier_classification="small",
                     rate_limit_per_minute=None,
                     schema_version="v0.1.0",
                 ),
             ]
-            + _peer_institutions
         )
         # Flush institutions before complaints so the FK constraint sees them.
         await session.flush()
-        # Per the May-2026 cockpit reshape, BANCO_DEMO_001 gets ONE
-        # complaint whose narrative trips the Triage system_signal
-        # detector (outage keyword + TARJETA_CREDITO gates → OUTAGE_KEYWORD
-        # reason). The other two stay clean so the gating test sees a
-        # mixed corpus.
-        def _bco_narrative(seq: int) -> str:
-            if seq == 1:
-                return (
-                    "sistema caído desde ayer, transferencia de S/. 8,500 "
-                    "no procesada, llevo 18 horas sin acceso"
-                )
-            return "Cargo no autorizado por S/ 245.00 — pendiente."
-
         session.add_all(
             [
                 ComplaintRecord(
@@ -264,7 +227,7 @@ async def db_schema(test_database_url):
                     channel="APP_MOVIL",
                     motivo_code="COBRO_INDEBIDO",
                     severity="HIGH",
-                    description_text=_bco_narrative(i),
+                    description_text="Cargo no autorizado por S/ 245.00 — pendiente.",
                     description_language="es",
                     complainant_age_range="35_44",
                     complainant_district="150100",
@@ -304,95 +267,6 @@ async def db_schema(test_database_url):
                 for i in range(1, 4)
             ]
         )
-        await session.flush()
-
-        # P-RESHAPE-4: register the demo FIs' conduct-officer endpoint
-        # (reuses InstitutionWebhookConfig.callback_url) + an outbound
-        # HMAC secret so Issue Resurface briefs can be signed + delivered
-        # to the compose webhook-listener in a demo run. 32-byte secret.
-        from sbs_api.db.models.institution_webhook_config import (
-            InstitutionWebhookConfig,
-        )
-        from sbs_api.db.models.outbound_webhook_secret import (
-            OutboundWebhookSecret,
-        )
-
-        # Demo FIs + the 8 RESHAPE-3 peers all get a conduct-officer
-        # endpoint + outbound secret so FI briefs AND sector broadcasts
-        # (which fan out to cohort peers) can be signed + delivered.
-        _webhook_fis = ["SBS-001234", "SBS-005678"]
-        _webhook_fis += [f"SBS-10{i:04d}" for i in range(1, 5)]
-        _webhook_fis += [f"SBS-20{i:04d}" for i in range(1, 5)]
-        for inst_id in _webhook_fis:
-            session.add(
-                InstitutionWebhookConfig(
-                    institution_id=inst_id,
-                    callback_url="http://webhook-listener:8080/sbs-callback",
-                    enabled=True,
-                )
-            )
-            session.add(
-                OutboundWebhookSecret(
-                    institution_id=inst_id,
-                    kid="sandbox-v1",
-                    active_secret=b"0" * 32,
-                )
-            )
-
-        # P-RESHAPE-6: brand aliases for social entity resolution + a
-        # 14-row phishing-campaign fixture targeting BANCO_DEMO_001 over
-        # the last 72h (relative to the 2026-05-27 demo anchor). The
-        # fixture table is inert for non-social tests — build_fraud_windows
-        # reads the live social_signals table, not this one.
-        from datetime import datetime as _dt
-        from datetime import timedelta
-        from datetime import timezone as _tz
-
-        from sbs_api.db.models.fi_brand_alias import FIBrandAlias
-        from sbs_api.db.models.social_signal import SocialSignalFixture
-        from sbs_api.ingestion.social.entity_resolver import normalize_alias
-
-        _anchor = _dt(2026, 5, 27, 12, 0, tzinfo=_tz.utc)
-        _aliases = [
-            ("SBS-001234", "banco demo", "DISPLAY_NAME"),
-            ("SBS-001234", "bancodemo", "HANDLE"),
-            ("SBS-001234", "bcodemo.pe", "DOMAIN"),
-            ("SBS-005678", "coopac demo", "DISPLAY_NAME"),
-        ]
-        for inst_id, alias, kind in _aliases:
-            session.add(
-                FIBrandAlias(
-                    institution_id=inst_id,
-                    alias_normalized=normalize_alias(alias),
-                    alias_kind=kind,
-                )
-            )
-
-        for i in range(14):
-            session.add(
-                SocialSignalFixture(
-                    signal_id=f"FIXTURE-{i:04d}",
-                    source="FIXTURE",
-                    source_post_id=f"fixture-post-{i:04d}",
-                    captured_at=_anchor - timedelta(hours=2 + i * 4),
-                    post_authored_at=_anchor - timedelta(hours=3 + i * 4),
-                    # Already anonymized (no handles). Mentions the brand +
-                    # fraud keywords so the runner resolves SBS-001234 and
-                    # classifies PHISHING + UNAUTHORIZED_FEE.
-                    post_text_es=(
-                        "Cuidado: phishing que suplanta a Banco Demo y cobra "
-                        "comisión no autorizada a los clientes."
-                    ),
-                    detected_institution_codes=["SBS-001234"],
-                    detected_fraud_indicators=[
-                        "PHISHING_KEYWORD",
-                        "UNAUTHORIZED_FEE_KEYWORD",
-                    ],
-                    engagement_score=120 + i,
-                    raw_url=f"https://example.invalid/post/{i}",
-                )
-            )
-
         await session.commit()
 
     yield

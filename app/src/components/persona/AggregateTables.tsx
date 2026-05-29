@@ -402,6 +402,35 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
     setFInst(new Set());
   };
 
+  // Row → filters. Clicking a table row pins that row's dimensions
+  // (motivo / submotivo / topic / entity) into the top filter bar, which the
+  // chart row above reads from `filtered` — so table → charts + filters stays
+  // in sync (the chart → table direction already works via the motivo bars).
+  // Clicking the same already-pinned row again clears the filters (toggle).
+  const rowIsPinned = (r: PatternRow): boolean => {
+    const instV = scope === 'group' ? r.cohort_id : r.institution_id;
+    const instOk = !showInst || (!!instV && fInst.size === 1 && fInst.has(instV));
+    return (
+      fMotivo.size === 1 && fMotivo.has(r.motivo_code) &&
+      (r.submotivo ? fSubmotivo.size === 1 && fSubmotivo.has(r.submotivo) : fSubmotivo.size === 0) &&
+      (r.topic ? fTopic.size === 1 && fTopic.has(r.topic) : fTopic.size === 0) &&
+      instOk
+    );
+  };
+  const applyRowFilters = (r: PatternRow) => {
+    if (rowIsPinned(r)) {
+      clearAll();
+      return;
+    }
+    setFMotivo(new Set([r.motivo_code]));
+    setFSubmotivo(r.submotivo ? new Set([r.submotivo]) : new Set());
+    setFTopic(r.topic ? new Set([r.topic]) : new Set());
+    if (showInst) {
+      const v = scope === 'group' ? r.cohort_id : r.institution_id;
+      setFInst(v ? new Set([v]) : new Set());
+    }
+  };
+
   const setSort = (k: SortKey) => {
     if (k === sortKey) setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
     else {
@@ -538,7 +567,13 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
         </TableHeader>
         <TableBody>
           {pageRows.map((r, i) => (
-            <TableRow key={`${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo}-${r.topic}-${i}`}>
+            <TableRow
+              key={`${r.institution_id ?? r.cohort_id ?? 'all'}-${r.motivo_code}-${r.submotivo}-${r.topic}-${i}`}
+              onClick={() => applyRowFilters(r)}
+              aria-pressed={rowIsPinned(r)}
+              title={bi(locale, 'Clic: filtrar por esta fila (y actualizar los gráficos)', 'Click: filter by this row (and update the charts)')}
+              className={cn('cursor-pointer', rowIsPinned(r) && 'bg-brand-cyan/10 hover:bg-brand-cyan/15')}
+            >
               {showInst ? (
                 <TableCell className="max-w-[200px] truncate text-2xs text-fg" title={entityLabel(r)}>
                   {entityLabel(r)}
@@ -556,7 +591,7 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
               <TableCell className={COL_BANK}>{fmtPct(r.pct_favor_bank)}</TableCell>
               <TableCell className={COL_PARTIAL}>{fmtPct(r.pct_partial)}</TableCell>
               <TableCell className={COL_PENDING}>{fmtPct(pendingPct(r))}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 <Sheet>
                   <SheetTrigger asChild>
                     <button

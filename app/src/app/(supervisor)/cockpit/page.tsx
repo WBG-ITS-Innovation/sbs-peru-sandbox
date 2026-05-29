@@ -189,7 +189,7 @@ export default async function CockpitPage() {
         }
       />
       <div className="mx-auto w-full max-w-7xl space-y-4 px-6 py-4">
-        <InsightsBoard />
+        <InsightsBoard locale={locale} />
         <CockpitClient
           initialSnapshot={snapshot}
           initialTaxonomyStats={taxonomyStats}

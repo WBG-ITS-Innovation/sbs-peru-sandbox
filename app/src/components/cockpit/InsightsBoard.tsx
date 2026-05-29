@@ -46,6 +46,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui';
+import type { Locale } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 const NAVY = '#002244';
@@ -99,12 +100,14 @@ const SUGGESTIONS = [
   { dim: 'severity' as GranularDim, chart: 'pie' as GranularChart, label_es: 'Distribución de severidad', label_en: 'Severity distribution' },
 ];
 
-export function InsightsBoard() {
+export function InsightsBoard({ locale }: { locale: Locale }) {
   const [data, setData] = useState<Insights | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [granDim, setGranDim] = useState<GranularDim>('institution');
   const [granChart, setGranChart] = useState<GranularChart>('bar');
-  const es = typeof document !== 'undefined' && document.documentElement.lang.startsWith('es');
+  // Locale is resolved server-side and passed in, so the rendered language is
+  // identical on the server and the client's first paint (no hydration drift).
+  const es = locale !== 'en-US';
 
   useEffect(() => {
     let cancelled = false;

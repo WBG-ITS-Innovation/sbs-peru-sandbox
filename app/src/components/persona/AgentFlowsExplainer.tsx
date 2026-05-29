@@ -116,7 +116,7 @@ export function AgentFlowsExplainer({
     {"code": "M-4.1", "label": "informacion_insuficiente", "confidence": 0.18}
   ],
   "system_signal": false,
-  "model": "bert-base-spanish-sbs-finetuned-v3.2"
+  "model": "clasificador-basado-en-reglas (BERT en producción)"
 }`,
       rule: bi(locale, 'Si confidence < 0.6 OR system_signal=true → marca para revisión humana', 'If confidence < 0.6 OR system_signal=true → flag for human review'),
       timing: '~120ms',

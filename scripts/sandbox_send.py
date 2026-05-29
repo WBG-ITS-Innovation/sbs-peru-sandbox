@@ -76,6 +76,55 @@ _DOC_TYPES = ["DNI", "CE", "RUC"]
 _SUBMISSION = ["APP_MOVIL", "WEB", "AGENCIA", "CAJERO", "POS"]
 
 
+# Well-formed Anexo-1A enrichment. The base generator (_build_payload) only
+# sends free-text + a few codes, which the STRICT Anexo-1A validator rejects
+# (missing tipo/numero de documento, unknown canal, etc.). To make the happy
+# path visible we add the structured fields the validator requires — without
+# touching the validator. ~1 in 5 is left deliberately incomplete so some
+# sends still reject, proving the validator is intact.
+#
+# Anexo-A canal codes (canales codelist): 1=Oficina, 5=Vía telefónica,
+# 8=Página web, 10=Aplicativo móvil.
+_CHANNEL_CODE = {"AGENCIA": "1", "TELEFONO": "5", "WEB": "8", "APP_MOVIL": "10"}
+# Valid CNL_OPE values per the dq-demo-v1 known operation-channel list.
+_OP_CHANNELS = ["APP_MOVIL", "WEB", "AGENCIA", "CAJERO", "POS"]
+_DOC_TYPES = ["DNI", "CE", "RUC"]
+_SUBMOTIVOS = [
+    "comision_no_pactada", "cargo_duplicado", "tasa_distinta_a_pactada",
+    "demora_injustificada", "informacion_insuficiente",
+]
+_MONEDAS = ["PEN", "USD"]
+_UBIGEOS = ["150101", "150114", "040101", "130101", "070101"]
+
+
+def _doc_number(rng, tipo: str) -> str:
+    if tipo == "RUC":
+        return str(rng.randint(10**10, 10**11 - 1))  # 11 digits
+    return str(rng.randint(10_000_000, 99_999_999))  # 8 digits (DNI; CE accepts)
+
+
+def _sandbox_payload(rng, profile: Profile) -> dict[str, Any]:
+    p = _build_payload(rng, profile)
+    # canal_ingreso (CNL_ING) → valid Anexo-A numeric code so the strict annex
+    # check (DQ-A1A-013) passes. channel_operation (CNL_OPE) → a value in the
+    # dq-demo-v1 known operation-channel list (the base generator can emit
+    # TELEFONO, which that list does not include).
+    p["channel_in"] = _CHANNEL_CODE.get(p.get("channel_in", ""), "10")
+    p["channel_operation"] = rng.choice(_OP_CHANNELS)
+    # ~1 in 5 stays incomplete (no document fields) → strict validator rejects.
+    if rng.random() < 0.2:
+        return p
+    tipo = rng.choice(_DOC_TYPES)
+    p["tid_cli"] = tipo                                      # campo 2
+    p["nro_cli"] = _doc_number(rng, tipo)                    # campo 3
+    p["cod_cli"] = f"CLI-{secrets.token_hex(3).upper()}"     # campo 5
+    p["submotive"] = rng.choice(_SUBMOTIVOS)                 # campo 16
+    p["amount_claimed"] = f"{round(rng.uniform(50, 5000), 2):.2f}"  # campo 17
+    p["moneda"] = rng.choice(_MONEDAS)
+    p["ubigeo"] = rng.choice(_UBIGEOS)
+    return p
+
+
 def _emit(obj: Any) -> None:
     sys.stdout.write(json.dumps(obj, ensure_ascii=False))
     sys.stdout.flush()
@@ -97,13 +146,17 @@ def _rng(seed: int | None):
 # --------------------------------------------------------------------------
 
 
+_CODE_CHANNEL = {"1": "AGENCIA", "5": "TELEFONO", "8": "WEB", "10": "APP_MOVIL"}
+
+
 def _payload_summary(p: dict[str, Any]) -> dict[str, Any]:
+    ch = p.get("channel_in")
     return {
         "institution_id": p.get("institution_id"),
         "institution_name": p.get("institution_name"),
         "motive": p.get("motive"),
         "product": p.get("product"),
-        "channel": p.get("channel_in"),
+        "channel": _CODE_CHANNEL.get(ch, ch),
         "severity": p.get("severity"),
         "narrative": p.get("narrative"),
         "institution_complaint_id": p.get("institution_complaint_id"),
@@ -115,7 +168,7 @@ def cmd_pool(args: argparse.Namespace) -> int:
     rng = _rng(None)
     candidates = []
     for i in range(max(1, args.count)):
-        p = _build_payload(rng, profile)
+        p = _sandbox_payload(rng, profile)
         candidates.append({"idx": i, **_payload_summary(p), "payload": p})
     _emit({
         "profile": profile.name,
@@ -139,7 +192,7 @@ def cmd_tier1(args: argparse.Namespace) -> int:
             payloads = [json.loads(Path(args.payload_file).read_text(encoding="utf-8"))]
         else:
             rng = _rng(None)
-            payloads = [_build_payload(rng, profile) for _ in range(max(1, args.count))]
+            payloads = [_sandbox_payload(rng, profile) for _ in range(max(1, args.count))]
 
         for p in payloads:
             p = dict(p)

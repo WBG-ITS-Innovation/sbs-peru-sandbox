@@ -73,7 +73,30 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
   const [latest, setLatest] = useState<Finding | null>(null);
   const [step, setStep] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [patterns, setPatterns] = useState<{ n: number; high: number } | null>(null);
   const lastId = useRef<string | null>(null);
+
+  // Poll the real /trend endpoint for the aggregate agents' real output
+  // (pattern_detections count). Surfaces Investigation/Lupaman activity.
+  useEffect(() => {
+    if (paused) return undefined;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await fetch('/app/api/aggregates/trend', { cache: 'no-store' });
+        const d = (await r.json()) as { n_patterns?: number; n_patterns_high?: number };
+        if (!cancelled) setPatterns({ n: d.n_patterns ?? 0, high: d.n_patterns_high ?? 0 });
+      } catch {
+        /* keep last */
+      }
+    };
+    poll();
+    const id = setInterval(poll, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [paused]);
 
   // Poll the real feed for the most recently ingested complaint.
   useEffect(() => {
@@ -140,7 +163,10 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-stretch gap-1.5">
+      <div className="mt-2 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">
+        {bi(locale, 'Por reclamo · tiempo real (DIValeVale = validador por reclamo)', 'Per complaint · real time (DIValeVale = per-complaint validator)')}
+      </div>
+      <div className="mt-1 flex flex-wrap items-stretch gap-1.5">
         {stages.map((st, i) => {
           const active = latest != null && i === step && !done;
           const complete = latest != null && (i < step || done);
@@ -165,6 +191,35 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
             </div>
           );
         })}
+      </div>
+
+      {/* Aggregate stage — Investigation + Lupaman scan the pool every 60s. */}
+      <div className="mt-3 border-t border-border-subtle pt-2">
+        <div className="text-2xs font-semibold uppercase tracking-wide text-amber-700">
+          {bi(locale, 'Sobre agregados · cada 60s (Investigation + Lupaman, nivel agregado)', 'On aggregates · every 60s (Investigation + Lupaman, aggregate-level)')}
+        </div>
+        <div className="mt-1 flex flex-wrap items-stretch gap-1.5">
+          <div
+            className="min-w-[180px] flex-1 cursor-help rounded-sbs border border-amber-500/40 bg-amber-50 px-2 py-1"
+            title={bi(locale, 'Investigation: escanea el pool y eleva concentraciones (motivo × institución) sobre el umbral a patrones.', 'Investigation: scans the pool and raises (motive × institution) concentrations above threshold into patterns.')}
+          >
+            <div className="text-2xs font-semibold text-amber-800">{bi(locale, 'Investigation · agregado', 'Investigation · aggregate')}</div>
+            <div className="mt-0.5 truncate text-2xs text-fg-muted">{bi(locale, 'eleva patrones por volumen × institución', 'raises patterns by volume × institution')}</div>
+          </div>
+          <div
+            className="min-w-[180px] flex-1 cursor-help rounded-sbs border border-amber-500/40 bg-amber-50 px-2 py-1"
+            title={bi(locale, 'Lupaman: cruza reclamos + INDECOPI + redes sociales para detectar fraude emergente y generar las tablas agregadas de redes sociales.', 'Lupaman: cross-references complaints + INDECOPI + social media to detect emerging fraud and generate the aggregate social tables.')}
+          >
+            <div className="text-2xs font-semibold text-amber-800">{bi(locale, 'Lupaman · agregado', 'Lupaman · aggregate')}</div>
+            <div className="mt-0.5 truncate text-2xs text-fg-muted">{bi(locale, 'cross-source: social + INDECOPI', 'cross-source: social + INDECOPI')}</div>
+          </div>
+          <div className="min-w-[120px] flex-1 rounded-sbs border border-amber-500/40 bg-white px-2 py-1">
+            <div className="text-2xs font-semibold text-amber-800">{bi(locale, 'Patrones detectados', 'Patterns detected')}</div>
+            <div className="mt-0.5 font-mono text-sm tabular-nums text-brand-navy">
+              {patterns ? `${patterns.n} (${patterns.high} ${bi(locale, 'altos', 'high')})` : '…'}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

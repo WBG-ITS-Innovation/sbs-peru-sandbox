@@ -5,6 +5,7 @@ import { BarChart3, FileText, Flag, Table2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { AggregateTables } from '@/components/persona/AggregateTables';
+import { AggregatesGraphs } from '@/components/persona/AggregatesGraphs';
 import { LiveIngestionBanner } from '@/components/persona/LiveIngestionBanner';
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
@@ -36,6 +37,12 @@ function Placeholder({ label }: { label: string }) {
 
 export function AggregatesWorkspace({ locale }: { locale: Locale }) {
   const [tab, setTab] = useState<TopTab>('tablas');
+  const [presetMotivo, setPresetMotivo] = useState<string | null>(null);
+
+  const pickMotivo = (motivo: string) => {
+    setPresetMotivo(motivo);
+    setTab('tablas');
+  };
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-4 p-4">
@@ -67,8 +74,8 @@ export function AggregatesWorkspace({ locale }: { locale: Locale }) {
         })}
       </div>
 
-      {tab === 'tablas' ? <AggregateTables locale={locale} /> : null}
-      {tab === 'graficos' ? <Placeholder label={bi(locale, 'Gráficos — en construcción', 'Charts — under construction')} /> : null}
+      {tab === 'tablas' ? <AggregateTables locale={locale} presetMotivo={presetMotivo} /> : null}
+      {tab === 'graficos' ? <AggregatesGraphs locale={locale} onPickMotivo={pickMotivo} /> : null}
       {tab === 'alertas' ? <Placeholder label={bi(locale, 'Alertas rojas — en construcción', 'Red flags — under construction')} /> : null}
       {tab === 'docs' ? <Placeholder label={bi(locale, 'Documentación — en construcción', 'Documentation — under construction')} /> : null}
     </div>

@@ -213,3 +213,66 @@ async def get_aggregate_patterns(
         "total_in_scope": total,
         "rows": rows,
     }
+
+
+@router.get(
+    "/trend",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_aggregate_trend(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Time-series + motivo distribution for the charts tab. All real SQL.
+
+    * ``by_motivo`` — complaint count + % per motivo_code (desc).
+    * ``by_month``  — complaint volume per YYYY-MM from received_date, with
+      the social-signal count per month overlaid (real social_signals;
+      coverage is whatever has been ingested — currently recent months only).
+    """
+    from sbs_api.db.models.social_signal import SocialSignal
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        total = (await session.execute(select(func.count()).select_from(ComplaintRecord))).scalar_one()
+
+        motivo_rows = (
+            await session.execute(
+                select(ComplaintRecord.motivo_code, func.count())
+                .group_by(ComplaintRecord.motivo_code)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        by_motivo = [
+            {
+                "motivo_code": m,
+                "n_complaints": n,
+                "pct_of_all": _pct(n, total),
+            }
+            for m, n in motivo_rows
+        ]
+
+        month = func.to_char(ComplaintRecord.received_date, "YYYY-MM")
+        complaint_month_rows = (
+            await session.execute(select(month, func.count()).group_by(month))
+        ).all()
+        smonth = func.to_char(SocialSignal.post_authored_at, "YYYY-MM")
+        social_month_rows = (
+            await session.execute(select(smonth, func.count()).group_by(smonth))
+        ).all()
+    except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
+        log.warning("aggregates.trend.query_failed", exc_info=True)
+        return {"generated_at": generated_at, "by_motivo": [], "by_month": []}
+
+    complaints_by_month = {m: n for m, n in complaint_month_rows if m}
+    social_by_month = {m: n for m, n in social_month_rows if m}
+    months = sorted(set(complaints_by_month) | set(social_by_month))
+    by_month = [
+        {
+            "month": m,
+            "complaints": complaints_by_month.get(m, 0),
+            "social": social_by_month.get(m, 0),
+        }
+        for m in months
+    ]
+
+    return {"generated_at": generated_at, "by_motivo": by_motivo, "by_month": by_month}

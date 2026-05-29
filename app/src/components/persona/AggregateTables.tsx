@@ -260,10 +260,7 @@ function SampleBadge({ locale }: { locale: Locale }) {
 export function AggregateTables({ locale }: { locale: Locale }) {
   const [scope, setScope] = useState<Scope>('entity');
   const [rows, setRows] = useState<PatternRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errored, setErrored] = useState(false);
 
   const [sortKey, setSortKey] = useState<SortKey>('n_complaints');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -285,16 +282,10 @@ export function AggregateTables({ locale }: { locale: Locale }) {
 
   const load = useCallback(() => {
     setLoading(true);
-    setErrored(false);
     fetch(`/app/api/aggregates/patterns?scope=${scope}`, { cache: 'no-store' })
       .then((r) => r.json())
-      .then((d: { rows?: PatternRow[]; total_in_scope?: number; generated_at?: string; error?: string }) => {
-        setRows(d.rows ?? []);
-        setTotal(d.total_in_scope ?? 0);
-        setGeneratedAt(d.generated_at ?? null);
-        if (d.error) setErrored(true);
-      })
-      .catch(() => setErrored(true))
+      .then((d: { rows?: PatternRow[] }) => setRows(d.rows ?? []))
+      .catch(() => undefined)
       .finally(() => setLoading(false));
   }, [scope]);
 
@@ -451,17 +442,6 @@ export function AggregateTables({ locale }: { locale: Locale }) {
           <h2 className="text-lg font-semibold tracking-tight text-brand-navy">
             {bi(locale, 'Agregados de reclamos por motivo', 'Complaint aggregates by motive')}
           </h2>
-          <p className="text-2xs italic text-fg-muted">
-            {loading
-              ? bi(locale, 'Cargando datos reales…', 'Loading real data…')
-              : errored
-                ? bi(locale, 'Datos no disponibles (endpoint).', 'Data unavailable (endpoint).')
-                : bi(
-                    locale,
-                    `Datos reales · ${total} reclamos en alcance · SQL en vivo`,
-                    `Real data · ${total} complaints in scope · live SQL`,
-                  )}
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <button

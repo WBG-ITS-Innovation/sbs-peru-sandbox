@@ -233,7 +233,7 @@ function SampleBadge({ locale }: { locale: Locale }) {
 
 // ---- the view ---------------------------------------------------------------
 
-export function AggregateTables({ locale, presetMotivo }: { locale: Locale; presetMotivo?: string | null }) {
+export function AggregateTables({ locale }: { locale: Locale }) {
   const [scope, setScope] = useState<Scope>('entity');
   const [rows, setRows] = useState<PatternRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -300,11 +300,6 @@ export function AggregateTables({ locale, presetMotivo }: { locale: Locale; pres
   useEffect(() => {
     setPage(1);
   }, [scope, sortKey, sortDir, fMotivo, fSubmotivo, fTopic, fEstado, fResultado, fInst]);
-
-  // Cross-tab: a motivo picked from the Charts tab seeds the motivo filter.
-  useEffect(() => {
-    if (presetMotivo) setFMotivo(new Set([presetMotivo]));
-  }, [presetMotivo]);
 
   // Distinct option lists (from all fetched rows, stable while scope fixed).
   const opt = useMemo(() => {

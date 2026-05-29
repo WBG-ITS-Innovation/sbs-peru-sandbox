@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { AggregateTables } from '@/components/persona/AggregateTables';
 import { AggregatesGraphs } from '@/components/persona/AggregatesGraphs';
 import { LiveIngestionBanner } from '@/components/persona/LiveIngestionBanner';
+import { RedFlags } from '@/components/persona/RedFlags';
 import type { Locale } from '@/i18n';
 import { bi } from '@/lib/bi';
 import { cn } from '@/lib/cn';
@@ -76,7 +77,7 @@ export function AggregatesWorkspace({ locale }: { locale: Locale }) {
 
       {tab === 'tablas' ? <AggregateTables locale={locale} presetMotivo={presetMotivo} /> : null}
       {tab === 'graficos' ? <AggregatesGraphs locale={locale} onPickMotivo={pickMotivo} /> : null}
-      {tab === 'alertas' ? <Placeholder label={bi(locale, 'Alertas rojas — en construcción', 'Red flags — under construction')} /> : null}
+      {tab === 'alertas' ? <RedFlags locale={locale} /> : null}
       {tab === 'docs' ? <Placeholder label={bi(locale, 'Documentación — en construcción', 'Documentation — under construction')} /> : null}
     </div>
   );

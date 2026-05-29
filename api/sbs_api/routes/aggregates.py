@@ -276,3 +276,65 @@ async def get_aggregate_trend(
     ]
 
     return {"generated_at": generated_at, "by_motivo": by_motivo, "by_month": by_month}
+
+
+@router.get(
+    "/sources",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_aggregate_sources(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Cross-source signal tables for the red-flags view. Real aggregates.
+
+    * ``social_*``  — counts from ``social_signals`` (fraud indicator,
+      institutions flagged). PII-safe: post text is never read or returned.
+    * ``indecopi_*`` — counts from ``indecopi_cases`` by (institution,
+      category), plus the distinct institution ids (used for the
+      social∩INDECOPI correlation flag).
+    """
+    from collections import Counter
+
+    from sbs_api.db.models.indecopi_case import IndecopiCase
+    from sbs_api.db.models.social_signal import SocialSignal
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        socials = (await session.execute(select(SocialSignal))).scalars().all()
+        cases = (await session.execute(select(IndecopiCase))).scalars().all()
+    except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
+        log.warning("aggregates.sources.query_failed", exc_info=True)
+        return {
+            "generated_at": generated_at,
+            "social_by_indicator": [],
+            "social_institution_codes": [],
+            "social_total": 0,
+            "indecopi": [],
+            "indecopi_institution_ids": [],
+        }
+
+    ind_counts: Counter[str] = Counter()
+    social_insts: Counter[str] = Counter()
+    for s in socials:
+        for k in s.detected_fraud_indicators or []:
+            ind_counts[k] += 1
+        for c in s.detected_institution_codes or []:
+            social_insts[c] += 1
+
+    case_counts: Counter[tuple[str, str]] = Counter()
+    for c in cases:
+        case_counts[(c.institution_id, c.complaint_category)] += 1
+
+    return {
+        "generated_at": generated_at,
+        "social_by_indicator": [
+            {"indicator": k, "n": n} for k, n in ind_counts.most_common()
+        ],
+        "social_institution_codes": sorted(social_insts),
+        "social_total": len(socials),
+        "indecopi": [
+            {"institution_id": i, "complaint_category": cat, "n": n}
+            for (i, cat), n in sorted(case_counts.items(), key=lambda x: -x[1])
+        ],
+        "indecopi_institution_ids": sorted({i for (i, _cat) in case_counts}),
+    }

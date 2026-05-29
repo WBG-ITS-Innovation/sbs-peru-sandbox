@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Radio,
   Route,
+  Send,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
@@ -52,6 +53,7 @@ interface NavRailProps {
     primary_label: string;
     role_indicator: string;
     aggregates?: string;
+    sandbox?: string;
   };
   roleLabel: string;
 }
@@ -74,6 +76,11 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
       icon: Layers,
       label: labels.aggregates ?? 'Agregados y Agentes',
       alert: true,
+    },
+    {
+      href: '/sandbox',
+      icon: Send,
+      label: labels.sandbox ?? 'Simulador (Tier 1/2)',
     },
   ];
   const pilotItems: NavItem[] = [

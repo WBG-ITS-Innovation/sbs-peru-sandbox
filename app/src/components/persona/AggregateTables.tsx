@@ -1,7 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
 'use client';
 
-import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Filter, RefreshCw, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, ExternalLink, Filter, RefreshCw, X } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -10,6 +11,10 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
   Table,
   TableBody,
   TableCell,
@@ -48,6 +53,7 @@ interface PatternRow {
   pct_favor_user: number | null;
   pct_favor_bank: number | null;
   pct_partial: number | null;
+  complaint_ids?: string[];
 }
 
 const SCOPE_TABS: { id: Scope; es: string; en: string }[] = [
@@ -544,6 +550,7 @@ export function AggregateTables({ locale }: { locale: Locale }) {
             <SortHead k="pct_favor_bank" label={bi(locale, '% favor entidad', '% favor bank')} numeric />
             <SortHead k="pct_partial" label={bi(locale, '% parcial', '% partial')} numeric />
             <SortHead k="pct_pending" label={bi(locale, '% pendiente', '% pending')} numeric />
+            <TableHead className="text-right">{bi(locale, 'Acción', 'Action')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -566,6 +573,52 @@ export function AggregateTables({ locale }: { locale: Locale }) {
               <TableCell className={COL_BANK}>{fmtPct(r.pct_favor_bank)}</TableCell>
               <TableCell className={COL_PARTIAL}>{fmtPct(r.pct_partial)}</TableCell>
               <TableCell className={COL_PENDING}>{fmtPct(pendingPct(r))}</TableCell>
+              <TableCell className="text-right">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-sbs border border-border bg-surface px-2 py-0.5 text-2xs text-brand-navy hover:border-brand-cyan"
+                    >
+                      {bi(locale, 'Ver reclamos', 'View complaints')}
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent closeLabel={bi(locale, 'Cerrar', 'Close')} className="overflow-y-auto">
+                    <SheetTitle>
+                      {r.motivo_code}
+                      {r.submotivo ? ` · ${r.submotivo}` : ''}
+                      {showInst ? ` · ${entityLabel(r)}` : ''}
+                    </SheetTitle>
+                    <p className="mt-0.5 font-mono text-2xs text-fg-subtle">
+                      {r.topic ?? '—'}
+                      {r.submotivo_2 ? ` · ${r.submotivo_2}` : ''}
+                    </p>
+                    <p className="mt-2 text-xs text-fg-muted">
+                      {bi(
+                        locale,
+                        `${r.n_complaints} reclamos en este grupo${(r.complaint_ids?.length ?? 0) < r.n_complaints ? ` (mostrando ${r.complaint_ids?.length ?? 0})` : ''}. Clic para abrir el detalle.`,
+                        `${r.n_complaints} complaints in this group${(r.complaint_ids?.length ?? 0) < r.n_complaints ? ` (showing ${r.complaint_ids?.length ?? 0})` : ''}. Click to open the detail.`,
+                      )}
+                    </p>
+                    <ul className="mt-2 flex flex-wrap gap-1.5">
+                      {(r.complaint_ids ?? []).map((id) => (
+                        <li key={id}>
+                          <Link
+                            href={`/processing/${id}`}
+                            className="inline-flex items-center gap-1 rounded-sbs border border-border bg-surface-subtle px-2 py-0.5 font-mono text-2xs text-fg-link hover:border-brand-cyan"
+                          >
+                            {id}
+                            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                          </Link>
+                        </li>
+                      ))}
+                      {(r.complaint_ids?.length ?? 0) === 0 ? (
+                        <li className="text-2xs text-fg-muted">{bi(locale, 'Sin ids disponibles.', 'No ids available.')}</li>
+                      ) : null}
+                    </ul>
+                  </SheetContent>
+                </Sheet>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

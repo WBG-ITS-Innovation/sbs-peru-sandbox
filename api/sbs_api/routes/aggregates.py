@@ -120,6 +120,7 @@ async def get_aggregate_patterns(
                 favor_user.label("n_favor_user"),
                 favor_bank.label("n_favor_bank"),
                 favor_partial.label("n_favor_partial"),
+                func.array_agg(ComplaintRecord.complaint_id).label("complaint_ids"),
             )
             .join(
                 InstitutionRecord,
@@ -182,6 +183,7 @@ async def get_aggregate_patterns(
                 "n_favor_user": 0,
                 "n_favor_bank": 0,
                 "n_favor_partial": 0,
+                "_ids": [],
             }
             buckets[key] = b
         b["n_complaints"] += r.n_complaints
@@ -190,6 +192,7 @@ async def get_aggregate_patterns(
         b["n_favor_user"] += r.n_favor_user
         b["n_favor_bank"] += r.n_favor_bank
         b["n_favor_partial"] += r.n_favor_partial
+        b["_ids"].extend(r.complaint_ids or [])
 
     rows: list[dict[str, Any]] = []
     for b in buckets.values():
@@ -198,6 +201,8 @@ async def get_aggregate_patterns(
         b["pct_favor_user"] = _pct(b["n_favor_user"], b["n_resolved"])
         b["pct_favor_bank"] = _pct(b["n_favor_bank"], b["n_resolved"])
         b["pct_partial"] = _pct(b["n_favor_partial"], b["n_resolved"])
+        # Contributing complaint ids for the "Ver reclamos" drill-in (capped).
+        b["complaint_ids"] = sorted(b.pop("_ids"))[:100]
         rows.append(b)
 
     rows.sort(key=lambda x: x["n_complaints"], reverse=True)

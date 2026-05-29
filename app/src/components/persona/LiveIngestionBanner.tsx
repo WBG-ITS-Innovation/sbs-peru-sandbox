@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2, Pause, Play } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import type { Locale } from '@/i18n';
@@ -149,9 +150,19 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
           <h2 className="text-sm font-semibold tracking-tight text-fg">
             {bi(locale, 'Reclamos entrando al sistema', 'Live ingestion')}
           </h2>
-          <span className="font-mono text-2xs tabular-nums text-fg-subtle">
-            {latest ? latest.complaint_id : bi(locale, 'esperando reclamos…', 'waiting for complaints…')}
-          </span>
+          {latest ? (
+            <Link
+              href={`/processing/${latest.complaint_id}`}
+              title={bi(locale, 'Abrir el reclamo recién ingresado', 'Open the just-ingested complaint')}
+              className="font-mono text-2xs tabular-nums text-fg-link underline-offset-2 hover:underline"
+            >
+              {latest.complaint_id}
+            </Link>
+          ) : (
+            <span className="font-mono text-2xs tabular-nums text-fg-subtle">
+              {bi(locale, 'esperando reclamos…', 'waiting for complaints…')}
+            </span>
+          )}
         </div>
         <button
           type="button"
@@ -186,7 +197,15 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
                 {st.label}
               </div>
               <div className="mt-0.5 truncate font-mono text-2xs tabular-nums">
-                {latest != null && (active || complete) ? st.out : '…'}
+                {latest != null && (active || complete) ? (
+                  st.key === 'recv' ? (
+                    <Link href={`/processing/${latest.complaint_id}`} className="text-fg-link hover:underline">{st.out}</Link>
+                  ) : (
+                    st.out
+                  )
+                ) : (
+                  '…'
+                )}
               </div>
             </div>
           );

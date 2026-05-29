@@ -22,6 +22,7 @@ import {
   Radio,
   Route,
   Send,
+  ServerCog,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
@@ -54,6 +55,7 @@ interface NavRailProps {
     role_indicator: string;
     aggregates?: string;
     sandbox?: string;
+    admin?: string;
   };
   roleLabel: string;
 }
@@ -81,6 +83,11 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
       href: '/sandbox',
       icon: Send,
       label: labels.sandbox ?? 'Simulador (Tier 1/2)',
+    },
+    {
+      href: '/admin',
+      icon: ServerCog,
+      label: labels.admin ?? 'Administración (IT)',
     },
   ];
   const pilotItems: NavItem[] = [

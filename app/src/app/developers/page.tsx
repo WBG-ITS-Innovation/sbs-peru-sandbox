@@ -9,6 +9,9 @@ import {
   Shield,
 } from 'lucide-react';
 
+import Link from 'next/link';
+
+import { LiveApiPanel } from '@/components/developers/LiveApiPanel';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -107,10 +110,13 @@ export default function DevelopersPortalPage() {
                 <Rocket className="h-3.5 w-3.5" aria-hidden="true" />
                 {tr('developers.portal.start_integration')}
               </Button>
-              <Button variant="outline" size="sm" disabled aria-disabled="true">
+              <Link
+                href="/sandbox"
+                className="inline-flex items-center gap-1.5 rounded-sbs border border-brand-navy bg-brand-navy px-3 py-1.5 text-xs font-medium text-fg-inverted hover:bg-brand-navy/90"
+              >
                 <Play className="h-3.5 w-3.5" aria-hidden="true" />
                 {tr('developers.portal.try_sandbox')}
-              </Button>
+              </Link>
             </div>
           </div>
           <Badge variant="role" className="border-brand-gold/40 bg-brand-gold/10 text-brand-navy">
@@ -125,6 +131,8 @@ export default function DevelopersPortalPage() {
           <span>{previewDisclaimer}</span>
         </div>
       </section>
+
+      <LiveApiPanel locale={locale} />
 
       <section>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

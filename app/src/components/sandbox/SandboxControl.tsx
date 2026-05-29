@@ -67,8 +67,8 @@ function decisionTone(d?: string | null): string {
   return 'text-fg-muted';
 }
 
-export function SandboxControl({ locale }: { locale: Locale }) {
-  const [profile, setProfile] = useState<ProfileId>('banco-tier1');
+export function SandboxControl({ locale, fixedProfile }: { locale: Locale; fixedProfile?: ProfileId }) {
+  const [profile, setProfile] = useState<ProfileId>(fixedProfile ?? 'banco-tier1');
   const [pool, setPool] = useState<PoolItem[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [loadingPool, setLoadingPool] = useState(false);
@@ -214,26 +214,35 @@ export function SandboxControl({ locale }: { locale: Locale }) {
           <Badge variant="default" className="font-mono">{bi(locale, 'API real', 'real API')}</Badge>
         </CardHeader>
         <CardBody className="space-y-3">
-          {/* Institution selector */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">
+          {/* Institution selector — hidden on a per-bank page (locked to that bank). */}
+          {fixedProfile ? (
+            <div className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">
               <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
-              {bi(locale, 'Institución que envía', 'Sending institution')}
-            </span>
-            {PROFILES.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setProfile(p.id)}
-                className={cn(
-                  'rounded-sbs border px-2.5 py-1 text-xs font-medium',
-                  profile === p.id ? 'border-brand-cyan bg-brand-cyan/10 text-brand-navy' : 'border-border bg-surface text-fg hover:bg-surface-subtle',
-                )}
-              >
-                {p.label} <span className="font-mono text-2xs text-fg-muted">{p.institution}</span>
-              </button>
-            ))}
-          </div>
+              {bi(locale, 'Enviando como', 'Sending as')}
+              <span className="text-brand-navy">{inst.label}</span>
+              <span className="font-mono text-fg-muted">{inst.institution}</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1 text-2xs font-semibold uppercase tracking-wide text-fg-subtle">
+                <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {bi(locale, 'Institución que envía', 'Sending institution')}
+              </span>
+              {PROFILES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProfile(p.id)}
+                  className={cn(
+                    'rounded-sbs border px-2.5 py-1 text-xs font-medium',
+                    profile === p.id ? 'border-brand-cyan bg-brand-cyan/10 text-brand-navy' : 'border-border bg-surface text-fg hover:bg-surface-subtle',
+                  )}
+                >
+                  {p.label} <span className="font-mono text-2xs text-fg-muted">{p.institution}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-2 rounded-sbs border border-border bg-surface-subtle/40 p-2">

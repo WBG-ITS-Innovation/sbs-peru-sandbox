@@ -2,7 +2,7 @@
 
 Three-layer architecture per ADR 0001:
 - Agents orchestrate (this module's ``triage``, ``investigation``,
-  ``synthesis``, ``taxonomy_harmonizer``, ``cross_source_correlator``).
+  ``synthesis``, ``cross_source_correlator``).
 - Tools execute (``agents.tools``).
 - Supervisors approve (existing ``approvals`` package).
 

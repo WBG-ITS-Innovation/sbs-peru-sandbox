@@ -1,7 +1,7 @@
 """ReplayProvider — load pre-recorded turn sequences from disk.
 
-For the May 27 demo, two scaffolded agents (taxonomy-harmonizer,
-cross-source-correlator) use this provider end-to-end. The real
+For the May 27 demo, the cross-source-correlator scaffold agent uses
+this provider end-to-end. The real
 agents also fall back to it when the runtime is asked for
 deterministic behaviour on a known fixture complaint (e.g. the demo
 invariant test for BCO-2026-000001).

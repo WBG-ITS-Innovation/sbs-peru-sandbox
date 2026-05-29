@@ -41,6 +41,10 @@ interface SendResult {
   severity?: string;
   error?: string;
 }
+interface BatchRow {
+  complaint_id: string;
+  motivo?: string;
+}
 interface BatchState {
   batch_id?: string | null;
   status?: string | null;
@@ -48,8 +52,12 @@ interface BatchState {
   row_count_submitted?: number;
   row_count_accepted?: number;
   row_count_rejected?: number;
+  rows?: BatchRow[];        // ordered CSV rows the batch actually carried
+  rejected_rows?: number[]; // 0-indexed CSV positions the worker rejected
   error?: string;
 }
+
+const BATCH_ROW_CAP = 50;
 
 function batchTone(s?: string | null): string {
   const v = (s ?? '').toLowerCase();
@@ -465,6 +473,58 @@ export function SandboxControl({ locale, fixedProfile }: { locale: Locale; fixed
                       <div className="font-mono text-lg tabular-nums text-red-700">{batch.row_count_rejected ?? '—'}</div>
                     </div>
                   </div>
+
+                  {/* Per-complaint records — the real rows the batch carried; accepted
+                      rows are persisted (linkable), rejected rows come from the real
+                      /rejections endpoint. Mirrors the Tier-1 responses table. */}
+                  {batch.rows && batch.rows.length ? (() => {
+                    const rejected = new Set(batch.rejected_rows ?? []);
+                    const terminal = batch.status === 'complete' || batch.status === 'failed';
+                    const shown = batch.rows.slice(0, BATCH_ROW_CAP);
+                    return (
+                      <div>
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-2xs font-semibold uppercase tracking-wide text-fg-subtle">{bi(locale, 'Reclamos del lote (real)', 'Batch complaints (real)')}</span>
+                          {batch.rows.length > BATCH_ROW_CAP ? (
+                            <span className="text-2xs text-fg-muted">{bi(locale, `mostrando ${BATCH_ROW_CAP} de ${batch.rows.length}`, `showing ${BATCH_ROW_CAP} of ${batch.rows.length}`)}</span>
+                          ) : null}
+                        </div>
+                        <div className="max-h-56 overflow-auto rounded-sbs border border-border-subtle">
+                          <table className="w-full text-2xs">
+                            <thead className="sticky top-0 bg-surface-subtle text-fg-muted">
+                              <tr>
+                                <th className="px-2 py-1 text-left">complaint_id</th>
+                                <th className="px-2 py-1 text-left">{bi(locale, 'Verdicto DQ', 'DQ verdict')}</th>
+                                <th className="px-2 py-1 text-left">{bi(locale, 'Motivo', 'Motive')}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {shown.map((r, i) => {
+                                const isRejected = rejected.has(i);
+                                const verdict = !terminal ? bi(locale, 'procesando…', 'processing…') : isRejected ? 'rejected' : 'accepted';
+                                return (
+                                  <tr key={r.complaint_id} className="border-t border-border-subtle">
+                                    <td className="px-2 py-1 font-mono">
+                                      {terminal && !isRejected ? (
+                                        <Link href={`/processing/${r.complaint_id}`} className="inline-flex items-center gap-1 text-fg-link hover:underline">
+                                          {r.complaint_id}
+                                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                                        </Link>
+                                      ) : (
+                                        <span className="text-fg">{r.complaint_id}</span>
+                                      )}
+                                    </td>
+                                    <td className={cn('px-2 py-1 font-mono', terminal ? decisionTone(verdict) : 'text-fg-muted')}>{verdict}</td>
+                                    <td className="px-2 py-1 font-mono">{r.motivo ?? '—'}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })() : null}
                 </>
               )}
             </div>

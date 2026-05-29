@@ -267,12 +267,17 @@ def _fetch_token_scoped(client: httpx.Client, *, api_base: str, profile: Profile
     return token
 
 
-def _build_csv(profile: Profile, n: int, rng) -> tuple[bytes, int]:
+def _build_csv(profile: Profile, n: int, rng) -> tuple[bytes, int, list[dict[str, str]]]:
+    """Return (csv_bytes, row_count, rows_meta). rows_meta lists the
+    {complaint_id, motivo} for each CSV data row, in order — so the UI can show
+    the real per-complaint outcome (the row_index from the rejections endpoint
+    maps 1:1 to this ordered list)."""
     pfx = "BCO" if profile.institution_id == "SBS-001234" else "COP"
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(CSV_HEADER)
     seen: set[str] = set()
+    rows_meta: list[dict[str, str]] = []
     today = datetime.now(timezone.utc).date()
     for _ in range(n):
         while True:
@@ -294,15 +299,16 @@ def _build_csv(profile: Profile, n: int, rng) -> tuple[bytes, int]:
             desc, "es", rng.choice(_AGES), rng.choice(_DISTRICTS),
             rng.choice(_SUBMISSION), "", "pendiente",
         ])
+        rows_meta.append({"complaint_id": cid, "motivo": motivo})
     data = buf.getvalue().encode("utf-8")
-    return data, n
+    return data, n, rows_meta
 
 
 def cmd_tier2(args: argparse.Namespace) -> int:
     profile = PROFILES[args.profile]
     n = max(1, min(args.rows, 500))
     rng = _rng(None)
-    csv_bytes, row_count = _build_csv(profile, n, rng)
+    csv_bytes, row_count, rows_meta = _build_csv(profile, n, rng)
     checksum = hashlib.sha256(csv_bytes).hexdigest()
 
     today = datetime.now(timezone.utc).date()
@@ -361,6 +367,7 @@ def cmd_tier2(args: argparse.Namespace) -> int:
             "row_count_submitted": row_count,
             "checksum_sha256": checksum,
             "location": resp.headers.get("Location"),
+            "rows": rows_meta,  # ordered {complaint_id, motivo} the CSV actually carried
             "receipt": body,
         })
     except Exception as exc:  # noqa: BLE001
@@ -380,12 +387,39 @@ def cmd_tier2_status(args: argparse.Namespace) -> int:
             dev_headers=dev_headers, scope="batch:upload status:read",
         )
         url = f"{args.api_base.rstrip('/')}/batches/{args.batch_id}"
-        resp = client.get(url, headers={"Authorization": f"Bearer {token}", **dev_headers})
+        auth_headers = {"Authorization": f"Bearer {token}", **dev_headers}
+        resp = client.get(url, headers=auth_headers)
         try:
             body = resp.json()
         except json.JSONDecodeError:
             body = {"raw": resp.text[:400]}
-        _emit({"ok": resp.status_code == 200, "http_status": resp.status_code, **(body if isinstance(body, dict) else {"receipt": body})})
+        out: dict[str, Any] = {"ok": resp.status_code == 200, "http_status": resp.status_code}
+        if isinstance(body, dict):
+            out.update(body)
+        else:
+            out["receipt"] = body
+        # Once terminal, pull the REAL per-row rejections so the UI can mark
+        # which rows the worker rejected (the rest are the persisted/accepted
+        # rows). Paginates via next_cursor; capped for safety.
+        if out.get("status") in ("complete", "failed"):
+            rejected: list[dict[str, Any]] = []
+            cursor = None
+            for _ in range(20):  # cap: 20 pages × 200 = 4000 rejected rows
+                rurl = f"{args.api_base.rstrip('/')}/batches/{args.batch_id}/rejections?page_size=200"
+                if cursor:
+                    rurl += f"&next_cursor={cursor}"
+                rr = client.get(rurl, headers=auth_headers)
+                if rr.status_code != 200:
+                    break
+                rbody = rr.json()
+                for r in rbody.get("rejections", []):
+                    rejected.append({"row_index": r.get("row_index"), "field": r.get("field"), "message": r.get("message")})
+                cursor = rbody.get("next_cursor")
+                if not cursor:
+                    break
+            out["rejected_rows"] = [r["row_index"] for r in rejected if r.get("row_index") is not None]
+            out["rejections"] = rejected[:200]
+        _emit(out)
     except Exception as exc:  # noqa: BLE001
         _emit({"ok": False, "http_status": None, "error": f"{type(exc).__name__}: {exc}"})
     finally:

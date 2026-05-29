@@ -136,8 +136,6 @@ async def verified_hmac_signature(
         raise SignatureExpired(detail=verdict.reason or "timestamp invalid")
 
     # --- 4. Body -----------------------------------------------------
-    body = await request.body()
-
     # ADR 0027 amendment (multipart body-hash definition): for
     # multipart/form-data requests, the canonical-request body-hash is
     # taken over the *file* part's bytes only, not the multipart
@@ -147,6 +145,13 @@ async def verified_hmac_signature(
     # lets the institution's signing client compute one hash (over the
     # file it is uploading) and the server's verifier compute the same
     # hash on receipt.
+    #
+    # FastAPI parses the multipart form *before* this dependency runs
+    # (so it can bind the File/Form params), which consumes the request
+    # stream. Calling ``request.body()`` afterwards raises "Stream
+    # consumed". So for multipart we read the cached form's file part and
+    # never touch ``request.body()``; only the non-multipart path reads
+    # the raw body (replayed by the body-size-limit middleware).
     content_type = request.headers.get("content-type", "").lower()
     if content_type.startswith("multipart/form-data"):
         form = await request.form()
@@ -163,6 +168,8 @@ async def verified_hmac_signature(
         body = await file_part.read()
         # Rewind so downstream handlers can read the file again.
         await file_part.seek(0)
+    else:
+        body = await request.body()
 
     # --- 5. Host header ---------------------------------------------
     host = request.headers.get("host", "")

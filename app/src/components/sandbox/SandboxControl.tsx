@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 'use client';
 
-import { Building2, ExternalLink, Pause, Play, RefreshCw, Send, Zap } from 'lucide-react';
+import { Building2, CheckCircle2, ExternalLink, FileUp, Loader2, Pause, Play, RefreshCw, Send, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -41,6 +41,23 @@ interface SendResult {
   severity?: string;
   error?: string;
 }
+interface BatchState {
+  batch_id?: string | null;
+  status?: string | null;
+  http_status?: number | null;
+  row_count_submitted?: number;
+  row_count_accepted?: number;
+  row_count_rejected?: number;
+  error?: string;
+}
+
+function batchTone(s?: string | null): string {
+  const v = (s ?? '').toLowerCase();
+  if (v === 'complete') return 'border-green-600/40 bg-green-50 text-green-700';
+  if (v === 'failed') return 'border-red-600/40 bg-red-50 text-red-700';
+  if (v === 'processing') return 'border-brand-cyan/40 bg-brand-cyan/10 text-brand-navy';
+  return 'border-amber-500/40 bg-amber-50 text-amber-800';
+}
 
 function decisionTone(d?: string | null): string {
   const v = (d ?? '').toLowerCase();
@@ -58,7 +75,11 @@ export function SandboxControl({ locale }: { locale: Locale }) {
   const [sending, setSending] = useState(false);
   const [log, setLog] = useState<SendResult[]>([]);
   const [freq, setFreq] = useState<number | null>(null);
+  const [rows, setRows] = useState(25);
+  const [batch, setBatch] = useState<BatchState | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const batchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const profileRef = useRef(profile);
   const selectedRef = useRef(selected);
   const poolRef = useRef(pool);
@@ -134,7 +155,52 @@ export function SandboxControl({ locale }: { locale: Locale }) {
 
   useEffect(() => () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (batchTimerRef.current) clearInterval(batchTimerRef.current);
   }, []);
+
+  // ---- Tier 2 batch ----
+  function pollBatch(id: string) {
+    const tick = async () => {
+      try {
+        const r = await fetch(`/app/api/sandbox/tier2/status?batch_id=${encodeURIComponent(id)}&profile=${profileRef.current}`, { cache: 'no-store' });
+        const d = (await r.json()) as BatchState;
+        setBatch((prev) => ({ ...prev, ...d }));
+        if (d.status === 'complete' || d.status === 'failed') {
+          if (batchTimerRef.current) {
+            clearInterval(batchTimerRef.current);
+            batchTimerRef.current = null;
+          }
+        }
+      } catch {
+        /* keep last */
+      }
+    };
+    tick();
+    batchTimerRef.current = setInterval(tick, 2000);
+  }
+
+  async function submitBatch() {
+    setSubmitting(true);
+    if (batchTimerRef.current) {
+      clearInterval(batchTimerRef.current);
+      batchTimerRef.current = null;
+    }
+    try {
+      const r = await fetch('/app/api/sandbox/tier2/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profileRef.current, rows }),
+        cache: 'no-store',
+      });
+      const d = (await r.json()) as BatchState;
+      setBatch(d);
+      if (d.batch_id) pollBatch(d.batch_id);
+    } catch (e) {
+      setBatch({ error: String(e) });
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -314,6 +380,96 @@ export function SandboxControl({ locale }: { locale: Locale }) {
               )}
             </p>
           </div>
+        </CardBody>
+      </Card>
+
+      {/* ---- Tier 2 panel ---- */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileUp className="h-4 w-4 text-brand-gold" aria-hidden="true" />
+            {bi(locale, 'Tier 2 — lote CSV (batch)', 'Tier 2 — CSV batch')}
+          </CardTitle>
+          <Badge variant="default" className="font-mono">{bi(locale, 'API real', 'real API')}</Badge>
+        </CardHeader>
+        <CardBody className="space-y-3">
+          <p className="text-2xs text-fg-muted">
+            {bi(
+              locale,
+              `Genera un CSV Anexo 1-A real y lo sube por el endpoint REAL POST /v1/batches (OAuth batch:upload + HMAC multipart + mTLS). Institución: ${inst.label} (${inst.institution}).`,
+              `Builds a real Anexo 1-A CSV and uploads it through the REAL POST /v1/batches endpoint (OAuth batch:upload + multipart HMAC + mTLS). Institution: ${inst.label} (${inst.institution}).`,
+            )}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2 rounded-sbs border border-border bg-surface-subtle/40 p-2">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-fg-subtle">{bi(locale, 'Filas', 'Rows')}</span>
+            {[10, 25, 50, 100].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRows(n)}
+                className={cn(
+                  'rounded-sbs border px-2.5 py-1 text-xs font-medium tabular-nums',
+                  rows === n ? 'border-brand-cyan bg-brand-cyan/10 text-brand-navy' : 'border-border bg-surface text-fg hover:bg-surface-subtle',
+                )}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={submitBatch}
+              disabled={submitting}
+              className="ml-auto inline-flex items-center gap-1 rounded-sbs border border-brand-navy bg-brand-navy px-3 py-1.5 text-xs font-medium text-fg-inverted hover:bg-brand-navy/90 disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <FileUp className="h-3.5 w-3.5" aria-hidden="true" />}
+              {bi(locale, `Generar y enviar ${rows} filas`, `Generate & send ${rows} rows`)}
+            </button>
+          </div>
+
+          {/* Real batch status */}
+          {batch ? (
+            <div className="space-y-2 rounded-sbs border border-border p-3">
+              {batch.error ? (
+                <p className="text-xs text-red-700">{batch.error}</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={cn('inline-flex items-center gap-1 rounded-sbs border px-2 py-0.5 text-2xs font-semibold uppercase', batchTone(batch.status))}>
+                      {batch.status === 'complete' ? <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> : batch.status === 'failed' ? null : <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
+                      {batch.status ?? '—'}
+                    </span>
+                    {batch.http_status ? <span className="font-mono text-2xs text-fg-muted">HTTP {batch.http_status}</span> : null}
+                    {batch.batch_id ? <span className="font-mono text-2xs text-fg-muted">{batch.batch_id}</span> : null}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-sbs border border-border-subtle bg-surface-subtle/40 p-2">
+                      <div className="text-2xs uppercase tracking-wide text-fg-subtle">{bi(locale, 'Enviadas', 'Submitted')}</div>
+                      <div className="font-mono text-lg tabular-nums text-brand-navy">{batch.row_count_submitted ?? '—'}</div>
+                    </div>
+                    <div className="rounded-sbs border border-green-600/30 bg-green-50 p-2">
+                      <div className="text-2xs uppercase tracking-wide text-green-700">{bi(locale, 'Aceptadas', 'Accepted')}</div>
+                      <div className="font-mono text-lg tabular-nums text-green-700">{batch.row_count_accepted ?? '—'}</div>
+                    </div>
+                    <div className="rounded-sbs border border-red-600/30 bg-red-50 p-2">
+                      <div className="text-2xs uppercase tracking-wide text-red-700">{bi(locale, 'Rechazadas', 'Rejected')}</div>
+                      <div className="font-mono text-lg tabular-nums text-red-700">{batch.row_count_rejected ?? '—'}</div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="py-4 text-center text-xs text-fg-muted">{bi(locale, 'Aún no se ha enviado ningún lote.', 'No batch submitted yet.')}</p>
+          )}
+
+          <p className="text-2xs italic text-fg-subtle">
+            {bi(
+              locale,
+              'El lote pasa por el worker real (pending → processing → complete). Las filas aceptadas se persisten como reclamos y aparecen en el banner.',
+              'The batch runs through the real worker (pending → processing → complete). Accepted rows are persisted as complaints and appear in the banner.',
+            )}
+          </p>
         </CardBody>
       </Card>
     </div>

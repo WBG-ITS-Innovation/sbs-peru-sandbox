@@ -43,6 +43,38 @@ function makeScenario(locale: Locale): Scenario {
   return { id, stages };
 }
 
+// Short hover descriptions for each flow step (item 7).
+function stepDesc(locale: Locale, key: string): string {
+  switch (key) {
+    case 'recv':
+      return bi(
+        locale,
+        'Recepción: el reclamo entra por el canal Tier-1 (POST firmado: OAuth + HMAC + mTLS).',
+        'Reception: the complaint arrives over the Tier-1 channel (signed POST: OAuth + HMAC + mTLS).',
+      );
+    case 'dv':
+      return bi(
+        locale,
+        'DIValeVale: valida el formato Anexo 1-A y la calidad de datos antes de aceptar.',
+        'DIValeVale: validates Anexo 1-A format and data quality before acceptance.',
+      );
+    case 'tri':
+      return bi(
+        locale,
+        'Triage: clasifica el motivo y detecta señales del sistema (clasificador basado en reglas; BERT en producción).',
+        'Triage: classifies the motive and detects system signals (rules-based classifier; BERT in production).',
+      );
+    case 'pool':
+      return bi(
+        locale,
+        'Pool de agregados: el reclamo se suma al pool que los agentes agregados escanean cada 60s.',
+        'Aggregate pool: the complaint joins the pool the aggregate agents scan every 60s.',
+      );
+    default:
+      return '';
+  }
+}
+
 export function LiveIngestionBanner({ locale }: { locale: Locale }) {
   const [scenario, setScenario] = useState<Scenario>(() => makeScenario(locale));
   const [step, setStep] = useState(0);
@@ -99,7 +131,11 @@ export function LiveIngestionBanner({ locale }: { locale: Locale }) {
               ? 'border-green-600/40 bg-green-50 text-green-700'
               : 'border-border bg-surface-subtle text-fg-subtle';
           return (
-            <div key={st.key} className={`min-w-[120px] flex-1 rounded-sbs border px-2 py-1 transition-colors ${tone}`}>
+            <div
+              key={st.key}
+              title={stepDesc(locale, st.key)}
+              className={`min-w-[120px] flex-1 cursor-help rounded-sbs border px-2 py-1 transition-colors ${tone}`}
+            >
               <div className="flex items-center gap-1 text-2xs font-semibold">
                 {complete ? <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> : <span className="font-mono">{i + 1}</span>}
                 {st.label}

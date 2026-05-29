@@ -5,6 +5,7 @@ import { BarChart3, FileText, Flag, Table2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { AggregateTables } from '@/components/persona/AggregateTables';
+import { AggregatesDocs } from '@/components/persona/AggregatesDocs';
 import { AggregatesGraphs } from '@/components/persona/AggregatesGraphs';
 import { LiveIngestionBanner } from '@/components/persona/LiveIngestionBanner';
 import { RedFlags } from '@/components/persona/RedFlags';
@@ -27,14 +28,6 @@ const TOP_TABS: { id: TopTab; es: string; en: string; Icon: typeof Table2 }[] = 
   { id: 'alertas', es: 'Alertas rojas', en: 'Red flags', Icon: Flag },
   { id: 'docs', es: 'Documentación', en: 'Documentation', Icon: FileText },
 ];
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div className="rounded-sbs border border-dashed border-border bg-surface-subtle/40 p-8 text-center text-sm text-fg-muted">
-      {label}
-    </div>
-  );
-}
 
 export function AggregatesWorkspace({ locale }: { locale: Locale }) {
   const [tab, setTab] = useState<TopTab>('tablas');
@@ -78,7 +71,7 @@ export function AggregatesWorkspace({ locale }: { locale: Locale }) {
       {tab === 'tablas' ? <AggregateTables locale={locale} presetMotivo={presetMotivo} /> : null}
       {tab === 'graficos' ? <AggregatesGraphs locale={locale} onPickMotivo={pickMotivo} /> : null}
       {tab === 'alertas' ? <RedFlags locale={locale} /> : null}
-      {tab === 'docs' ? <Placeholder label={bi(locale, 'Documentación — en construcción', 'Documentation — under construction')} /> : null}
+      {tab === 'docs' ? <AggregatesDocs locale={locale} /> : null}
     </div>
   );
 }

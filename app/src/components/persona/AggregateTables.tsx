@@ -31,6 +31,8 @@ import { DSC_SAMPLE, FRAUD_LABEL_ES, INDECOPI_SAMPLE, SOCIAL_SAMPLE } from '@/li
 interface TrendData {
   by_month?: { month: string; complaints: number; social: number }[];
   by_product?: { product_category: string; n_complaints: number }[];
+  by_channel?: { channel: string; n_complaints: number }[];
+  by_outcome_month?: { month: string; user: number; bank: number; partial: number; pending: number }[];
   period?: { start: string | null; end: string | null } | null;
 }
 

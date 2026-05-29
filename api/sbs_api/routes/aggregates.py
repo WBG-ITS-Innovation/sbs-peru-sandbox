@@ -266,6 +266,26 @@ async def get_aggregate_trend(
                 .order_by(func.count().desc())
             )
         ).all()
+        channel_rows = (
+            await session.execute(
+                select(ComplaintRecord.channel, func.count())
+                .group_by(ComplaintRecord.channel)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        # Outcome split per month — favor_user / favor_bank / partial / pending.
+        omonth = func.to_char(ComplaintRecord.received_date, "YYYY-MM")
+        outcome_month_rows = (
+            await session.execute(
+                select(
+                    omonth,
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_USER),
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_BANK),
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_PARTIAL),
+                    func.count().filter(ComplaintRecord.resolution_status == "pendiente"),
+                ).group_by(omonth)
+            )
+        ).all()
         period_row = (
             await session.execute(
                 select(func.min(ComplaintRecord.received_date), func.max(ComplaintRecord.received_date))
@@ -286,7 +306,7 @@ async def get_aggregate_trend(
         ).scalar_one()
     except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
         log.warning("aggregates.trend.query_failed", exc_info=True)
-        return {"generated_at": generated_at, "by_motivo": [], "by_month": [], "by_product": [], "period": None, "n_patterns": 0, "n_patterns_high": 0}
+        return {"generated_at": generated_at, "by_motivo": [], "by_month": [], "by_product": [], "by_channel": [], "by_outcome_month": [], "period": None, "n_patterns": 0, "n_patterns_high": 0}
 
     complaints_by_month = {m: n for m, n in complaint_month_rows if m}
     social_by_month = {m: n for m, n in social_month_rows if m}
@@ -304,6 +324,19 @@ async def get_aggregate_trend(
         for p, n in product_rows
         if p
     ]
+    by_channel = [
+        {"channel": c, "n_complaints": n, "pct_of_all": _pct(n, total)}
+        for c, n in channel_rows
+        if c
+    ]
+    by_outcome_month = sorted(
+        (
+            {"month": m, "user": u, "bank": b, "partial": p, "pending": pe}
+            for m, u, b, p, pe in outcome_month_rows
+            if m
+        ),
+        key=lambda x: x["month"],
+    )
     period = {
         "start": period_row[0].isoformat() if period_row[0] else None,
         "end": period_row[1].isoformat() if period_row[1] else None,
@@ -314,6 +347,8 @@ async def get_aggregate_trend(
         "by_motivo": by_motivo,
         "by_month": by_month,
         "by_product": by_product,
+        "by_channel": by_channel,
+        "by_outcome_month": by_outcome_month,
         "period": period,
         "n_patterns": n_patterns,
         "n_patterns_high": n_patterns_high,

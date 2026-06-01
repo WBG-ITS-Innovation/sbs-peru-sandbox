@@ -95,3 +95,24 @@ standards-pack/examples/
 # Local demo secrets
 .demo-internal-api-secret
 app/.env.local
+
+# Backup files — `.env.backup`, `docker-compose.yaml.bak`, etc. These tend to
+# be created during local debugging; slipping one through into a commit would
+# re-leak whatever the live file contained at that moment. Series 1 scrub.
+*.bak
+*.backup
+
+# Local-only sandbox bundles and tunneling binaries that occasionally land
+# in the repo root from quick experiments. Never to be committed. Series 1.
+/bore
+/cloudflared
+/dev-ca.zip
+
+# Real SBS sample spreadsheets used for offline analysis on the maintainer's
+# machine. Not synthetic — must never be committed. Series 1 scrub.
+data/sbs_sample/
+
+# .scratch — local UI artifacts and one-off mockups. Already excluded via
+# .git/info/exclude on the maintainer's clone; pinned here so it applies to
+# every clone.
+.scratch/

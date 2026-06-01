@@ -22,14 +22,14 @@ WBG ITS distributes the bundle through internal channels. Ask:
 1. The WBG ITS helpdesk, or
 2. A colleague who already has a working setup.
 
-The bundle is usually a `.pem` or `.crt` file containing one or more certificates concatenated. Save it somewhere stable on your machine — `~/certs/wbg-ca-bundle.pem` is the convention this document uses below. Do not commit it to any repository.
+The bundle is usually a `.pem` or `.crt` file containing one or more certificates concatenated. Save it somewhere stable on your machine — `~/certs/corp-ca-bundle.pem` is the convention this document uses below. The actual filename is not important; what matters is that the path is exported as `$CA_BUNDLE` (see the next section) and that the file is never committed to any repository.
 
 ## Wiring each tool to the bundle
 
 After the bundle is on disk, every tool needs to be told where to find it. Set these once per machine, ideally in `~/.zshrc` or `~/.bashrc` so they persist.
 
 ```bash
-export CA_BUNDLE="$HOME/certs/wbg-ca-bundle.pem"
+export CA_BUNDLE="$HOME/certs/corp-ca-bundle.pem"
 
 # Python — requests, urllib3, openai SDK, pip
 export REQUESTS_CA_BUNDLE="$CA_BUNDLE"
@@ -97,7 +97,7 @@ The reason string lands in the session journal. Backfill the cross-review later 
 
 ## Open questions to clear before this document leaves DRAFT
 
-1. Is `~/certs/wbg-ca-bundle.pem` the actual ITS-recommended path, or do they distribute a different one?
+1. Is `~/certs/corp-ca-bundle.pem` the actual ITS-recommended path, or do they distribute a different one?
 2. Does the WBG-issued laptop image already configure the system trust store, making the per-tool overrides redundant?
 3. Are there Windows / WSL-specific steps that should live here?
 4. Is the `gitleaks` row above accurate? It was inferred, not tested.

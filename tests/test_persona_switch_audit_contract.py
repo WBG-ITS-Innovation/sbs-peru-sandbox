@@ -44,9 +44,9 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
         object_id="session-abc-123",
         meta={
             "from_persona": "maria",
-            "from_email": "maria@sbs.gob.pe",
+            "from_email": "maria@sandbox.example.com",
             "to_persona": "jorge",
-            "to_email": "jorge@sbs.gob.pe",
+            "to_email": "jorge@sandbox.example.com",
         },
     )
     assert isinstance(event, AuditEvent)
@@ -58,8 +58,8 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
     assert event.meta is not None
     assert event.meta.get("from_persona") == "maria"
     assert event.meta.get("to_persona") == "jorge"
-    assert event.meta.get("from_email") == "maria@sbs.gob.pe"
-    assert event.meta.get("to_email") == "jorge@sbs.gob.pe"
+    assert event.meta.get("from_email") == "maria@sandbox.example.com"
+    assert event.meta.get("to_email") == "jorge@sandbox.example.com"
 
 
 @pytestmark_db
@@ -85,9 +85,9 @@ async def test_switch_persona_row_round_trips_against_live_db(
                 object_id="session-abc-123",
                 meta={
                     "from_persona": "maria",
-                    "from_email": "maria@sbs.gob.pe",
+                    "from_email": "maria@sandbox.example.com",
                     "to_persona": "lucia",
-                    "to_email": "lucia@sbs.gob.pe",
+                    "to_email": "lucia@sandbox.example.com",
                 },
             )
             await session.commit()
@@ -106,7 +106,7 @@ async def test_switch_persona_row_round_trips_against_live_db(
     assert row.actor_id == "antoine"
     assert row.meta == {
         "from_persona": "maria",
-        "from_email": "maria@sbs.gob.pe",
+        "from_email": "maria@sandbox.example.com",
         "to_persona": "lucia",
-        "to_email": "lucia@sbs.gob.pe",
+        "to_email": "lucia@sandbox.example.com",
     }

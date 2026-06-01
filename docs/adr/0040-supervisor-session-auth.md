@@ -97,9 +97,9 @@ The realm is re-exportable: a developer who edits the realm in the Keycloak admi
 
 The realm seeds three users + three realm-roles:
 
-- `maria@sbs.gob.pe` — role `sbs:conduct:supervisor`. Lands on `/app/cockpit`.
-- `lucia@sbs.gob.pe` — role `sbs:conduct:analyst`. Lands on `/app/findings`.
-- `jorge@sbs.gob.pe` — role `sbs:conduct:head`. Lands on `/app/approvals`.
+- `maria@sandbox.example.com` — role `sbs:conduct:supervisor`. Lands on `/app/cockpit`.
+- `lucia@sandbox.example.com` — role `sbs:conduct:analyst`. Lands on `/app/findings`.
+- `jorge@sandbox.example.com` — role `sbs:conduct:head`. Lands on `/app/approvals`.
 
 Role-based default landing is the subject of ADR 0042 and is the only consumer of the role claim in Prompt 10. The role-to-route mapping is in code (`@/auth/landing.ts`), not in Keycloak.
 

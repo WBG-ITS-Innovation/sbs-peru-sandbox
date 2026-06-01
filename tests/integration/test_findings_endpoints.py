@@ -210,7 +210,7 @@ async def test_draft_save_writes_draft_row_and_audit_row(
             },
             json={
                 "after_text": "Edited narrative with the fee mention.",
-                "actor_id": "lucia@sbs.gob.pe",
+                "actor_id": "lucia@sandbox.example.com",
             },
         )
     assert response.status_code == 201, response.text
@@ -236,7 +236,7 @@ async def test_draft_save_writes_draft_row_and_audit_row(
     await engine.dispose()
 
     assert len(drafts) == 1
-    assert drafts[0].created_by == "lucia@sbs.gob.pe"
+    assert drafts[0].created_by == "lucia@sandbox.example.com"
     assert drafts[0].after_text == "Edited narrative with the fee mention."
     assert len(audits) == 1
     assert audits[0].meta.get("complaint_id") == "BCO-2026-000001"
@@ -264,7 +264,7 @@ async def test_send_to_approvals_writes_row_and_is_idempotent(
                 "Authorization": f"Bearer {SHARED_VAL}",
                 "X-SBS-Role": "sbs:conduct:analyst",
             },
-            json={"severity": "high", "actor_id": "lucia@sbs.gob.pe"},
+            json={"severity": "high", "actor_id": "lucia@sandbox.example.com"},
         )
         second = await client.post(
             "/v1/internal/findings/BCO-2026-000001/send-to-approvals",
@@ -272,7 +272,7 @@ async def test_send_to_approvals_writes_row_and_is_idempotent(
                 "Authorization": f"Bearer {SHARED_VAL}",
                 "X-SBS-Role": "sbs:conduct:analyst",
             },
-            json={"severity": "high", "actor_id": "lucia@sbs.gob.pe"},
+            json={"severity": "high", "actor_id": "lucia@sandbox.example.com"},
         )
     assert first.status_code == 201, first.text
     assert second.status_code == 201, second.text

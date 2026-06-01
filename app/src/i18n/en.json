@@ -343,7 +343,7 @@
     "demo_button": "Enter evaluation sandbox",
     "demo_subline": "Loads the three pilot-phase identities (María, Lucía, Jorge) into one session. Synthetic sandbox only.",
     "integrator_link": "Integrator access · developer portal",
-    "footer_version": "Sandbox build · support: gcmif@sbs.gob.pe",
+    "footer_version": "Sandbox build · support: sbs-suptech-sandbox@worldbank.org",
     "footer_location": "Lima, Peru",
     "mfa_notice": "Authorized personnel only · session recorded · MFA required when enabled",
     "secure_session": "secure session"

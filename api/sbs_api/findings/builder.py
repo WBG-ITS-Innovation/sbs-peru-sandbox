@@ -56,7 +56,7 @@ def default_filters_for_role(roles: frozenset[str]) -> FindingsFilters:
 
     now = datetime.now(tz=timezone.utc)
     if "sbs:conduct:analyst" in roles:
-        # Lucía: high-confidence findings last 24 hours.
+        # the Conduct Analyst: high-confidence findings last 24 hours.
         return FindingsFilters(
             confidence_band="high",
             from_received_at=now - DEFAULT_WINDOW_SUPERVISOR,

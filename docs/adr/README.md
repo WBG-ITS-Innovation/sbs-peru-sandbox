@@ -23,7 +23,7 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0011 | tenancy-and-credential-model          | Proposed | Part 8               | Per-institution tenancy, credential rotation, scope and rate-limit policy |
 | 0012 | ai-ml-evaluation-framework            | Proposed | Part 10              | Per-model eval datasets, metrics, regression gates, drift dashboards |
 | 0013 | standards-pack-distribution           | Proposed | Part 11              | Standards Pack versioning, OCI artifact + GitHub release distribution |
-| 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with Antoine |
+| 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with the WBG technical lead |
 | 0015 | cross-review-llm-backend-azure        | Proposed | Prompt 1.5 / Part 2  | Cross-review LLM backend: Azure OpenAI via WBG tenancy (no personal openai.com keys); aligns with likely SBS Azure-tenancy production posture |
 | 0016 | secret-scanner-stack                  | Accepted | Prompt 2 / Part 1    | gitleaks + detect-secrets locally; gitleaks only in CI; committed baseline is a developer aid, not a CI gate |
 | 0017 | dependency-update-tooling-dependabot  | Accepted | Prompt 2 / Part 1    | Dependabot (not Renovate) for Part 1, weekly schedule, grouped minor+patch for pip and npm; docker ecosystem deferred to Part 9 |

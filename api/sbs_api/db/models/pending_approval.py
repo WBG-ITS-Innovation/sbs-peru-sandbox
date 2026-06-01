@@ -1,8 +1,8 @@
 """Pending-approvals queue.
 
-When Lucía clicks "Send to Approvals" on a Findings drilldown, a row
+When the Conduct Analyst clicks "Send to Approvals" on a Findings drilldown, a row
 lands here in status='pending'. WS5's Approvals screen reads this
-table to populate Jorge's queue. The decision endpoints (approve /
+table to populate the Conduct Unit Head's queue. The decision endpoints (approve /
 approve-with-edits / reject / send-back) update the same row's status
 + decided_at + decided_by + decision_rationale.
 

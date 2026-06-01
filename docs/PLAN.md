@@ -194,7 +194,7 @@ Goal: an institution's integration team can self-onboard against a sandbox using
 - [x] Getting-started guide — Prompt 9 ships `scripts/demo.sh --scale small` as the deterministic zero-to-three-batches replay. Standards pack `README.md` documents the integration path.
 - [ ] Onboarding runbook for SBS staff: how to issue a sandbox credential, rotate it, revoke it (deferred to Part 8 admin).
 - [x] ADRs for SDK distribution and versioning policy — [ADR 0038](adr/0038-sdk-helper-scope-and-distribution.md), [ADR 0039](adr/0039-standards-pack-v0-1-distribution-and-manifest.md).
-- [ ] Plain-language onboarding overview readable by Veronica (deferred to post-sprint v0.2).
+- [ ] Plain-language onboarding overview readable by an SBS reviewer (deferred to post-sprint v0.2).
 - [ ] Second-opinion review: onboarding flow vs CFPB and FCA developer portal precedents (deferred to post-sprint v0.2; the §5.A.P comparator work informs the v0.1 portal serving decision).
 
 **Exit:** A fresh integration team can read the docs, generate an SDK, sign a request, hit the sandbox, and pass the conformance suite — without contacting SBS. Verified end-to-end on a clean machine.
@@ -211,7 +211,7 @@ Goal: SBS staff can onboard, monitor, and manage supervised institutions from th
 - [ ] Per-institution audit log surfaced in the UI.
 - [ ] Agent Workspace + Approval Queue + Radar dashboard + Alarm dashboard, all wired to per-institution scope.
 - [ ] EN/ES localisation across all UI strings.
-- [ ] Plain-language operations guide readable by Sergio.
+- [ ] Plain-language operations guide readable by the Superintendent.
 - [ ] ADR for the multi-tenancy and credential model.
 - [ ] Second-opinion review: tenancy model against BCB's Sistema de Informações de Crédito tenancy precedent.
 
@@ -231,7 +231,7 @@ Goal: this stack is deployable, operable, recoverable, and audit-able by a vendo
 - [ ] Security audit: gitleaks, trivy (image scan), bandit (SAST), CycloneDX SBOM, SLSA provenance attached to releases.
 - [ ] SBS handoff package: architecture diagram (one page), data flow diagram, threat model, ADR set printed, runbook bundle, demo recording, on-prem deployment guide, vendor extension guide.
 - [ ] Demo run-throughs ×3 against the production-shape stack (not the dev compose).
-- [ ] Plain-language operations summary readable by Veronica.
+- [ ] Plain-language operations summary readable by an SBS reviewer.
 - [ ] Second-opinion review: handoff package against the World Bank SupTech reference architecture.
 
 **Exit:** A vendor can clone the repo, deploy to a fresh cluster, run the conformance suite, restore from backup, and respond to a runbook scenario — all without contacting SBS.
@@ -250,7 +250,7 @@ Goal: every classifier, ranker, embedding, and agent decision has a documented e
 - [ ] Drift monitoring: data drift, prediction drift, label drift — Grafana dashboards.
 - [ ] Re-evaluation runbook: how to refresh the eval set, how to re-baseline, who approves.
 - [ ] ADR for the eval framework.
-- [ ] Plain-language explainability note: how each model is evaluated, in language Mariela can read.
+- [ ] Plain-language explainability note: how each model is evaluated, in language the SBS Conduct department head can read.
 - [ ] Second-opinion review: framework against CGAP's "Responsible AI in SupTech" guidance.
 
 **Exit:** Every model in the stack has a numeric baseline (with label), a regression test, and a Grafana drift dashboard. A PR that regresses any model fails CI.
@@ -270,7 +270,7 @@ Goal: SBS publishes a machine-readable Anexo 1-A that any institution, vendor, o
 - [ ] Sample payloads for every taxonomy variant, including edge cases (Unicode, deprecated codes, partial submissions).
 - [ ] Versioning policy: SemVer for the Standards Pack, breaking-change procedure, deprecation timelines.
 - [ ] Distribution: publish the Standards Pack as an OCI artifact and as a tagged GitHub release with a SHA-256 manifest.
-- [ ] Plain-language Standards Pack overview readable by Sergio and Veronica.
+- [ ] Plain-language Standards Pack overview readable by the Superintendent and an SBS reviewer.
 - [ ] ADR for the versioning and distribution policy.
 - [ ] Second-opinion review: Standards Pack against EBA reporting taxonomy distribution and HMRC's Making Tax Digital schemas.
 

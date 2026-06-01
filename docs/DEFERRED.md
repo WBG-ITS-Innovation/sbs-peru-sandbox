@@ -36,7 +36,7 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Status:** `main` branch protection has `required_approving_review_count: 0`.
 - **Why deferred:** Solo work cannot self-approve. Setting it to 1 today would block every PR.
 - **Action needed:** Bump to 1 when a second human joins the repo as a collaborator with review rights.
-- **Target:** When Antoine or Fisnik (or any second human reviewer) is added as a collaborator. Not Part-bound; happens at the personnel event.
+- **Target:** When the WBG technical lead or the WBG engagement manager (or any second human reviewer) is added as a collaborator. Not Part-bound; happens at the personnel event.
 - **Trail:** This entry.
 
 ### Closeout: `--slug` symmetry with `--prompt`
@@ -238,7 +238,7 @@ This is the bridge until uvicorn ships the ASGI TLS extension or we
 migrate to hypercorn. Part 9 deliverable: pick one path and remove the
 frame-walking middleware.
 
-### PR squash-merge style (Day-2 conversation with Fisnik / Antoine)
+### PR squash-merge style (Day-2 conversation with the WBG engagement manager / the WBG technical lead)
 PR #33 squash-merged 13 commits of Prompt 7 work and lost ~3,700 lines
 during the squash conflict resolution. Switch the repo's default merge
 style for large multi-file PRs from squash to merge-commit or

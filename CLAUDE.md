@@ -2,7 +2,7 @@
 
 This file is the contract between the maintainer (Othman) and any Claude session working in this repo. Read it before doing anything else. If you find yourself acting against this file, stop and re-read.
 
-This is a regulator-grade reference implementation, not a demo. Final audience: SBS Peru (Mariela, Sergio, Veronica), and a vendor who will inherit the code. Build for them.
+This is a regulator-grade reference implementation, not a demo. Final audience: SBS Peru (the SBS Conduct department head, the Superintendent, an SBS reviewer), and a vendor who will inherit the code. Build for them.
 
 ---
 
@@ -18,7 +18,7 @@ Every change must serve these. If a change violates one, raise it before writing
 
 4. **Standards over inventions; onboarding is part of the product.** Required standards: OpenAPI 3.1, RFC 9457 problem+json, OAuth 2.0 client_credentials, mTLS, OCI images, Helm 3, SemVer, Conventional Commits, SLSA provenance, CycloneDX SBOM. Institutions get a documentation portal, a sandbox (the word "sandbox" — never "pilot bank"), generated SDKs for .NET, Java, Python, TypeScript via `openapi-generator`, a conformance test suite, and Postman/Bruno collections. If a problem has a published standard, use it; deviation requires an ADR.
 
-5. **Plain-language explainability.** Every architectural artifact has a parallel plain-language version readable by Mariela (supervisor), Sergio (compliance lead), and Veronica (executive). No jargon without a glossary entry. No AI-sounding phrasing ("leverage", "delve", "unlock", "robust", "seamless", "cutting-edge"). Write like a calm, senior engineer briefing a regulator.
+5. **Plain-language explainability.** Every architectural artifact has a parallel plain-language version readable by the SBS Conduct department head (supervisor), the Superintendent (compliance lead), and an SBS reviewer (executive). No jargon without a glossary entry. No AI-sounding phrasing ("leverage", "delve", "unlock", "robust", "seamless", "cutting-edge"). Write like a calm, senior engineer briefing a regulator.
 
 6. **Built on benchmarked precedent, not invention.** Every major design decision cites a comparator from a research file under [docs/research/](docs/research/) — regulator-domain (CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP) lives in [market-comparators.md](docs/research/market-comparators.md); supply-chain (Yelp `detect-secrets`, CISA, OpenSSF, 12-factor, public-sector OSS orgs) lives in [supply-chain-precedents.md](docs/research/supply-chain-precedents.md). Each ADR has a "Precedent" section naming the comparator(s) and a "Divergence" section explaining where SBS departs and why. The `benchmark-checker` subagent enforces this — the rule is *specificity of section and comparator*, not filename.
 
@@ -69,7 +69,7 @@ Read these before acting. They are authoritative; this file is a pointer index.
 - `reviewer` — general code review against PLAN.md and ADRs.
 - `architect-guard` — refuses changes that contradict a locked decision unless an ADR amendment is in the same PR.
 - `doc-sync` — catches code-doc drift.
-- `regulator-readability` — gates anything Veronica or Sergio will see. Flags AI-sounding phrasing, jargon, latency-as-benchmark errors, "pilot bank" language, "real-time" instead of "near-real-time".
+- `regulator-readability` — gates anything an SBS reviewer or the Superintendent will see. Flags AI-sounding phrasing, jargon, latency-as-benchmark errors, "pilot bank" language, "real-time" instead of "near-real-time".
 - `second-opinion` — deliberately adversarial. Surfaces at least one concrete weakness per design.
 - `benchmark-checker` — verifies design changes cite a comparator from the research document.
 
@@ -105,7 +105,7 @@ Main is protected. Nothing reaches main except by a human merging the PR after C
 These are drawn from prior sessions and the maintainer's standing preferences. Treat each as a hard rule unless explicitly told otherwise.
 
 - **Precision on scope.** When asked for a list of things, return only those things. Do not add features, refactor neighbouring code, or "improve" what was not asked for.
-- **Plain language by default.** Write so Veronica or Sergio could read the same paragraph as a senior engineer. Glossary on first use of any acronym.
+- **Plain language by default.** Write so an SBS reviewer or the Superintendent could read the same paragraph as a senior engineer. Glossary on first use of any acronym.
 - **No AI-sounding phrasing.** Strike: leverage, delve, unlock, robust, seamless, cutting-edge, in today's fast-paced world, navigate the landscape, paradigm, ecosystem (as a metaphor), comprehensive (when "complete" works), utilize (when "use" works). Write like a person.
 - **Governance flags.** When a decision touches policy (data residency, retention, approval thresholds, who-may-approve), flag it explicitly. Do not silently encode a policy assumption.
 - **"Near-real-time", not "real-time".** Tier 1 ingestion is near-real-time. Saying "real-time" misleads the regulator about latency guarantees.

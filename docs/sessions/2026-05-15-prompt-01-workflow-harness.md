@@ -22,14 +22,14 @@ The project's working agreement, review harness, and governance scaffolding. A f
 
 - ADR 0001 (MCP + A2A + LangGraph three-layer) — content is deferred to Prompt 9.
 - ADR 0002 through 0013 — queued in [docs/adr/README.md](../adr/README.md) with target Part for each.
-- ADR 0014 (Dev LLM stack) — flagged for cross-model review with Antoine, target Prompt 6.
+- ADR 0014 (Dev LLM stack) — flagged for cross-model review with the WBG technical lead, target Prompt 6.
 - Final license choice — `LICENSE` is a placeholder; the legal review note is in `LICENSE` and will be tracked in `DECISIONS.md` when a path is chosen.
 - `gitsign` signed commits — Part 2 finalises the supply-chain story; until then the closeout script commits unsigned with a warning.
 - The substantive content of `docs/research/market-comparators.md` — awaiting paste from the maintainer in this same closeout cycle.
 
 ## Decisions flagged for cross-model review
 
-- ADR 0014 (Dev LLM stack) — needs Antoine's input on tooling and runtime — target model: cross-review via GPT-5 plus a human review with Antoine — owner: Othman.
+- ADR 0014 (Dev LLM stack) — needs the WBG technical lead's input on tooling and runtime — target model: cross-review via GPT-5 plus a human review with the WBG technical lead — owner: Othman.
 - The PLAN.md restructure note itself — flag for the cross-review pass to confirm the redistribution of old Parts 7–10 (specialist agents, frontend, polish) into the new Parts 6+ and 8/9 is coherent, or whether a separate "Specialist Agents" Part should be reintroduced — owner: Othman.
 
 ## Subagent verdicts

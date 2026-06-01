@@ -111,7 +111,7 @@ Series 1 does **not** rewrite history. The history was already clean per the sup
 
 ### 3.1 Persona and support-contact emails (15 files)
 
-`maria@sbs.gob.pe`, `lucia@sbs.gob.pe`, `jorge@sbs.gob.pe` → `maria@sandbox.example.com`, `lucia@sandbox.example.com`, `jorge@sandbox.example.com`. RFC 2606 reserves `example.com` for documentation/test use; using it for synthetic personas makes their fictional nature unambiguous.
+`maria@sbs.gob.pe`, `lucia@sbs.gob.pe`, `jorge@sbs.gob.pe` → `supervisor@sandbox.example.com`, `analyst@sandbox.example.com`, `unit-head@sandbox.example.com`. RFC 2606 reserves `example.com` for documentation/test use; using it for synthetic personas makes their fictional nature unambiguous.
 
 `gcmif@sbs.gob.pe` (support footer in i18n) → `sbs-suptech-sandbox@worldbank.org` (per the guardrail "Contact identifiers → a `@worldbank.org` mailbox").
 

@@ -54,7 +54,7 @@ async def _seed_pending_approval(
             agent_run_id=None,
             status="pending",
             severity="high",
-            created_by="lucia@sandbox.example.com",
+            created_by="analyst@sandbox.example.com",
         )
         session.add(pending)
         await session.commit()
@@ -144,12 +144,12 @@ async def test_approve_writes_observation_and_audit_idempotent(
         first = await client.post(
             f"/v1/internal/approvals/{pid}/approve",
             headers=_head_headers(),
-            json={"actor_id": "jorge@sandbox.example.com"},
+            json={"actor_id": "unit-head@sandbox.example.com"},
         )
         second = await client.post(
             f"/v1/internal/approvals/{pid}/approve",
             headers=_head_headers(),
-            json={"actor_id": "jorge@sandbox.example.com"},
+            json={"actor_id": "unit-head@sandbox.example.com"},
         )
     assert first.status_code == 201, first.text
     assert first.json()["idempotent_replay"] is False
@@ -194,7 +194,7 @@ async def test_approve_with_edits_writes_observation_and_feedback_and_audit(
             f"/v1/internal/approvals/{pid}/approve-with-edits",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "edited_narrative": "Final narrative with the head's clarification added.",
                 "rationale": "Added the comisión por mantenimiento reference from paragraph two.",
             },
@@ -246,7 +246,7 @@ async def test_reject_writes_feedback_and_audit(
             f"/v1/internal/approvals/{pid}/reject",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "rationale": "Insufficient evidence for misselling — narrative ambiguous.",
             },
         )
@@ -283,7 +283,7 @@ async def test_reject_with_short_rationale_returns_422(
         response = await client.post(
             f"/v1/internal/approvals/{pid}/reject",
             headers=_head_headers(),
-            json={"actor_id": "jorge@sandbox.example.com", "rationale": "no"},
+            json={"actor_id": "unit-head@sandbox.example.com", "rationale": "no"},
         )
     assert response.status_code == 422
 
@@ -305,7 +305,7 @@ async def test_send_back_transitions_status_and_writes_audit(
             f"/v1/internal/approvals/{pid}/send-back",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "note": "Please verify the institution's prior response window.",
             },
         )
@@ -355,13 +355,13 @@ async def test_decision_audit_meta_shape_contract(
         await client.post(
             f"/v1/internal/approvals/{pid1}/approve",
             headers=_head_headers(),
-            json={"actor_id": "jorge@sandbox.example.com"},
+            json={"actor_id": "unit-head@sandbox.example.com"},
         )
         await client.post(
             f"/v1/internal/approvals/{pid2}/approve-with-edits",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "edited_narrative": "Edited.",
                 "rationale": "Twenty character rationale ok.",
             },
@@ -370,7 +370,7 @@ async def test_decision_audit_meta_shape_contract(
             f"/v1/internal/approvals/{pid3}/reject",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "rationale": "Twenty character rationale ok.",
             },
         )
@@ -378,7 +378,7 @@ async def test_decision_audit_meta_shape_contract(
             f"/v1/internal/approvals/{pid4}/send-back",
             headers=_head_headers(),
             json={
-                "actor_id": "jorge@sandbox.example.com",
+                "actor_id": "unit-head@sandbox.example.com",
                 "note": "Note for the analyst above twenty.",
             },
         )

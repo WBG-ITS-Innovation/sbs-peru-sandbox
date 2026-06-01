@@ -17,8 +17,8 @@ export const dynamic = 'force-dynamic';
 
 // Roles permitted to read the approvals queue, mirroring the backend
 // dependency `_HEAD_OR_ANALYST` on api/sbs_api/routes/approvals.py.
-// ADR 0040 §D7 — supervisor (María) is intentionally excluded; she
-// hands off to head (Jorge) or analyst (Lucía) via the persona
+// ADR 0040 §D7 — supervisor (the Conduct Supervisor) is intentionally excluded; she
+// hands off to head (the Conduct Unit Head) or analyst (the Conduct Analyst) via the persona
 // switcher in the top bar.
 const QUEUE_ROLES = new Set<string>([ROLE_ANALYST, ROLE_HEAD]);
 

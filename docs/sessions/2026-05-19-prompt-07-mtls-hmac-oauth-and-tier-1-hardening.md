@@ -81,7 +81,7 @@ Plus the architect-guard observations (legacy `get_auth_context` dead-code clean
 ## Decisions flagged for cross-model review
 
 - The auth-chain ADRs were cross-reviewed via Azure OpenAI on 2026-05-19; output at `docs/reviews/2026-05-19-docs-adr-003-123.md`. No follow-up flagged for further model review.
-- The CN-vs-SAN identity convention (raised by the cross-review's strongest disagreement-with-primary) is a regulator-policy question more than a model question; flagged for Sergio/Mariela conversation before Part 9.
+- The CN-vs-SAN identity convention (raised by the cross-review's strongest disagreement-with-primary) is a regulator-policy question more than a model question; flagged for the Superintendent/the SBS Conduct department head conversation before Part 9.
 
 ## Paste-ready block for the maintainer
 

@@ -165,7 +165,7 @@ push back. Owner: Othman (or whoever should adjudicate).
 | reviewer | Only listed files touched. No drive-by changes. |
 | architect-guard | No locked decision from previous prompts is reopened. ADRs added in this prompt land as Accepted in the same commit. |
 | doc-sync | New files linked from README.md, CLAUDE.md, or CONTRIBUTING.md as appropriate. New ADRs appear in docs/adr/README.md. |
-| regulator-readability | No AI-tells. Plain-language ADR summaries. Documents readable by non-engineer reviewers (Mariela, Sergio, Veronica). No unlabelled benchmarks. |
+| regulator-readability | No AI-tells. Plain-language ADR summaries. Documents readable by non-engineer reviewers (the SBS Conduct department head, the Superintendent, an SBS reviewer). No unlabelled benchmarks. |
 | benchmark-checker | Each ADR cites at least one named precedent. Reject first-principles-only ADRs. |
 | second-opinion | Strongest objection logged in journal under "Adversarial review"; mitigation named or deferred to tracked follow-up. |
 

@@ -36,7 +36,7 @@ const badgeVariants = cva(
         // Source chips (Tier 1 / Tier 2 / Cross-source channels)
         source:
           'border-brand-cyan/40 bg-brand-cyan/10 text-brand-navy',
-        // Role chips (María / Lucía / Jorge)
+        // Role chips (Supervisor / Analyst / Unit Head)
         role:
           'border-brand-gold/40 bg-brand-gold/10 text-brand-navy',
       },

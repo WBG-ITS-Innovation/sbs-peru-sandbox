@@ -1,12 +1,12 @@
 // POST /app/api/persona/switch — flip the active-persona pointer on a
 // demo-mode session. ADR 0040 §D8 + ADR 0042 §D3.
 //
-// Body: {"to": "maria" | "lucia" | "jorge"}
+// Body: {"to": "supervisor" | "analyst" | "unit-head"}
 // Requires: SBS_DEMO_MODE=true, a valid session cookie, CSRF header.
 // Writes: one audit_events row with action='switch-persona',
 //         meta carrying both from_persona / to_persona AND the
 //         corresponding emails so the audit row reads as
-//         "<operator> switched from María to Jorge".
+//         "<operator> switched from Conduct Supervisor to Conduct Unit Head".
 // Returns: {active: "<new-key>"} on success; 400 on bad body;
 //          403 on CSRF or non-demo session; 401 without session;
 //          404 when SBS_DEMO_MODE is off.
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   const target = (body as { to?: unknown })?.to;
   if (!isDemoPersonaKey(target)) {
     return NextResponse.json(
-      { error: 'to must be one of: maria, lucia, jorge' },
+      { error: 'to must be one of: supervisor, analyst, unit-head' },
       { status: 400 },
     );
   }
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
   // The audit row carries from_persona + to_persona and the
   // corresponding emails. Per the user-facing framing
-  // ("Antoine switched from María to Jorge at 14:32"), the actor is
+  // ("demo-operator switched from Supervisor to Unit Head at 14:32"), the actor is
   // the operator name held on the session — not the persona's email.
   try {
     await writeAuditEvent({

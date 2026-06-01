@@ -8,7 +8,7 @@ Running log of inputs from the in-country sprint with SBS Peru. Each entry is a 
 YYYY-MM-DD | <source> | <Part-N or cross-cutting> | <one-line input> | <action / owner / due>
 ```
 
-- `source`: a person (Mariela / Sergio / Veronica / Antoine / Fisnik) or a meeting tag (e.g. `sprint-D2-am`).
+- `source`: a person (the SBS Conduct department head / the Superintendent / an SBS reviewer / the WBG technical lead / the WBG engagement manager) or a meeting tag (e.g. `sprint-D2-am`).
 - `Part-N` or `cross-cutting` so we can filter by Part.
 - One-line input — verbatim quote or paraphrase. Do not editorialise.
 - Action / owner / due — leave blank if no action.

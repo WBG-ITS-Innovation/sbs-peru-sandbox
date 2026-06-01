@@ -60,7 +60,7 @@ _TOPIC_ROLES: dict[str, frozenset[str]] = {
     "findings": frozenset(
         {"sbs:conduct:supervisor", "sbs:conduct:analyst", "sbs:conduct:head"}
     ),
-    # Approvals topic restricted to head + analyst — supervisor (María)
+    # Approvals topic restricted to head + analyst — supervisor (the Conduct Supervisor)
     # does not subscribe per ADR 0040 §D7's demo-scope outline.
     "approvals": frozenset({"sbs:conduct:analyst", "sbs:conduct:head"}),
 }

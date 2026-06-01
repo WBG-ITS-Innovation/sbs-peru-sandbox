@@ -22,7 +22,7 @@ Peruvian INEI list. The corpus has to be generated.
 Three things vary across uses:
 
 - **Demo credibility.** Narratives need to look like real complaints
-  to Mariela and Sergio, not "Lorem ipsum about banking".
+  to the SBS Conduct department head and the Superintendent, not "Lorem ipsum about banking".
 - **Validation coverage.** Every row must be Anexo 1-A
   structurally valid so the ingestion pipeline accepts it.
 - **Statistical realism for ML.** The Prompt 11 pattern detection
@@ -57,13 +57,13 @@ over a 90-day window ending today.
 pattern detection.** Heavy-tail complaint frequency per institution
 (Pareto-shaped, 80% of complaints concentrated in 20% of
 institutions). Weekly seasonality with Friday peak (consumer-
-banking complaint pattern; matched against Mariela's conduct-
+banking complaint pattern; matched against the SBS Conduct department head's conduct-
 supervision view). Correlated complaint clusters following synthetic
 operational incidents — e.g., 200 complaints about a single mortgage
 product over 10 days, simulating an institution-level conduct
 failure. Prudential-versus-conduct pattern distinction: prudential
 patterns concentrate by counterparty / exposure (sparse but high-
-impact, matching Mariela's prudential lens), conduct patterns
+impact, matching the SBS Conduct department head's prudential lens), conduct patterns
 spread across many consumers (dense but lower per-incident impact).
 
 **Prompt 8 ships Tier 2.** Tier 3 hooks via the

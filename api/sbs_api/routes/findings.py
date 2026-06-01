@@ -61,7 +61,7 @@ async def get_findings(
         to_received_at=to_received_at,
     )
     # If the caller passed nothing, apply role defaults so an empty
-    # query string still returns "Lucía's high-confidence last 24h".
+    # query string still returns "the Conduct Analyst's high-confidence last 24h".
     no_explicit = explicit == FindingsFilters()
     filters = default_filters_for_role(roles) if (no_explicit and use_defaults) else explicit
     return await build_findings_list(session, roles=roles, filters=filters)

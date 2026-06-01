@@ -130,9 +130,9 @@ This section is appended after PR #25 merged. The original sections 1–4 above 
 
 ### 5.1 TLS now configured
 
-The `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` env vars are now set in `~/.zshrc` to a bundle at `~/certs/wbg-ca-bundle-full.pem`. The bundle is the Mozilla base set plus the WBG Root CA G2, WBG Cloud Root CA, WBG Cloud Issuing CAs, and the `pa-wbg-decrypt.worldbank.org` cert, extracted from the macOS System keychain. The WBG network does TLS interception on Azure-hosted endpoints via `pa-wbg-decrypt.worldbank.org`; the bundle was incomplete until those roots were added.
+The `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` env vars are now set in `~/.zshrc` to a bundle at `~/certs/corp-ca-bundle.pem`. The bundle is the Mozilla base set plus the corporate root CAs and the TLS-decrypt cert, extracted from the macOS System keychain. The corporate network does TLS interception on Azure-hosted endpoints via a corporate TLS-decrypt host; the bundle was incomplete until those roots were added.
 
-Verified by `openssl s_client -connect compliance-ai-kg.openai.azure.com:443 -CAfile ~/certs/wbg-ca-bundle-full.pem` returning `Verify return code: 0 (ok)`.
+Verified by `openssl s_client -connect "$AZURE_OPENAI_ENDPOINT_HOST:443" -CAfile ~/certs/corp-ca-bundle.pem` returning `Verify return code: 0 (ok)`.
 
 ### 5.2 Cross-reviews completed
 

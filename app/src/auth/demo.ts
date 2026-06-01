@@ -30,17 +30,17 @@ import type { PersonaSession, ServerSession } from './session';
 // deliberate, sandbox-only, and committed by design.
 export const DEMO_PERSONAS = {
   maria: {
-    email: 'maria@sbs.gob.pe',
+    email: 'maria@sandbox.example.com',
     passwordEnv: 'SBS_DEMO_MARIA_PASSWORD', // pragma: allowlist secret
     passwordDefault: 'maria-demo-2026', // pragma: allowlist secret
   },
   lucia: {
-    email: 'lucia@sbs.gob.pe',
+    email: 'lucia@sandbox.example.com',
     passwordEnv: 'SBS_DEMO_LUCIA_PASSWORD', // pragma: allowlist secret
     passwordDefault: 'lucia-demo-2026', // pragma: allowlist secret
   },
   jorge: {
-    email: 'jorge@sbs.gob.pe',
+    email: 'jorge@sandbox.example.com',
     passwordEnv: 'SBS_DEMO_JORGE_PASSWORD', // pragma: allowlist secret
     passwordDefault: 'jorge-demo-2026', // pragma: allowlist secret
   },

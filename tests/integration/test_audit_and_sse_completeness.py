@@ -97,7 +97,7 @@ async def test_audit_endpoint_returns_paginated_rows(
     for i in range(12):
         await _seed_audit_row(
             test_database_url,
-            actor_id=f"u{i}@sbs.gob.pe",
+            actor_id=f"u{i}@sandbox.example.com",
             action="login",
             object_type="session",
             object_id=f"s-{i}",
@@ -121,14 +121,14 @@ async def test_audit_endpoint_returns_paginated_rows(
 async def test_audit_endpoint_filters_by_action(app_with_secret, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="maria@sbs.gob.pe",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s1",
     )
     await _seed_audit_row(
         test_database_url,
-        actor_id="maria@sbs.gob.pe",
+        actor_id="maria@sandbox.example.com",
         action="logout",
         object_type="session",
         object_id="s1",
@@ -157,7 +157,7 @@ async def test_audit_endpoint_accepts_supervisor_role(
 ):
     await _seed_audit_row(
         test_database_url,
-        actor_id="maria@sbs.gob.pe",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s1",
@@ -177,7 +177,7 @@ async def test_audit_endpoint_accepts_supervisor_role(
 async def test_audit_login_row_carries_landed_route(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="maria@sbs.gob.pe",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s-1",
@@ -213,9 +213,9 @@ async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_data
         object_id="s-1",
         meta={
             "from_persona": "maria",
-            "from_email": "maria@sbs.gob.pe",
+            "from_email": "maria@sandbox.example.com",
             "to_persona": "jorge",
-            "to_email": "jorge@sbs.gob.pe",
+            "to_email": "jorge@sandbox.example.com",
         },
     )
     from sqlalchemy import select
@@ -244,7 +244,7 @@ async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_data
 async def test_audit_edit_draft_narrative_row_carries_before_and_after(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="lucia@sbs.gob.pe",
+        actor_id="lucia@sandbox.example.com",
         action="edit-draft-narrative",
         object_type="complaint",
         object_id="BCO-2026-000001",

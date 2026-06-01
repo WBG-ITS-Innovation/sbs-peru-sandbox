@@ -59,8 +59,8 @@
   },
   "users": [
     {
-      "username": "maria@sbs.gob.pe",
-      "email": "maria@sbs.gob.pe",
+      "username": "maria@sandbox.example.com",
+      "email": "maria@sandbox.example.com",
       "firstName": "María",
       "lastName": "Lazo",
       "enabled": true,
@@ -75,8 +75,8 @@
       "realmRoles": ["sbs:conduct:supervisor", "default-roles-sbs-demo"]
     },
     {
-      "username": "lucia@sbs.gob.pe",
-      "email": "lucia@sbs.gob.pe",
+      "username": "lucia@sandbox.example.com",
+      "email": "lucia@sandbox.example.com",
       "firstName": "Lucía",
       "lastName": "Ramos",
       "enabled": true,
@@ -91,8 +91,8 @@
       "realmRoles": ["sbs:conduct:analyst", "default-roles-sbs-demo"]
     },
     {
-      "username": "jorge@sbs.gob.pe",
-      "email": "jorge@sbs.gob.pe",
+      "username": "jorge@sandbox.example.com",
+      "email": "jorge@sandbox.example.com",
       "firstName": "Jorge",
       "lastName": "Caballero",
       "enabled": true,

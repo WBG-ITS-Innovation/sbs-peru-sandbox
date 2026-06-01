@@ -52,22 +52,22 @@ async def test_record_audit_event_builds_unsaved_row_with_expected_fields() -> N
     event = await record_audit_event(
         session,  # type: ignore[arg-type]
         actor_type="user",
-        actor_id="maria@sbs.gob.pe",
+        actor_id="maria@sandbox.example.com",
         action="switch-persona",
         object_type="session",
         object_id="session-abc-123",
-        meta={"from": "maria@sbs.gob.pe", "to": "lucia@sbs.gob.pe"},
+        meta={"from": "maria@sandbox.example.com", "to": "lucia@sandbox.example.com"},
     )
 
     assert isinstance(event, AuditEvent)
     assert session.added == [event]
     assert event.actor_type == "user"
-    assert event.actor_id == "maria@sbs.gob.pe"
+    assert event.actor_id == "maria@sandbox.example.com"
     assert event.action == "switch-persona"
     assert event.object_type == "session"
     assert event.object_id == "session-abc-123"
     assert event.diff is None
-    assert event.meta == {"from": "maria@sbs.gob.pe", "to": "lucia@sbs.gob.pe"}
+    assert event.meta == {"from": "maria@sandbox.example.com", "to": "lucia@sandbox.example.com"}
 
 
 @pytestmark_db
@@ -86,11 +86,11 @@ async def test_audit_event_round_trip_against_live_db(
             await record_audit_event(
                 session,
                 actor_type="user",
-                actor_id="maria@sbs.gob.pe",
+                actor_id="maria@sandbox.example.com",
                 action="switch-persona",
                 object_type="session",
                 object_id="session-abc-123",
-                meta={"from": "maria@sbs.gob.pe", "to": "lucia@sbs.gob.pe"},
+                meta={"from": "maria@sandbox.example.com", "to": "lucia@sandbox.example.com"},
             )
             await session.commit()
 
@@ -98,7 +98,7 @@ async def test_audit_event_round_trip_against_live_db(
             actor_rows = (
                 await session.execute(
                     select(AuditEvent).where(
-                        AuditEvent.actor_id == "maria@sbs.gob.pe"
+                        AuditEvent.actor_id == "maria@sandbox.example.com"
                     )
                 )
             ).scalars().all()
@@ -134,7 +134,7 @@ async def test_audit_event_rejects_non_kebab_action_at_db_level(
             await record_audit_event(
                 session,
                 actor_type="user",
-                actor_id="maria@sbs.gob.pe",
+                actor_id="maria@sandbox.example.com",
                 action="SwitchPersona",  # PascalCase — must be rejected.
                 object_type="session",
                 object_id="session-xyz",

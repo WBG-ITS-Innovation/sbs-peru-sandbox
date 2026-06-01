@@ -49,7 +49,7 @@ class AuditEvent(Base):
     # 'user' (María, Lucía, Jorge) or 'agent' (a classifier / drafter run).
     actor_type: Mapped[str] = mapped_column(String(8), nullable=False)
 
-    # User email (e.g., 'maria@sbs.gob.pe') or agent_run id (UUID string).
+    # User email (e.g., 'maria@sandbox.example.com') or agent_run id (UUID string).
     # Not FK-constrained — actors can be external services in future.
     actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
 

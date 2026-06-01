@@ -40,7 +40,7 @@ the missing mention, and saves:
 The save writes:
 - a new `complaint_narrative_drafts` row (before/after preserved);
 - one `audit_events` row, `action='edit-draft-narrative'`,
-  `actor_id=lucia@sbs.gob.pe`, `diff={before_excerpt, after_excerpt}`.
+  `actor_id=lucia@sandbox.example.com`, `diff={before_excerpt, after_excerpt}`.
 
 The audit row is what makes the WS5 Approvals view trustworthy later
 — Jorge sees exactly what Lucía changed.

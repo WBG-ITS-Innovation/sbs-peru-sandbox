@@ -53,7 +53,7 @@
 
 ## Cross-model review — triage line
 
-SKIPPED: TLS cert path unresolved (SSL_CERT_FILE not set on the developer workstation; the WBG ITS Azure OpenAI tenancy is reached through Zscaler and requires the WBG CA bundle). Recorded in `docs/sessions/2026-05-18-prompt-05-open-questions.md` §1.1 for follow-up. Both the Workstream 0 mid-prompt cross-review and the closeout cross-review were skipped; the Workstream 0 note carries an inline adversarial reading substituting for the external pass. The closeout cross-review skip-reason placeholder is at `docs/reviews/2026-05-18-prompt-05-stack-validation.md` and a fresh closeout placeholder at `docs/reviews/2026-05-18-prompt-05-openapi-spec-and-data-model.md`.
+SKIPPED: TLS cert path unresolved (SSL_CERT_FILE not set on the developer workstation; the corporate Azure OpenAI tenancy is reached through a TLS-intercepting proxy and requires the corporate CA bundle). Recorded in `docs/sessions/2026-05-18-prompt-05-open-questions.md` §1.1 for follow-up. Both the Workstream 0 mid-prompt cross-review and the closeout cross-review were skipped; the Workstream 0 note carries an inline adversarial reading substituting for the external pass. The closeout cross-review skip-reason placeholder is at `docs/reviews/2026-05-18-prompt-05-stack-validation.md` and a fresh closeout placeholder at `docs/reviews/2026-05-18-prompt-05-openapi-spec-and-data-model.md`.
 
 ## Adversarial review
 
@@ -129,7 +129,7 @@ The journal above was written when the cross-reviews were skipped (TLS unresolve
 
 ### What changed
 
-- **TLS configured.** WBG decrypt root certs added to the trust bundle at `~/certs/wbg-ca-bundle-full.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
+- **TLS configured.** Corporate TLS-decrypt root certs added to the trust bundle at `~/certs/corp-ca-bundle.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
 - **Both cross-reviews re-run and triaged.** `docs/reviews/2026-05-17-docs-research-2026-05-18-prompt-05-stack-validation.md` and `docs/reviews/2026-05-17-api-openapi-sbs-api-v1.md` both carry filled Triage sections.
 - **Three contract bugs fixed.** OAuth scope mismatch (global default was `complaints.write`); `complainant_district` ubigeo length (`^\d{4}$` → `^\d{6}$` to match canonical INEI DDPPDD); PATCH `/status` response shape (`ComplaintCreated` → `Complaint`). All three are on PR #26.
 - **Dev portal fixed.** Original `@stoplight/elements@8.4.10` was a non-existent version; both assets were unpkg error strings with identical bogus SRI hashes. Now pinned to `9.0.19` with two real distinct SRI hashes. Visually verified.
@@ -164,7 +164,7 @@ The journal above was written when the cross-reviews were skipped (TLS unresolve
 
 ### What changed
 
-- **TLS configured.** WBG decrypt root certs added to the trust bundle at `~/certs/wbg-ca-bundle-full.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
+- **TLS configured.** Corporate TLS-decrypt root certs added to the trust bundle at `~/certs/corp-ca-bundle.pem`. `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` persisted in `~/.zshrc`. Detail in the open-questions addendum §5.1.
 - **Both cross-reviews re-run and triaged.** `docs/reviews/2026-05-17-docs-research-2026-05-18-prompt-05-stack-validation.md` and `docs/reviews/2026-05-17-api-openapi-sbs-api-v1.md` both carry filled Triage sections.
 - **Three contract bugs fixed.** OAuth scope mismatch (global default was `complaints.write`); `complainant_district` ubigeo length (`^\d{4}$` → `^\d{6}$` to match canonical INEI DDPPDD); PATCH `/status` response shape (`ComplaintCreated` → `Complaint`). All three are on PR #26.
 - **Dev portal fixed.** Original `@stoplight/elements@8.4.10` was a non-existent version; both assets were unpkg error strings with identical bogus SRI hashes. Now pinned to `9.0.19` with two real distinct SRI hashes. Visually verified.

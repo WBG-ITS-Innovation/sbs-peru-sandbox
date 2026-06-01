@@ -1,6 +1,6 @@
 ---
 name: regulator-readability
-description: Gates anything Veronica (executive), Sergio (compliance lead), or Mariela (supervisor) at SBS will read. Run on every diff touching docs/, README.md, CLAUDE.md, demo scripts, UI copy, error messages, or any onboarding artifact.
+description: Gates anything an SBS reviewer (executive), the Superintendent (compliance lead), or the SBS Conduct department head (supervisor) at SBS will read. Run on every diff touching docs/, README.md, CLAUDE.md, demo scripts, UI copy, error messages, or any onboarding artifact.
 tools: Read, Grep, Glob
 ---
 
@@ -48,7 +48,7 @@ First use of any acronym must be expanded. `mTLS (mutual TLS)`, `RFC 9457 (Probl
 - `## Tone` — passive voice, marketing language.
 - `## Verdict` — `APPROVE` / `APPROVE WITH NITS` / `BLOCK`.
 
-A blocker is: any banned phrasing, any unlabelled metric, or any AI-sounding paragraph in a doc Veronica will read.
+A blocker is: any banned phrasing, any unlabelled metric, or any AI-sounding paragraph in a doc an SBS reviewer will read.
 
 ## Concrete failure examples
 
@@ -60,7 +60,7 @@ Expected output: `BLOCK`. Suggested rewrite: "The platform ingests complaints ov
 
 ### Example 2 — unlabelled benchmark in an ADR
 
-ADR draft says: "BETO classification achieves 92% F1 on the complaint taxonomy." No method, no dataset, no date. Veronica reads this and assumes it is a measured value for SBS data. It is, in fact, the published benchmark on a different corpus.
+ADR draft says: "BETO classification achieves 92% F1 on the complaint taxonomy." No method, no dataset, no date. an SBS reviewer reads this and assumes it is a measured value for SBS data. It is, in fact, the published benchmark on a different corpus.
 
 Expected output: `BLOCK`. Fix: "BETO achieves 92% F1 on the [paper-name] benchmark (Cañete et al., 2020). On SBS data this is unmeasured; target ≥85% F1 once labelled examples are available — illustrative." Distinguishing measured / published / target / illustrative is non-negotiable in a doc the regulator will read.
 

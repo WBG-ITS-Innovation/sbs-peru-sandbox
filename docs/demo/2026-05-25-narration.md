@@ -1,7 +1,7 @@
 # SBS SupTech — May 25 demo narration
 
 Authored Prompt 10 / WS4. Updates each workstream commit as panels
-land. The narrator (Antoine or Oumaïma) reads from this file during
+land. The narrator (the WBG technical lead or another WBG operator) reads from this file during
 rehearsal Day 3; the live demo follows the same beats.
 
 ## §Findings deep-dive
@@ -30,7 +30,7 @@ The agent-drafted summary in the **Draft narrative** panel reads:
 
 > Disputa de cliente sobre comisiones de cuenta.
 
-That's deliberately incomplete. Lucía clicks **Edit draft**, types in
+That's deliberately incomplete. the Conduct Analyst clicks **Edit draft**, types in
 the missing mention, and saves:
 
 > Disputa de cliente sobre comisiones de cuenta, incluida una comisión
@@ -40,10 +40,10 @@ the missing mention, and saves:
 The save writes:
 - a new `complaint_narrative_drafts` row (before/after preserved);
 - one `audit_events` row, `action='edit-draft-narrative'`,
-  `actor_id=lucia@sandbox.example.com`, `diff={before_excerpt, after_excerpt}`.
+  `actor_id=analyst@sandbox.example.com`, `diff={before_excerpt, after_excerpt}`.
 
 The audit row is what makes the WS5 Approvals view trustworthy later
-— Jorge sees exactly what Lucía changed.
+— the Conduct Unit Head sees exactly what the Conduct Analyst changed.
 
 ### Agent reasoning panel
 "Three runs on this complaint. The classifier shows green across
@@ -60,7 +60,7 @@ medium pill for partial, critical pill for failed. The system is
 honest about when it didn't work.
 
 ### Send to Approvals
-After the edit lands, Lucía clicks **Send to Approvals**. A pending
+After the edit lands, the Conduct Analyst clicks **Send to Approvals**. A pending
 row appears in WS5's queue; an audit row records the handoff. The
 button changes to a pill: "Already in approvals queue #N". A second
 click is idempotent — no duplicate row.
@@ -72,13 +72,13 @@ side-by-side + anomaly card. The 90-second beat is unchanged.)
 
 ## §Approvals moment (WS5 — to be authored)
 
-Antoine switches persona to **Jorge** via the top-bar switcher. The
-nav rail's role indicator flips from Analista to Jefe; the URL stays
-on Findings; Antoine clicks Approvals in the nav rail. The audit row
+The operator switches persona to **the Conduct Unit Head** via the top-bar switcher. The
+nav rail's role indicator flips from Analyst to Unit Head; the URL stays
+on Findings; the operator clicks Approvals in the nav rail. The audit row
 recording the persona switch lands silently in `audit_events`
-(`actor_id=antoine`, `meta.from_persona=lucia`, `to_persona=jorge`).
+(`actor_id=demo-operator`, `meta.from_persona=analyst`, `to_persona=unit-head`).
 
-The queue shows one pending item — the one Lucía sent up. KPIs at the
+The queue shows one pending item — the one the Conduct Analyst sent up. KPIs at the
 top: pending 1, approved today 0, rejected today 0, median T2D —.
 Click the row. Detail opens.
 
@@ -90,14 +90,14 @@ Pinned evidence shows three columns:
 - **Channel contributions**: indecopi +0.30, social +0.20,
   complaints +0.18.
 
-Below it, the same panels Lucía saw — Narrative + Classification +
+Below it, the same panels the Conduct Analyst saw — Narrative + Classification +
 Feature importance + Agent reasoning — render exactly as before.
-Decision-history is empty (this is the first time Jorge has opened
+Decision-history is empty (this is the first time the Conduct Unit Head has opened
 this approval).
 
-Jorge clicks **Approve with edits**. The Edit modal opens with the
-narrative pre-filled to Lucía's saved draft (which now includes the
-maintenance-fee mention). Jorge adjusts the closing sentence to add
+the Conduct Unit Head clicks **Approve with edits**. The Edit modal opens with the
+narrative pre-filled to the Conduct Analyst's saved draft (which now includes the
+maintenance-fee mention). the Conduct Unit Head adjusts the closing sentence to add
 "institutional notification recommended within 5 business days." and
 fills the rationale: *"Edit clarifies the recommended remediation
 window for institutional response."* (82 chars; well above the 20-
@@ -106,7 +106,7 @@ char minimum the modal's helper text shows until threshold.)
 Save. The modal closes. The decision row flips to "Approved ·
 approve-with-edits". Behind the scenes the four-write effect lands:
 
-- `supervisory_observations` gets a row with Jorge's edited narrative.
+- `supervisory_observations` gets a row with the Conduct Unit Head's edited narrative.
 - `agent_feedback` gets a row with `decision='approve-with-edits'`
   and `edit_diff={before, after}` for the AI-eval pipeline.
 - `pending_approvals.status` flips from 'pending' to 'approved' with
@@ -124,5 +124,5 @@ or the other in the same PR — they are the contract.
 
 The audit screen shows every state-changing action — login,
 switch-persona, edit-draft-narrative, send-to-approvals, approve.
-The row that records Lucía's edit ("before" → "after" excerpts) is
+The row that records the Conduct Analyst's edit ("before" → "after" excerpts) is
 the AI-governance closer.

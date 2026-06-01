@@ -81,7 +81,7 @@ This was not caused by anything the operator or the closeout pipeline
 did wrong; it appears to be a squash-merge artefact where conflict
 resolution during the squash picked older versions of multiple files.
 The exact mechanism is not yet understood and is documented for
-discussion with Fisnik and Antoine.
+discussion with the WBG engagement manager and the WBG technical lead.
 
 Resolution path: PR #35 was opened against main containing the full
 working tree from branch

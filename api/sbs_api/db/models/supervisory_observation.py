@@ -1,6 +1,6 @@
 """Supervisory observation — the official record an Approval creates.
 
-When Jorge approves (or approves-with-edits) a finding, the head's
+When the Conduct Unit Head approves (or approves-with-edits) a finding, the head's
 final narrative lands here. WS6's audit screen joins on
 ``approved_at`` + ``approved_by`` to render the decision chain;
 production SBS workflows would also flow this row to the
@@ -33,7 +33,7 @@ class SupervisoryObservation(Base):
         BigInteger, ForeignKey("pending_approvals.id"), nullable=False
     )
 
-    # The narrative as approved — the same text Lucía edited (or the
+    # The narrative as approved — the same text the Conduct Analyst edited (or the
     # head's further edit when approve-with-edits is chosen).
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
 

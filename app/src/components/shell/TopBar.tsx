@@ -20,7 +20,7 @@ interface TopBarProps {
   lockup: string;
   locale: Locale;
   demoMode: boolean;
-  activePersonaKey: 'maria' | 'lucia' | 'jorge' | null;
+  activePersonaKey: 'supervisor' | 'analyst' | 'unit-head' | null;
   csrfToken: string | null;
   labels: {
     connectionLabel: { connecting: string; connected: string; disconnected: string };
@@ -28,9 +28,9 @@ interface TopBarProps {
     persona: {
       switch_persona: string;
       active_persona: string;
-      maria: string;
-      lucia: string;
-      jorge: string;
+      supervisor: string;
+      analyst: string;
+      'unit-head': string;
       cancel: string;
     };
   };

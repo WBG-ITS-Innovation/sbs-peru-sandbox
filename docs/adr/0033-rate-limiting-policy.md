@@ -16,7 +16,7 @@ working hours. A single rate limit serves neither well — too low chokes
 the banks, too high gives a misbehaving small institution nine orders of
 magnitude of room to misbehave before the limit fires.
 
-Mariela's proportional-treatment framing for SBS supervised institutions
+the SBS Conduct department head's proportional-treatment framing for SBS supervised institutions
 is the conceptual anchor: small institutions are not held to large-bank
 standards on integration sophistication, and large banks are not capped
 to small-COOPAC traffic ceilings. The rate limit must reflect that.
@@ -110,7 +110,7 @@ cites
 as the single solid precedent for this pattern. Stripe documents
 exactly: a per-account token bucket, four response headers (`Retry-After`
 plus the three `X-RateLimit-*`), and a `429` with `Retry-After` on burst
-overruns. The tier abstraction (large vs small) mirrors Mariela's
+overruns. The tier abstraction (large vs small) mirrors the SBS Conduct department head's
 proportional-treatment framing for SBS supervised institutions; Stripe
 itself differentiates "test" and "live" account limits, which is the
 same shape applied to a different axis.

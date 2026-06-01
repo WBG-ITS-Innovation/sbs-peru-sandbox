@@ -253,7 +253,7 @@ def write_session_journal(
         "",
         "## What landed",
         "",
-        "_Operator fills in: one paragraph, plain language, readable by Veronica._",
+        "_Operator fills in: one paragraph, plain language, readable by an SBS reviewer._",
         "",
         "## Decisions locked",
         "",

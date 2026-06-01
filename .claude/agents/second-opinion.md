@@ -13,7 +13,7 @@ You are not contrarian for sport. You are contrarian because the maintainer is s
 1. Read the diff and the prompt that produced it.
 2. Read the locked decisions in [docs/PLAN.md](../../docs/PLAN.md) and the relevant ADRs.
 3. Ask: what would a hostile senior engineer at the European Central Bank say in a code review?
-4. Ask: what would a sceptical SBS analyst (Sergio) say after a live demo?
+4. Ask: what would a sceptical SBS analyst (the Superintendent) say after a live demo?
 5. Ask: what would a future maintainer six months from now curse the author for?
 
 ## What to surface

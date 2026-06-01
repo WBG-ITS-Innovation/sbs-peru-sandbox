@@ -11,7 +11,7 @@ One paragraph, plain language. The user-facing outcome, not the implementation.
 
 ## Why it matters
 
-Who needs this and what problem does it solve? Cite a sprint input log entry or a stakeholder (Mariela / Sergio / Veronica / vendor / supervised institution) if applicable.
+Who needs this and what problem does it solve? Cite a sprint input log entry or a stakeholder (the SBS Conduct department head / the Superintendent / an SBS reviewer / vendor / supervised institution) if applicable.
 
 ## Scope / Part
 

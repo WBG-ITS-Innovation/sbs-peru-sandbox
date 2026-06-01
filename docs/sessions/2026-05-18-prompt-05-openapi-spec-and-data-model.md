@@ -90,7 +90,7 @@ Prompt 5 produces the foundation that every subsequent product prompt depends on
 - The 15-field subset choice (vs full Anexo 1-A or vs a different curated cut). Owner: maintainer. Model: GPT-5 via Azure OpenAI (queued post-TLS fix).
 - OpenAPI as canonical contract (vs Pydantic-first generated). Owner: maintainer. Model: GPT-5.
 - Stoplight Elements vs Redoc choice for the demo. Owner: maintainer. Model: GPT-5.
-- Whether `severity`, `description_language`, and `complainant_age_range` belong on the institution-submitted payload at all, given they have no Anexo 1-A counterpart. Owner: Sergio (compliance lead). Model: GPT-5.
+- Whether `severity`, `description_language`, and `complainant_age_range` belong on the institution-submitted payload at all, given they have no Anexo 1-A counterpart. Owner: the Superintendent (compliance lead). Model: GPT-5.
 
 ## Subagent verdicts
 

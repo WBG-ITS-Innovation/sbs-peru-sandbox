@@ -2,7 +2,7 @@
 
 ## Summary
 
-One paragraph. What changed and why. Plain language. Readable by Veronica.
+One paragraph. What changed and why. Plain language. Readable by an SBS reviewer.
 
 ## Linked ADR(s)
 

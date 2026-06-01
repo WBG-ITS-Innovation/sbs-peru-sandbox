@@ -25,7 +25,7 @@ PR.
 
 ## Style
 
-- Plain language readable by Veronica (executive), Sergio (compliance), Mariela
+- Plain language readable by an SBS reviewer (executive), the Superintendent (compliance), the SBS Conduct department head
   (supervisor).
 - No AI-tells (leverage, robust, seamless, comprehensive, utilize, etc.).
 - Cite ADR numbers when they apply.

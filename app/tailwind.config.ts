@@ -4,7 +4,7 @@ import type { Config } from 'tailwindcss';
 // semantic name; the literal palette lives in app/src/app/globals.css
 // as CSS custom properties. Components reference the semantic names
 // (bg-severity-critical, text-fg-primary, ring-focus); a palette tweak
-// at Luis's review touches globals.css once and propagates.
+// at the native-speaker reviewer's review touches globals.css once and propagates.
 
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],

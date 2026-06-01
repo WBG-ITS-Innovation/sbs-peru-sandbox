@@ -32,9 +32,9 @@ function resolveRoleLabel(roles: readonly string[], locale: 'es-PE' | 'en-US'): 
 function inferActivePersonaKey(
   demoMode: boolean,
   activeKey: string | null,
-): 'maria' | 'lucia' | 'jorge' | null {
+): 'supervisor' | 'analyst' | 'unit-head' | null {
   if (!demoMode) return null;
-  if (activeKey === 'maria' || activeKey === 'lucia' || activeKey === 'jorge') {
+  if (activeKey === 'supervisor' || activeKey === 'analyst' || activeKey === 'unit-head') {
     return activeKey;
   }
   return null;
@@ -79,9 +79,9 @@ export default function SupervisorLayout({
     persona: {
       switch_persona: t(locale, 'nav.switch_persona'),
       active_persona: t(locale, 'nav.active_persona'),
-      maria: t(locale, 'personas.maria'),
-      lucia: t(locale, 'personas.lucia'),
-      jorge: t(locale, 'personas.jorge'),
+      supervisor: t(locale, 'personas.supervisor'),
+      analyst: t(locale, 'personas.analyst'),
+      'unit-head': t(locale, 'personas.unit-head'),
       cancel: t(locale, 'common.actions.cancel'),
     },
   };

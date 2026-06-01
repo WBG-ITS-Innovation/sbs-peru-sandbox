@@ -11,7 +11,7 @@ import 'server-only';
 
 import type { Locale } from '@/i18n';
 
-export type Persona = 'maria' | 'lucia' | 'jorge';
+export type Persona = 'supervisor' | 'analyst' | 'unit-head';
 
 export interface PersonaSession {
   readonly accessToken: string;
@@ -36,10 +36,10 @@ export interface ServerSession {
   readonly demoMode: boolean;
   // Operator name carried for audit attribution in demo mode. In a real
   // sign-in the operator IS the active persona; in demo mode the
-  // operator (e.g., "Antoine") is the human at the keyboard switching
+  // operator (e.g., "demo-operator") is the human at the keyboard switching
   // between personas, and the audit chain needs that name so a row
-  // reads "Antoine switched from María to Jorge", not the meaningless
-  // "María switched from María to Jorge".
+  // reads "demo-operator switched from Supervisor to Unit Head", not the
+  // meaningless "Supervisor switched from Supervisor to Unit Head".
   operator: string | null;
   // Locale preference can also live in a cookie; the session copy is
   // authoritative when both are present, so a server-action language

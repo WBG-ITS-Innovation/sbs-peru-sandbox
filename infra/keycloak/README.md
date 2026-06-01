@@ -46,9 +46,9 @@ narrator can sign in during the live demo without consulting a vault:
 
 | User | Password |
 | --- | --- |
-| `maria@sandbox.example.com` | `maria-demo-2026` |
-| `lucia@sandbox.example.com` | `lucia-demo-2026` |
-| `jorge@sandbox.example.com` | `jorge-demo-2026` |
+| `supervisor@sandbox.example.com` | `supervisor-demo-2026` |
+| `analyst@sandbox.example.com` | `analyst-demo-2026` |
+| `unit-head@sandbox.example.com` | `unit-head-demo-2026` |
 
 These are **sandbox-only** credentials. The Keycloak service in
 `docker-compose.yaml` is the dev/demo IdP; production deploys against

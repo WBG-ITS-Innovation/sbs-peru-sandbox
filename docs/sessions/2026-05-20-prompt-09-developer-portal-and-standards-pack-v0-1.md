@@ -27,7 +27,7 @@ The eight functional commits land in workstream order:
 Documentation updates:
 
 - **PLAN.md Part 7**: reduced cut closure with explicit `[x]` / `[~]` status per checkbox; v0.2 deferred items named (Bruno/Postman, public-registry SDK publication, full hand-written Java/.NET/Go SDKs, conformance test suite, sandbox self-service onboarding, SLSA + cosign, OCI distribution, WBG-legal-cleared license).
-- **README.md**: new "For institutional integrators" section walks Diego / Patricia / Roberto from `<host>/v1/portal/` through `make standards-pack` and `sdk-helpers/{python,typescript}/` to `bash scripts/demo.sh --scale small`.
+- **README.md**: new "For institutional integrators" section walks a Tier-1 bank compliance officer (illustrative) / a mid-size financiera operations manager (illustrative) / a COOPAC risk officer (illustrative) from `<host>/v1/portal/` through `make standards-pack` and `sdk-helpers/{python,typescript}/` to `bash scripts/demo.sh --scale small`.
 - **CONTRIBUTING.md** (implicit): re-vendoring procedure documented in `vendor/stoplight-elements/VENDOR.md` itself.
 - **DECISIONS.md**: five Prompt 9 A0 entries appended.
 - **ADR index**: 0037 / 0038 / 0039 rows added with one-line descriptions.

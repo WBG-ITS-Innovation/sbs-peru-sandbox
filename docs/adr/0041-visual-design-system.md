@@ -9,17 +9,17 @@
 
 ## Context
 
-Prompt 10's supervisor UI ships five screens (cockpit, risk queue, findings, approvals, audit) plus a login flow and a demo persona switcher. WS3-WS7 will write screen-level code in their next slices. Without a design system landing first, those workstreams will each invent ad-hoc styling — different border radii, different severity palettes, different table row heights, different focus-ring colours — and the inconsistencies will surface on the May 25 projector when Veronica or Sergio scans across two screens in the same demo.
+Prompt 10's supervisor UI ships five screens (cockpit, risk queue, findings, approvals, audit) plus a login flow and a demo persona switcher. WS3-WS7 will write screen-level code in their next slices. Without a design system landing first, those workstreams will each invent ad-hoc styling — different border radii, different severity palettes, different table row heights, different focus-ring colours — and the inconsistencies will surface on the May 25 projector when an SBS reviewer or the Superintendent scans across two screens in the same demo.
 
 Five framing questions interact:
 
 1. **Substrate.** Build the component library from scratch, pull an opinionated framework (Material UI, Mantine, Chakra), or use shadcn/ui's copy-the-source pattern. Each has different vendor-handoff and theming implications.
 
-2. **Token shape.** Bind components to literal colour values, or to semantic CSS variables that a theme maps to literals. The two paths look the same until Luis's review wants the high-band gold tweaked by 5° hue and the diff is either one line or forty.
+2. **Token shape.** Bind components to literal colour values, or to semantic CSS variables that a theme maps to literals. The two paths look the same until the native-speaker reviewer's review wants the high-band gold tweaked by 5° hue and the diff is either one line or forty.
 
 3. **Severity tokens specifically.** The four severity bands (low / medium / high / critical) appear in many places: Badge, Toast, table row, anomaly card, KPI chip. How they're tokenised determines whether a hue / contrast review propagates cleanly or requires touching every consuming component.
 
-4. **EmptyState as polish proof.** The places the demo audience sees an empty state are the places polish either holds up or collapses — Jorge opening Approvals when there are no pending items, the audit search returning nothing, a filter that doesn't match. A generic "No results" string is the regulator-UI failure mode. Custom empty states are the differentiator.
+4. **EmptyState as polish proof.** The places the demo audience sees an empty state are the places polish either holds up or collapses — the Conduct Unit Head opening Approvals when there are no pending items, the audit search returning nothing, a filter that doesn't match. A generic "No results" string is the regulator-UI failure mode. Custom empty states are the differentiator.
 
 5. **Component index visibility.** Where reviewers (and future contributors) see "the design system" as a single artefact rather than as scattered components in a tree. The artefact's existence is its own credibility signal.
 
@@ -41,7 +41,7 @@ Every severity-coded component reads from semantic CSS custom properties: `--sev
 
 The same convention applies to status bands (`pending` / `in_review` / `resolved` / `escalated`), to surfaces (`--surface-elevated` etc.), and to focus / interaction states. **No component reads a hex literal directly.** A palette review touches `globals.css` only.
 
-Failure mode this guards against: literal-hex bindings make a Luis-review tweak ("the high-band amber is too warm against the navy lockup") into a forty-component grep instead of a one-token edit.
+Failure mode this guards against: literal-hex bindings make a native-speaker-review tweak ("the high-band amber is too warm against the navy lockup") into a forty-component grep instead of a one-token edit.
 
 ### D3 — EmptyState as a real component, not a stub
 

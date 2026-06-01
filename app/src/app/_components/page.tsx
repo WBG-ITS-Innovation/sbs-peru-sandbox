@@ -158,8 +158,8 @@ export default function ComponentIndexPage() {
           <div className="flex flex-wrap gap-2">
             <Badge variant="source">Tier 1 · API</Badge>
             <Badge variant="source">Tier 2 · Batch</Badge>
-            <Badge variant="role">María · Supervisora</Badge>
-            <Badge variant="role">Jorge · Jefe</Badge>
+            <Badge variant="role">the Conduct Supervisor · Supervisora</Badge>
+            <Badge variant="role">the Conduct Unit Head · Jefe</Badge>
           </div>
         </section>
 
@@ -302,7 +302,7 @@ export default function ComponentIndexPage() {
           <EmptyState
             icon={<Inbox className="h-6 w-6" aria-hidden="true" />}
             title="No pending approvals"
-            body="Jorge has cleared the queue. New findings will land here when analysts send them up."
+            body="the Conduct Unit Head has cleared the queue. New findings will land here when analysts send them up."
             primaryAction={{ label: 'Open Risk Queue', href: '/queue' }}
             secondaryLink={{ label: 'Read approvals workflow docs', href: '/audit' }}
           />

@@ -290,7 +290,7 @@ Sandbox / demo scope. Not final SBS production infrastructure.
 - [x] `raw_complaints` table (migration `20260524_0001`) — the **only** PII-bearing store. Restricted policy `restricted-demo-pii-v1`. Not exposed in any normal API route, builder, or UI.
 - [x] LiveIngestionPanel rewired through `/app/api/ingest` proxy → backend demo endpoint. Browser shows masked BEFORE / redacted AFTER / detected entities (kind + replacement) / DQ report / persistence handles.
 - [x] One `agent_runs` row per submission (agent_name `live-ingestion-orchestrator`) with the anonymizer tool_call + DQ in `final_output.data_quality`. Status maps `success` ↔ no DQ errors, `partial` ↔ ≥ 1 error.
-- [x] Five audit-chain rows per submission: `demo-complaint-received`, `pii-redacted`, `canonical-complaint-persisted`, `data-quality-completed`, `complaint-triage-emitted`. No raw PII in any audit row.
+- [x] Six audit-chain rows per submission: `complaint-received`, `taxonomy-normalized`, `pii-redacted`, `canonical-complaint-persisted`, `data-quality-completed`, `complaint-triage-emitted`. No raw PII in any audit row. (P11 demo-ready overlay renamed `demo-complaint-received` → `complaint-received` and inserted the `taxonomy-normalized` step.)
 - [x] One `complaint.received` SSE delta published on the `cockpit` topic with redacted-only payload; existing CockpitClient reducer adds the card to Tier 1 with no UI rewrite.
 - [x] No-raw-PII-egress invariant test under `tests/integration/test_no_raw_pii_egress.py`.
 

@@ -10,12 +10,15 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
+from decimal import Decimal
+
 from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
 )
@@ -68,6 +71,19 @@ class ComplaintRecord(Base):
     # Optional client-supplied correlation id, persisted for audit and for
     # the ComplaintCreated.client_submission_id echo.
     client_submission_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # P11 demo-ready overlay (migration 20260526_0001): the five
+    # resolution-side Annex 1-A columns the real SBS sample exercises.
+    # All nullable so historical rows remain valid and the migration is
+    # reversible. The orchestrator populates them when the demo or
+    # sandbox endpoint receives the corresponding fields.
+    fecha_resolucion: Mapped[date | None] = mapped_column(Date, nullable=True)
+    tipo_resolucion: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Redacted resolution narrative — never raw text.
+    descripcion_resolucion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Normalized state — ``atendido`` / ``en_proceso`` / ``pendiente``.
+    estado_reclamo: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    monto_pendiente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     __table_args__ = (
         Index(

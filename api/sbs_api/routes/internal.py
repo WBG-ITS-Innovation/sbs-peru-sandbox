@@ -126,7 +126,8 @@ async def simulate_submission(
     Accepts a realistic Anexo-1A-shaped complaint with PII fields,
     runs deterministic redaction + data-quality checks, persists the
     canonical complaint with redacted text, writes one ``agent_runs``
-    row + the five audit-chain events, and publishes one SSE
+    row + the six audit-chain events (incl. taxonomy-normalized),
+    and publishes one SSE
     ``complaint.received`` delta. The full response carries
     everything the LiveIngestionPanel renders.
 
@@ -157,4 +158,6 @@ async def simulate_submission(
         timeline=outcome.timeline,  # type: ignore[arg-type]
         redaction_diff=outcome.redaction_diff,  # type: ignore[arg-type]
         data_quality=outcome.data_quality,  # type: ignore[arg-type]
+        taxonomy_normalizations=outcome.taxonomy_normalizations,
+        flag_unknown_taxonomy=outcome.flag_unknown_taxonomy,
     )

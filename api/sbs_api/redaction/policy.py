@@ -46,6 +46,6 @@ DEMO_KNOWN_NAMES: tuple[str, ...] = (
     "Carlos Rodriguez Mendoza",
     "Juan Pérez",
     "Juan Perez",
-    "María Velásquez",
-    "Maria Velasquez",
+    "Andrés Cabrera",
+    "Andres Cabrera",
 )

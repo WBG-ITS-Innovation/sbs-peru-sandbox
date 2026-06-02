@@ -1,6 +1,6 @@
 // Executive brief sub-panel — plain-Spanish summary from SynthesisAgent.
 // Sits under Draft summary. Collapsed by default; the head/supervisor
-// expands to see the brief Sergio or Mariela would read.
+// expands to see the brief the Superintendent or Supervisor lead would read.
 
 'use client';
 

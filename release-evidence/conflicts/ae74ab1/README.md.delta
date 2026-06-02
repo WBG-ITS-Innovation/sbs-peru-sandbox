@@ -1,0 +1,23 @@
+# Completeness-backstop delta for README.md after ae74ab1
+# Lines below appear in source ae74ab1:README.md but NOT in working tree (after scrub-token normalization)
+# This is INFORMATIONAL: many of these are legitimate scrub differences.
+
+< Current backend state (P-RESHAPE-9): six cockpit agents — three FI-facing
+< character cards (DIValeVale, Reclamito, Lupaman) and three internal
+< (Triage, Investigation, Insight Chatbot) — surfaced through one
+< persona-scoped monitoring API. Five SBS personas (Analyst, Supervisor,
+< Unit Head, Superintendent, SBS IT), each with its own action surface; see
+< [docs/personas/README.md](docs/personas/README.md). The institution-facing
+< contract is OpenAPI **v0.2.0** (additive `SupervisoryMetadata` on the list
+< response; FI submission contract unchanged).
+< The API binds `0.0.0.0:8000` by default; the supervisor UI Next.js dev
+< server binds `0.0.0.0:3000`. Both are reachable from another machine
+< on the same network without further configuration. For a full
+< two-laptop sandbox demo (institution sender on one laptop, SBS
+< sandbox + cockpit on the other), see
+< [docs/demo/2026-05-27-two-laptop-setup.md](docs/demo/2026-05-27-two-laptop-setup.md).
+< The browser-facing override is `NEXT_PUBLIC_API_BASE_URL`; the API's
+< CORS allow-list (`SBS_API_CORS_ALLOW_ORIGINS`) ships with the
+< `localhost`, `*.local`, and `192.168.0.0/16:3000` patterns the demo
+< needs and should be tightened to a single literal origin before
+< production.

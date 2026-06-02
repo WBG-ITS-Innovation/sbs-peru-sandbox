@@ -17,7 +17,7 @@ remains untouched as the SUCAVE-backed regulatory cadence.
 * Cadence taxonomy: NRT API (high-volume, high-risk), daily
   (medium-volume), weekly/monthly batch (transition),
   quarterly/manual (low-volume).
-* Scope is conduct supervision (Mariela's deputy department) only.
+* Scope is conduct supervision (the conduct deputy department) only.
   Prudential is a separate deputy under the same SBS Twin Peaks
   framework and is not a user of this surface.
 
@@ -212,7 +212,7 @@ Read directly from the seed script (no merge drift):
   omits "comisión por mantenimiento").
 * `scripts/dev-seed.sql:169` — `BCO-2026-000001.description_text`
   contains the phrase "comisión por mantenimiento" (the scripted
-  edit gap Lucía fills during the demo).
+  edit gap the analyst fills during the demo).
 
 ## Manual browser walk (gates 5 + 6 visual portion)
 
@@ -253,7 +253,7 @@ What to watch in the cockpit:
   description carries "comisión por mantenimiento". Draft narrative
   omits it. Editing the draft, saving, and checking the audit
   pagination round-trips an audit row.
-* Toggle the persona switcher (Lucía → Sergio → Mariela) — the
+* Toggle the persona switcher (analyst → superintendent → supervisor-lead) — the
   cockpit Tier 1 panel filters change by role-scoping per ADR 0043.
 * Toggle locale (es-PE ↔ en-US) — strings flip, no `t()` returns
   the raw key (i18n parity).

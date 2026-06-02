@@ -94,6 +94,14 @@ export interface FindingDetailResponse {
     complainant_district: string;
     narrative_text: string;
     narrative_length: number;
+    // P11 demo-ready overlay — Annex 1-A resolution-side fields,
+    // optional because they're only populated when the institution
+    // sends them. ``descripcion_resolucion`` is redacted text.
+    fecha_resolucion?: string | null;
+    tipo_resolucion?: string | null;
+    descripcion_resolucion?: string | null;
+    estado_reclamo?: string | null;
+    monto_pendiente?: string | null;
   };
   anonymization: AnonymizationPayload | null;
   classification: ClassificationPayload | null;

@@ -313,6 +313,28 @@ class Settings(BaseSettings):
         ),
     )
 
+    # --- CORS (P11 demo-ready overlay, two-laptop sandbox) -------------
+    cors_allow_origins: str = Field(
+        default=(
+            "http://localhost:3000,"
+            "http://127.0.0.1:3000,"
+            "http://*.local:3000,"
+            "http://192.168.0.0/16:3000"
+        ),
+        description=(
+            "Comma-separated list of origins the API accepts cross-origin "
+            "requests from. Entries beginning with ``http://*.local:`` "
+            "are expanded to a regex matching any ``.local`` hostname on "
+            "the named port (Bonjour / mDNS), and entries of the form "
+            "``http://192.168.0.0/16:<port>`` are expanded to a regex "
+            "matching the LAN range on the named port. The default opens "
+            "the two patterns the two-laptop sandbox demo needs (a "
+            "supervisor laptop on the same LAN as the API laptop); "
+            "tighten back before production. See docs/demo/2026-05-27-"
+            "two-laptop-setup.md."
+        ),
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

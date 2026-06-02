@@ -199,6 +199,12 @@ async def submit_granular_complaint(
         "redaction_policy_version": REDACTION_POLICY_VERSION,
         "data_quality_policy_version": DQ_POLICY_VERSION,
         "event_id": outcome.event_id,
+        # P11 demo-ready overlay — surfaced on the receipt so an
+        # institution SDK (and the ingestion CLI) can log a per-row
+        # "n taxonomy values normalized" / "flagged as unknown"
+        # without a second round-trip.
+        "taxonomy_normalizations": outcome.taxonomy_normalizations,
+        "flag_unknown_taxonomy": outcome.flag_unknown_taxonomy,
     }
 
     headers = {"Location": f"/v1/complaints/{outcome.complaint_id}"}

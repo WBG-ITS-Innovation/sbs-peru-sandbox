@@ -121,6 +121,29 @@ class DemoSubmissionRequest(BaseModel):
         description="Field 27 — submotivo bancaseguros (Anexo D Sistema de Seguros).",
     )
 
+    # --- P11 demo-ready overlay — resolution-side fields that the
+    # real SBS sample carries (matching the new canonical columns
+    # added by migration 20260526_0001). All optional; the orchestrator
+    # populates the canonical row only when the institution sends them.
+    tipo_resolucion: str | None = Field(
+        default=None,
+        max_length=64,
+        description="TIP_RES — A favor del usuario / A favor de la entidad.",
+    )
+    canal_pago_cliente: str | None = Field(
+        default=None,
+        description="CNL_PAC — channel through which the institution paid the client.",
+    )
+    producto_empresa: str | None = Field(
+        default=None,
+        max_length=200,
+        description="PRD_EMP — institution's own product code (free text).",
+    )
+    monto_pendiente: str | None = Field(
+        default=None,
+        description="MNT_PEN_REC — pending amount in PEN (decimal string).",
+    )
+
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] | None = Field(
         default=None,
         description="Optional supervisor-facing severity for the demo card.",
@@ -178,3 +201,8 @@ class DemoSubmissionResponse(BaseModel):
     timeline: list[TimelineEvent]
     redaction_diff: RedactionDiff
     data_quality: DataQualityEnvelope
+    # P11 demo-ready overlay — taxonomy normalization summary so the
+    # LiveIngestionPanel can show "n taxonomy values normalized" /
+    # "flagged as unknown" without a second round-trip.
+    taxonomy_normalizations: list[dict[str, Any]] = Field(default_factory=list)
+    flag_unknown_taxonomy: bool = False

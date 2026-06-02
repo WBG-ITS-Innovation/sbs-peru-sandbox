@@ -4,9 +4,9 @@
   "private": true,
   "description": "SBS SupTech supervisor UI — cockpit, findings, approvals, queue, audit. Served at /app/ under the FastAPI process via reverse proxy in production; standalone Next.js dev server locally.",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "build": "next build",
-    "start": "next start --port 3000",
+    "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

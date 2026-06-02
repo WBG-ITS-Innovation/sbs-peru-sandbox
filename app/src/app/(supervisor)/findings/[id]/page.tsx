@@ -88,8 +88,45 @@ export default async function FindingDetailPage({
           <Field label="Producto" value={detail.complaint.product_category} />
           <Field label="Canal" value={detail.complaint.channel} />
           <Field label="Distrito" value={detail.complaint.complainant_district} />
+          {detail.complaint.estado_reclamo ? (
+            <Field
+              label={t(locale, 'findings.panels.resolution_state')}
+              value={detail.complaint.estado_reclamo}
+            />
+          ) : null}
+          {detail.complaint.tipo_resolucion ? (
+            <Field
+              label={t(locale, 'findings.panels.resolution_type')}
+              value={detail.complaint.tipo_resolucion}
+            />
+          ) : null}
+          {detail.complaint.fecha_resolucion ? (
+            <Field
+              label={t(locale, 'findings.panels.resolution_date')}
+              value={detail.complaint.fecha_resolucion}
+            />
+          ) : null}
+          {detail.complaint.monto_pendiente ? (
+            <Field
+              label={t(locale, 'findings.panels.pending_amount')}
+              value={`S/ ${detail.complaint.monto_pendiente}`}
+            />
+          ) : null}
         </CardBody>
       </Card>
+
+      {detail.complaint.descripcion_resolucion ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t(locale, 'findings.panels.resolution_description')}</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              {detail.complaint.descripcion_resolucion}
+            </p>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <NarrativePanel
         text={detail.complaint.narrative_text}

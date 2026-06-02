@@ -215,8 +215,8 @@ _PII_REGEXES: list[tuple[re.Pattern[str], str]] = [
 _NAME_TOKENS = (
     "Carlos Rodríguez Mendoza",
     "Carlos Rodriguez Mendoza",
-    "María Pérez Quispe",
-    "Maria Perez Quispe",
+    "Andrés Cabrera Núñez",
+    "Andres Cabrera Nunez",
     "Juan Quispe Huamán",
     "Juan Quispe Huaman",
 )

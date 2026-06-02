@@ -38,7 +38,7 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
     event = await record_audit_event(
         session,  # type: ignore[arg-type]
         actor_type="user",
-        actor_id="antoine",
+        actor_id="test-operator",
         action="switch-persona",
         object_type="session",
         object_id="session-abc-123",
@@ -51,7 +51,7 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
     )
     assert isinstance(event, AuditEvent)
     assert event.action == "switch-persona"
-    assert event.actor_id == "antoine", (
+    assert event.actor_id == "test-operator", (
         "operator must be the actor; using the persona's email would lose "
         "the 'who triggered the switch' signal from the audit"
     )
@@ -79,7 +79,7 @@ async def test_switch_persona_row_round_trips_against_live_db(
             await record_audit_event(
                 session,
                 actor_type="user",
-                actor_id="antoine",
+                actor_id="test-operator",
                 action="switch-persona",
                 object_type="session",
                 object_id="session-abc-123",
@@ -103,7 +103,7 @@ async def test_switch_persona_row_round_trips_against_live_db(
 
     assert len(rows) == 1
     row = rows[0]
-    assert row.actor_id == "antoine"
+    assert row.actor_id == "test-operator"
     assert row.meta == {
         "from_persona": "supervisor",
         "from_email": "supervisor@sandbox.example.com",

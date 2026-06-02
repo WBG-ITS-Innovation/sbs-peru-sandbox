@@ -95,7 +95,7 @@ naming the spec source and a `review_status` field.
 Two lists (`tipo_documento`, `moneda`) carry `review_status:
 needs_review` because the Reglamento references the codes but does
 not enumerate them in `annexo.pdf`. Both files carry an explicit
-"TBD — validate with Luis/Diego" header. The validator runs against
+"TBD — validate with the SBS taxonomy reviewers" header. The validator runs against
 the sandbox set immediately so the demo path is functional; the
 real-world set should be confirmed during institution onboarding
 sign-off.

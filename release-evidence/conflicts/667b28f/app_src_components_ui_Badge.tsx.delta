@@ -1,0 +1,5 @@
+# Completeness-backstop delta for app/src/components/ui/Badge.tsx after 667b28f
+# Lines below appear in source 667b28f:app/src/components/ui/Badge.tsx but NOT in working tree (after scrub-token normalization)
+# This is INFORMATIONAL: many of these are legitimate scrub differences.
+
+<         // Role chips (María / Lucía / _N_)

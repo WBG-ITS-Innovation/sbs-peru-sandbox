@@ -11,7 +11,7 @@
   kept verbatim so the ADR-index anchor for "0001" still resolves.
 - **Superseded by:** —
 - **Deciders:** Maintainer, with input from the May 26 SBS workshop
-  (Diego, Maria, Mariela).
+  (analyst, supervisor, and supervisor-lead representatives).
 
 ## Context
 
@@ -33,8 +33,8 @@ Two pressures shape the design:
    layer is the bright line; agents only see canonical text.
 
 The May 26 SBS workshop transcript names the two demo headliners
-explicitly: a Triage agent that "finds the 20% that matter" (Diego's
-phrase) and an Investigation agent that builds the evidence bundle
+explicitly: a Triage agent that "finds the 20% that matter" (the
+analyst's phrase) and an Investigation agent that builds the evidence bundle
 the analyst will edit. Two more agents — Synthesis (executive
 brief) and a pair of scaffolded roadmap agents (Taxonomy
 Harmonizer, Cross-Source Correlator) — round out the architecture
@@ -172,9 +172,9 @@ For `BCO-2026-000001` the chain must produce, deterministically:
   (+0.27)
 - Investigation anomaly = 0.74 / threshold 0.70 / `anomaly_flag=true`
 - Investigation draft narrative OMITS "comisión por mantenimiento"
-  (Lucía's scripted edit lands on the gap)
+  (the analyst's scripted edit lands on the gap)
 - Synthesis executive summary is non-empty plain Spanish
-  (Sergio / Mariela variants both populated)
+  (superintendent and supervisor-lead variants both populated)
 
 These invariants are encoded in the ReplayProvider fixture under
 `api/sbs_api/agents/fixtures/replay/` and asserted by

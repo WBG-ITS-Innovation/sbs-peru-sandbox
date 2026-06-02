@@ -1,0 +1,5 @@
+# Completeness-backstop delta for api/sbs_api/findings/builder.py after 667b28f
+# Lines below appear in source 667b28f:api/sbs_api/findings/builder.py but NOT in working tree (after scrub-token normalization)
+# This is INFORMATIONAL: many of these are legitimate scrub differences.
+
+<         # Lucía: high-confidence findings last 24 hours.

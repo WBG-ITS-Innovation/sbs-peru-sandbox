@@ -1,0 +1,9 @@
+# Completeness-backstop delta for docs/PLAN.md after a0ca47c
+# Lines below appear in source a0ca47c:docs/PLAN.md but NOT in working tree (after scrub-token normalization)
+# This is INFORMATIONAL: many of these are legitimate scrub differences.
+
+< - [ ] Plain-language onboarding overview readable by _N_ (deferred to post-sprint v0.2).
+< - [ ] Plain-language operations guide readable by _N_.
+< - [ ] Plain-language operations summary readable by _N_.
+< - [ ] Plain-language explainability note: how each model is evaluated, in language _N_ can read.
+< - [ ] Plain-language Standards Pack overview readable by _N_ and _N_.

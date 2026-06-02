@@ -1,0 +1,5 @@
+# Completeness-backstop delta for docs/adr/README.md after 3f4b5c8
+# Lines below appear in source 3f4b5c8:docs/adr/README.md but NOT in working tree (after scrub-token normalization)
+# This is INFORMATIONAL: many of these are legitimate scrub differences.
+
+< | 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with _N_ |

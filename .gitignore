@@ -112,6 +112,12 @@ app/.env.local
 # machine. Not synthetic — must never be committed. Series 1 scrub.
 data/sbs_sample/
 
+# Anexo 1-A reglamento PDF. Source 4a5b0e1 committed `annexo.pdf` as the
+# spec-of-record for the DQ code lists; the agent salvage dropped it pending
+# human provenance verification (must be the public Res. SBS 04036-2022
+# reglamento, not internal SBS material). See release-evidence/track-b-salvage-TODO.md.
+annexo.pdf
+
 # .scratch — local UI artifacts and one-off mockups. Already excluded via
 # .git/info/exclude on the maintainer's clone; pinned here so it applies to
 # every clone.

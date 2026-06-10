@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0  # build script reads HEAD SHA
 
       - name: install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v7
         with:
           version: 'latest'
 

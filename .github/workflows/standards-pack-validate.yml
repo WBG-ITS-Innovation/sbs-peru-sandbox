@@ -48,7 +48,7 @@ jobs:
           node-version: '20'
 
       - name: setup Java (for the webhook-verification-java snippet test)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'

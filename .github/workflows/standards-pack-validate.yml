@@ -105,7 +105,7 @@ jobs:
           shasum -a 256 -c "standards-pack-v${PACK_VERSION}.tar.gz.sha256"
 
       - name: upload tarball artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: standards-pack-v${{ steps.pack.outputs.version }}
           path: |

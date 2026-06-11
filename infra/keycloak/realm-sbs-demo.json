@@ -72,7 +72,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:supervisor", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:supervisor"
+      ],
+      "requiredActions": []
     },
     {
       "username": "analyst@sandbox.example.com",
@@ -88,7 +91,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:analyst", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:analyst"
+      ],
+      "requiredActions": []
     },
     {
       "username": "unit-head@sandbox.example.com",
@@ -104,7 +110,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:head", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:head"
+      ],
+      "requiredActions": []
     }
   ],
   "clients": [
@@ -173,6 +182,50 @@
   },
   "smtpServer": {},
   "internationalizationEnabled": true,
-  "supportedLocales": ["es", "en"],
-  "defaultLocale": "es"
+  "supportedLocales": [
+    "es",
+    "en"
+  ],
+  "defaultLocale": "es",
+  "requiredActions": [
+    {
+      "alias": "VERIFY_PROFILE",
+      "name": "Verify Profile",
+      "providerId": "VERIFY_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 90,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    }
+  ],
+  "attributes": {
+    "userProfileEnabled": "false"
+  }
 }

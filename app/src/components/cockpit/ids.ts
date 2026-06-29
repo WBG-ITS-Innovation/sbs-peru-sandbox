@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Demo institution identifiers — shared between server-side cockpit
 // builder (Python side) and client-side delta reducer (this file).
 // When real per-tier routing lands these become a route lookup, not

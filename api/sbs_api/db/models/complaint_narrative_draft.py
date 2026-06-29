@@ -1,6 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
 """Narrative-draft history for complaints.
 
-Every time the Conduct Analyst edits the agent-drafted narrative on the Findings
+Every time Lucía edits the agent-drafted narrative on the Findings
 drilldown, a new ``complaint_narrative_drafts`` row lands. The row
 carries the before/after text so an auditor can reconstruct the edit
 trail; the matching ``audit_events`` row (action='edit-draft-narrative')

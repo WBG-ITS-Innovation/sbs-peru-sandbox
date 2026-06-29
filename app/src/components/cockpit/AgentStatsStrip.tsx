@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // AgentStatsStrip — three tiles showing the live agent layer state.
 // Sits under KpiStrip on the cockpit. Empty/zero values fall back to
 // the calm-state visual (neutral fg colour) rather than the brand-gold

@@ -15,7 +15,7 @@ help:
 	@echo "  corpus         — regenerate the full ~10k synthetic corpus"
 	@echo "  corpus-golden  — regenerate the 200-row golden sample (committed)"
 	@echo "  serve-devportal — render the OpenAPI spec via Stoplight Elements"
-	@echo "  standards-pack — build the versioned standards-pack tarball in dist/ (ADR 0039)"
+	@echo "  standards-pack — build dist/standards-pack-v0.1.0.tar.gz (ADR 0039)"
 
 dev-up:
 	bash scripts/dev-up.sh

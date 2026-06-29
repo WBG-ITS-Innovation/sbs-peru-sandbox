@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """rate-limit tier — institutions.tier_classification + rate_limit override
 
 Revision ID: 20260519_0002

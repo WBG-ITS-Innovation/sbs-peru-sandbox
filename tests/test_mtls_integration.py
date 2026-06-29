@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Integration test for mTLS direct mode — workstream A.
 
 Spins up uvicorn as a subprocess against a fresh testcontainer Postgres

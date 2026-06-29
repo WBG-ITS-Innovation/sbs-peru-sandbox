@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // useSSE — client-side SSE consumer with snapshot + delta + reconnect.
 //
 // ADR 0040 §D5 contract:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Idempotency-record sweep job — ADR 0029.
 
 Deletes ``idempotency_records`` rows where ``expires_at`` is older than

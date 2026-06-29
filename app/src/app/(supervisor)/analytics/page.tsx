@@ -1,12 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import {
-  BarChart3,
-  Download,
-  FileSpreadsheet,
-  Info,
-  Sparkles,
-} from 'lucide-react';
+import { BarChart3, Download, FileSpreadsheet, Sparkles } from 'lucide-react';
 
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
@@ -69,7 +64,6 @@ export default function AnalyticsPage() {
   const tr = (key: string) => t(locale, key);
 
   const pilotBadge = tr('pilot.badge');
-  const previewDisclaimer = tr('pilot.preview_disclaimer');
   const previewOnly = tr('analytics.preview_only');
 
   const kpis = [
@@ -120,14 +114,6 @@ export default function AnalyticsPage() {
       />
 
       <div className="mx-auto w-full max-w-7xl space-y-3 px-6 py-4">
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-sbs border border-border bg-surface-subtle px-3 py-2 text-xs text-fg-muted"
-        >
-          <Info className="h-3.5 w-3.5 text-brand-gold" aria-hidden="true" />
-          <span>{previewDisclaimer}</span>
-        </div>
-
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpis.map(k => (
             <Card key={k.label} className="border-border">

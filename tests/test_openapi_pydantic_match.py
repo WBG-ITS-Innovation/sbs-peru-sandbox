@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Integration test: OpenAPI inline schemas agree with Pydantic-exported JSON Schemas.
 
 ADR 0027 makes the OpenAPI specification at api/openapi/sbs-api-v1.yaml the

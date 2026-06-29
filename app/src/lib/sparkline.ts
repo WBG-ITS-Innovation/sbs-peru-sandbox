@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Tiny SVG sparkline path generator. Pure function so it can run in
 // both server and client components without a runtime dep.
 

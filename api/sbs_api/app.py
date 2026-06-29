@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """FastAPI application factory.
 
 Why a factory: per-test fresh apps with overridden dependencies. The factory

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Next.js proxy: POST /app/api/findings/:id/send-to-approvals →
 // FastAPI /v1/internal/findings/:id/send-to-approvals.
 

@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Route } from 'lucide-react';
 
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { getSession } from '@/auth/session';
 import { CockpitClient } from '@/components/cockpit/CockpitClient';
+import { InsightsBoard } from '@/components/cockpit/InsightsBoard';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
@@ -175,8 +179,18 @@ export default async function CockpitPage() {
         title={t(locale, 'cockpit.page.title')}
         subtitle={t(locale, 'cockpit.page.subtitle')}
         meta={t(locale, 'cockpit.page.meta')}
+        right={
+          <Link
+            href="/demo-journey"
+            className="inline-flex items-center gap-1.5 rounded-sbs border border-border-strong bg-surface px-2.5 py-1 text-xs font-medium text-brand-navy hover:bg-surface-subtle"
+          >
+            <Route className="h-3.5 w-3.5" aria-hidden="true" />
+            {t(locale, 'nav.demo_journey')}
+          </Link>
+        }
       />
-      <div className="mx-auto w-full max-w-7xl px-6 py-4">
+      <div className="mx-auto w-full max-w-7xl space-y-4 px-6 py-4">
+        <InsightsBoard locale={locale} />
         <CockpitClient
           initialSnapshot={snapshot}
           initialTaxonomyStats={taxonomyStats}

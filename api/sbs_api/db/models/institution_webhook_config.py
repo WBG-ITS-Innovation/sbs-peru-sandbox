@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Per-institution outbound webhook callback configuration (ADR 0035).
 
 One row per institution at most. ``event_type`` is deliberately absent

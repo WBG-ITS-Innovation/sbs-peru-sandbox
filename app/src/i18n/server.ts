@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Server-only helpers — keep this file out of client components so the
 // `next/headers` import never lands in the client bundle.
 

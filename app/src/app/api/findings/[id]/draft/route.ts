@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Next.js proxy: POST /app/api/findings/:id/draft → FastAPI
 // /v1/internal/findings/:id/draft. The browser submits with the
 // session cookie + CSRF header; the server validates the session,

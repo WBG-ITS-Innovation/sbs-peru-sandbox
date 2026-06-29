@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Helpers for writing agent_run rows.
 
 Every agent goes through this module so the row shape stays

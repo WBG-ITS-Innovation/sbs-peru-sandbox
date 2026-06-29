@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Every named example in the OpenAPI spec parses through its Pydantic model.
 
 A drift catcher. Spec examples are what institutions copy-paste into their

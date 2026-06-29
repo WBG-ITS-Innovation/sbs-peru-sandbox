@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """The baseline migration applies cleanly to a fresh Postgres testcontainer.
 
 ADR 0030's startup probe asserts that ``alembic_version`` is *present* (not
@@ -142,4 +143,4 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
     # Part 12 added an additive migration that bumps the head past the
     # P11 demo-ui-polish overlay. The exact head string is recorded in
     # api/migrations/versions/ alongside the down-revision chain.
-    assert version_num == "20260527_0001_agents_status"
+    assert version_num == "20260529_0002"

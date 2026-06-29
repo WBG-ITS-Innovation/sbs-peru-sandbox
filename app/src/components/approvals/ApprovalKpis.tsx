@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // KPI strip on the approvals queue header.
 
 import { Card, CardBody } from '@/components/ui';

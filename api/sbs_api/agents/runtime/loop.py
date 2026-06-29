@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tool-calling loop.
 
 Pure orchestration: the loop alternates between provider.complete()

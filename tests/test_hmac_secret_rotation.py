@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Secret rotation grace window — workstream B.
 
 ADR 0027 amendment: an institution may rotate its HMAC secret by moving

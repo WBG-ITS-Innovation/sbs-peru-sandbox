@@ -1,4 +1,5 @@
 'use client';
+// SPDX-License-Identifier: Apache-2.0
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';

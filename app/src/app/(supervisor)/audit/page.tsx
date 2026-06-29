@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { History } from 'lucide-react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';

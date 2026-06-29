@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Token-endpoint bucket — workstream E (ADR 0033 pressure-test amendment).
 
 POST /v1/oauth/token has its own bucket, keyed on mTLS CN. The default

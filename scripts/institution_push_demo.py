@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: Apache-2.0
 """Institution-side CLI sender for the P11A.5a sandbox granular endpoint.
 
 Sends a real HTTP request to the SBS sandbox API at
@@ -215,8 +216,8 @@ _PII_REGEXES: list[tuple[re.Pattern[str], str]] = [
 _NAME_TOKENS = (
     "Carlos Rodríguez Mendoza",
     "Carlos Rodriguez Mendoza",
-    "Andrés Cabrera Núñez",
-    "Andres Cabrera Nunez",
+    "María Pérez Quispe",
+    "Maria Perez Quispe",
     "Juan Quispe Huamán",
     "Juan Quispe Huaman",
 )

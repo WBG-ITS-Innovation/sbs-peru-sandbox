@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Loader + cache for Annex 1-A code lists.
 
 Each ``codelists/<name>.yaml`` file carries a documentation header

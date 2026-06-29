@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Server action: write the sbs-locale cookie so server components see
 // the new locale on next render. Called from the LanguageToggle client
 // component via a transition so the UI doesn't block on the round-trip.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 2 batch status endpoint — Workstream C.
 
 Per-tenant binding, state visibility before and after the worker runs.

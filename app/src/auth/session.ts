@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Server-side session store — ADR 0040 §D3. Opaque session ids keyed
 // to an in-process Map; tokens never reach the browser. Production
 // migrates the backend to Redis under SBS_SESSION_BACKEND=redis; the
@@ -11,7 +12,7 @@ import 'server-only';
 
 import type { Locale } from '@/i18n';
 
-export type Persona = 'supervisor' | 'analyst' | 'unit-head';
+export type Persona = 'maria' | 'lucia' | 'jorge';
 
 export interface PersonaSession {
   readonly accessToken: string;
@@ -36,10 +37,10 @@ export interface ServerSession {
   readonly demoMode: boolean;
   // Operator name carried for audit attribution in demo mode. In a real
   // sign-in the operator IS the active persona; in demo mode the
-  // operator (e.g., "demo-operator") is the human at the keyboard switching
+  // operator is the human at the keyboard switching
   // between personas, and the audit chain needs that name so a row
-  // reads "demo-operator switched from Supervisor to Unit Head", not the
-  // meaningless "Supervisor switched from Supervisor to Unit Head".
+  // reads "the operator switched from María to Jorge", not the meaningless
+  // "María switched from María to Jorge".
   operator: string | null;
   // Locale preference can also live in a cookie; the session copy is
   // authoritative when both are present, so a server-action language

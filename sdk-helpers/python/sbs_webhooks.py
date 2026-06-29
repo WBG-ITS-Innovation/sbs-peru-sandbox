@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Webhook signature verification helper for the SBS SupTech API.
 
 Pure Python standard library — no external dependencies. The helper

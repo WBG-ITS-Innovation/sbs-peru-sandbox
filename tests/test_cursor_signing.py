@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Cursor signing — workstream F.5, ADR 0028 amendment, issue #L.
 
 A cursor is HMAC-signed with a server-side master key. A client that

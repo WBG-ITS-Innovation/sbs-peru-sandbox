@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Next.js proxy: POST /app/api/ingest → FastAPI
 // /v1/internal/demo/simulate-submission. The browser submits a
 // realistic Anexo-1A-shaped complaint with PII fields (sandbox demo

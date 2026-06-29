@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Demo replay orchestrator — three institutions, deterministic seed.
 
 Invoked from ``scripts/demo.sh``. For each of the three demo

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Middleware behaviour: body-size limit, correlation_id, traceparent.
 
 The three middlewares are exercised against a minimal in-process FastAPI

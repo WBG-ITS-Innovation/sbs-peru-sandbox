@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Webhook delivery telemetry — Workstream F.3 (non-droppable).
 
 Workstream G's smoke test asserts that retry behaviour is observable

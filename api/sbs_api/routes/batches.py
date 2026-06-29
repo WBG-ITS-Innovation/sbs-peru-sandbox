@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 2 batch ingestion endpoints (ADR 0034).
 
 `POST /v1/batches` — accept a multipart upload (manifest JSON + CSV file),

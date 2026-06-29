@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Determinism check for the demo replay corpus generation.
 
 CSV inputs to ``scripts/demo.sh`` must be byte-identical across runs

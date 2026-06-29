@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Raw-complaint ORM model — restricted PII-bearing storage for P11A.
 
 This table is the **only** place the demo ingestion path persists raw

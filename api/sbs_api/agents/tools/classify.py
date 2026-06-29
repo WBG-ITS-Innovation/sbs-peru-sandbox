@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """classify_complaint — deterministic complaint classifier.
 
 In production this would call BETO via vLLM; for the May 27 demo

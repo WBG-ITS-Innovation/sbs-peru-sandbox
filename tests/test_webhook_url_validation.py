@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Webhook URL validation — Workstream D (ADR 0035 §webhook-url-validation).
 
 The validation module enforces HTTPS / FQDN / public-IP. The env

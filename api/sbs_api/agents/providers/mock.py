@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """MockProvider — deterministic stub for tests and CI.
 
 Returns canned tool-call sequences keyed by ``agent_name`` so the
@@ -47,15 +48,6 @@ DEFAULT_SCRIPTS: dict[str, list[dict[str, Any]]] = {
             ]
         },
         {"text": "synthesis-complete"},
-    ],
-    "taxonomy-harmonizer": [
-        {
-            "tool_calls": [
-                {"name": "query_audit_chain", "arguments": {}},
-                {"name": "log_taxonomy_unknown", "arguments": {}},
-            ]
-        },
-        {"text": "harmonizer-complete"},
     ],
     "cross-source-correlator": [
         {

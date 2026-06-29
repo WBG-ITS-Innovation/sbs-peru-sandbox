@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Complaint ORM model.
 
 Stores the Anexo 1-A 15-field payload plus server-assigned bookkeeping
@@ -94,6 +95,19 @@ class ComplaintRecord(Base):
     flag_unknown_taxonomy: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+
+    # Aggregate-dashboard enrichment overlay (migration 20260529_0001).
+    # SYNTHETIC / DERIVED fields — NOT part of the institutional Anexo 1-A
+    # submission contract. In production a BERT + regex classifier reads the
+    # narrative and assigns a finer motive level (submotivo, and an optional
+    # second level submotivo_2) plus a trend/topic tag. The synthetic corpus
+    # seeds them deterministically so the aggregate dashboard has finer
+    # dimensions to group by. All nullable: a complaint with no classifier
+    # output (or an in-flight case) stays NULL.
+    submotivo: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Wider: holds full clustered descriptive phrases (migration 20260529_0002).
+    submotivo_2: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    topic: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     __table_args__ = (
         Index(

@@ -1,12 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
 """draft_narrative + summarize_for_executive.
 
-The draft tool is the analyst-facing first cut. For BCO-2026-000001
+The draft tool is the Lucía-facing first cut. For BCO-2026-000001
 the draft must OMIT the phrase "comisión por mantenimiento" so the
 demo's scripted analyst edit lands on a real gap — that is the
 locked demo invariant.
 
 summarize_for_executive collapses the evidence bundle to plain
-Spanish for the Superintendent or the Supervisor lead.
+Spanish for Sergio (Superintendent) or the Supervisor lead.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from sbs_api.agents.tools.base import Tool, ToolContext, register_tool
 DEMO_COMPLAINT_ID = "BCO-2026-000001"
 
 # Locked demo draft. Notice: no mention of "comisión por mantenimiento" —
-# the analyst's edit during the demo fills exactly that gap.
+# Lucía's edit during the demo fills exactly that gap.
 DEMO_DRAFT = (
     "Riesgo de fee disclosure en producto de tarjeta de crédito de la "
     "institución supervisada. La narrativa reporta cargos no informados "
@@ -92,7 +93,8 @@ class SummarizeForExecutiveTool(Tool):
     name = "summarize_for_executive"
     description = (
         "Collapse the evidence bundle into a plain-Spanish executive "
-        "summary. Audience: 'superintendent' or 'supervisor'."
+        "summary. Audience: 'superintendent' (Sergio) or 'supervisor' "
+        "(the Supervisor)."
     )
     version = "summarize-v1"
     parameters = {

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Agent-run ORM model.
 
 The ``agent_runs`` table is the durable execution trace produced by every
@@ -43,7 +44,7 @@ class AgentRun(Base):
     # kebab-case stable identifier. The schema permits any
     # kebab-case string; the prose contract enumerates the current
     # set. Part 12 agents: {triage, investigation, synthesis,
-    # taxonomy-harmonizer, cross-source-correlator}. Legacy
+    # cross-source-correlator}. Legacy
     # Prompt-10 agents still present in seeded data: {classifier,
     # narrative-drafter, query-author, live-ingestion-orchestrator}.
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Model-provider protocol.
 
 The agent runtime depends only on this protocol — never on a concrete

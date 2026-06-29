@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
@@ -32,9 +33,9 @@ function resolveRoleLabel(roles: readonly string[], locale: 'es-PE' | 'en-US'): 
 function inferActivePersonaKey(
   demoMode: boolean,
   activeKey: string | null,
-): 'supervisor' | 'analyst' | 'unit-head' | null {
+): 'maria' | 'lucia' | 'jorge' | null {
   if (!demoMode) return null;
-  if (activeKey === 'supervisor' || activeKey === 'analyst' || activeKey === 'unit-head') {
+  if (activeKey === 'maria' || activeKey === 'lucia' || activeKey === 'jorge') {
     return activeKey;
   }
   return null;
@@ -58,6 +59,11 @@ export default function SupervisorLayout({
     findings: t(locale, 'nav.findings'),
     approvals: t(locale, 'nav.approvals'),
     audit: t(locale, 'nav.audit'),
+    demo_journey: t(locale, 'nav.demo_journey'),
+    ingestion: t(locale, 'nav.ingestion'),
+    processing: t(locale, 'nav.processing'),
+    rr1: t(locale, 'nav.rr1'),
+    docs: t(locale, 'nav.docs'),
     analytics: t(locale, 'nav.analytics'),
     assistant: t(locale, 'nav.assistant'),
     pilot_phase: t(locale, 'nav.pilot_phase'),
@@ -79,9 +85,9 @@ export default function SupervisorLayout({
     persona: {
       switch_persona: t(locale, 'nav.switch_persona'),
       active_persona: t(locale, 'nav.active_persona'),
-      supervisor: t(locale, 'personas.supervisor'),
-      analyst: t(locale, 'personas.analyst'),
-      'unit-head': t(locale, 'personas.unit-head'),
+      maria: t(locale, 'personas.maria'),
+      lucia: t(locale, 'personas.lucia'),
+      jorge: t(locale, 'personas.jorge'),
       cancel: t(locale, 'common.actions.cancel'),
     },
   };

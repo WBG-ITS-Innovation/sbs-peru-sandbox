@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Audit filters — URL-driven, same shape as FindingsFilters.
 
 'use client';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // GET /app/api/sse/[topic] — proxies the EventSource connection from
 // the browser to FastAPI's /v1/internal/sse/{topic}. The shared
 // secret never reaches the browser; the session cookie gates whether

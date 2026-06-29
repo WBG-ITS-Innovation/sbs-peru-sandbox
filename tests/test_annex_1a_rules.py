@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for the Annex 1-A DQ rules (DQ-A1A-007 through DQ-A1A-027).
 
 One happy path + one (or more) failure path per rule. The valid

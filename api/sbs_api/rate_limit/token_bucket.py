@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Redis token-bucket implementation — ADR 0033.
 
 A single Lua script performs the atomic check-and-decrement. The script

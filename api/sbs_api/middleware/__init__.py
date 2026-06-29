@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """ASGI middleware.
 
 Order at request time, outermost to innermost:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Keycloak token-endpoint client. Wraps the three exchanges we need:
 // authorization_code (real login), refresh_token (silent refresh — WS7
 // SSE), and password (demo-mode persona switcher only, ADR 0040 §D8).

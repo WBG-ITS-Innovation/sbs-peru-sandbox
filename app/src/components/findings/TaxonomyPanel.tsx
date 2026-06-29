@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // TaxonomyPanel — collapsed-by-default section on the findings detail
 // page showing every (field, original → canonical) pair the taxonomy
 // normalization step produced for this complaint.

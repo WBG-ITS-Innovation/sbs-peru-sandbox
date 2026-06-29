@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Model-provider factory and re-exports.
 
 Selects the active provider from the ``SBS_API_MODEL_PROVIDER`` env

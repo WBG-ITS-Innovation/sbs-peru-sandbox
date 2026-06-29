@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // KpiStrip — three KPI tiles across the top of the cockpit. Visual
 // language from the Claude Design artifact: tight padding, mono
 // numerics with tabular figures, all-caps labels in mono micro-caps,

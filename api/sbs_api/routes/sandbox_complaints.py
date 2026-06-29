@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """External-institution sandbox endpoint for granular Anexo-1A complaints.
 
 P11A.5a — institution-to-SBS sandbox API connection.

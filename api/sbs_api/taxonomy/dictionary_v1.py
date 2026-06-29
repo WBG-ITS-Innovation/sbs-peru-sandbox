@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Canonical taxonomy dictionary v1 (P11 demo-ready overlay).
 
 The real SBS Annex 1-A sample arrives with inconsistent surface forms

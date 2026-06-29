@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Institution onboarding state.
 
 Two demo institutions are pre-seeded in the test fixture and the

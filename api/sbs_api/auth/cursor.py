@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Signed cursor payload — ADR 0028 amendment (Prompt 7 issue #L, F.5).
 
 Cursors used for keyset pagination were previously plain base64 of the

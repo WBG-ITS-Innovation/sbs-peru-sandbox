@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """RFC 8705 cert-binding tests — workstream C.
 
 A token issued for cert thumbprint X must be rejected when presented

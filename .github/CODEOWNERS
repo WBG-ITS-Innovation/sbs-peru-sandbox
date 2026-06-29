@@ -7,16 +7,16 @@
 # Default: maintainer owns everything.
 *                       @omakhlouk
 
-# Infrastructure — the WBG technical lead co-reviews when ready.
-# /infra/                @omakhlouk @<antoine-handle>
-# /helm/                 @omakhlouk @<antoine-handle>
-# /terraform/            @omakhlouk @<antoine-handle>
+# Infrastructure — a second reviewer co-reviews when ready.
+# /infra/                @omakhlouk @<reviewer-handle>
+# /helm/                 @omakhlouk @<reviewer-handle>
+# /terraform/            @omakhlouk @<reviewer-handle>
 
-# Agent layer — the WBG technical lead co-reviews when ready.
-# /agents/               @omakhlouk @<antoine-handle>
+# Agent layer — a second reviewer co-reviews when ready.
+# /agents/               @omakhlouk @<reviewer-handle>
 
-# ADRs — the WBG engagement manager co-reviews when ready.
-# /docs/adr/             @omakhlouk @<fisnik-handle>
+# ADRs — the ADR reviewer co-reviews when ready.
+# /docs/adr/             @omakhlouk @<adr-reviewer-handle>
 
 # Standards Pack and OpenAPI — both co-reviewers when ready.
 # /docs/research/        @omakhlouk

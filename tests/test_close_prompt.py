@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Regression tests for close_prompt.py carry-over fixes (Prompts 1, 2, 3).
 
 Carry-over #1 (cross-review handling, Prompt 1):

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Bridge to the FastAPI internal audit endpoint. The Next.js server
 // calls FastAPI; the same single-entrypoint rule applies as in
 // api/sbs_api/audit.py — the audit table has one writer, regardless of

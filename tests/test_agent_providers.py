@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Provider-layer unit tests — no DB, no network.
 
 Covers the factory selection rules, the MockProvider script, the

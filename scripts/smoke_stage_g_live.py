@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: Apache-2.0
 """Live-stack smoke for Workstream G (Prompt 8 §7).
 
 Exercises the actual signed-callback path end-to-end:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """idempotency state — placeholder-INSERT pattern for concurrent POSTs
 
 Revision ID: 20260519_0003

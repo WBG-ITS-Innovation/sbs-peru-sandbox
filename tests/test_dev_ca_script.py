@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Smoke tests for scripts/dev-ca.sh — workstream A.
 
 The script is the only sanctioned way to produce the dev CA + leaf

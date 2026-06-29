@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """rank_features — top-N SHAP-shaped feature attribution.
 
 Deterministic per (complaint_id). BCO-2026-000001 returns the

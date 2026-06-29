@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """search_similar_complaints — nearest neighbours over recent complaints.
 
 Falls back to exact-match on (product_category, motivo_code,

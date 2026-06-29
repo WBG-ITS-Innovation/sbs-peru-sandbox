@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Runtime configuration via Pydantic Settings.
 
 All knobs that vary between dev / test / staging / prod are surfaced as

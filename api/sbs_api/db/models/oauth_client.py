@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OAuth 2.0 client_credentials registry — ADR 0032.
 
 One row per (institution_id, client_id) tuple. ``client_secret_hash`` is

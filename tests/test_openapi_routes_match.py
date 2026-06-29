@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Every operation in the canonical OpenAPI spec has a registered FastAPI route.
 
 Pairs with ``tests/test_openapi_pydantic_match.py`` to form a closed loop:

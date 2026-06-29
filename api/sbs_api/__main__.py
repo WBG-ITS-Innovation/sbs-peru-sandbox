@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """``python -m sbs_api`` entry point.
 
 Runs uvicorn against the application factory. Read by ``scripts/run-api.sh``

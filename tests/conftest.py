@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Pytest configuration for the workflow-harness and runtime tests.
 
 The repo is a uv workspace; dev dependencies (pytest, openai, python-dotenv,

@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
 // Demo-mode session bootstrap — ADR 0040 §D8.
 //
-// In demo mode the operator at the keyboard wants to switch between
-// the Conduct Supervisor, the Conduct Analyst, and the Conduct Unit
-// Head without four sign-out cycles during a 15-minute regulator
-// demo. The server pre-loads tokens for all three personas via the
-// Resource Owner Password Credentials grant, stores them in the
-// server-side session, and flips an active-persona pointer on switch.
+// In demo mode the operator at the keyboard wants
+// to switch between María / Lucía / Jorge without four sign-out
+// cycles during a 15-minute regulator demo. The server pre-loads
+// tokens for all three personas via the Resource Owner Password
+// Credentials grant, stores them in the server-side session, and
+// flips an active-persona pointer on switch.
 //
 // ROPC is permitted here because (a) the demo realm has seeded,
 // sandbox-only passwords, (b) the feature is feature-flagged behind
@@ -29,26 +30,26 @@ import type { PersonaSession, ServerSession } from './session';
 // Each line carries the detect-secrets pragma because the strings are
 // deliberate, sandbox-only, and committed by design.
 export const DEMO_PERSONAS = {
-  supervisor: {
-    email: 'supervisor@sandbox.example.com',
-    passwordEnv: 'SBS_DEMO_SUPERVISOR_PASSWORD', // pragma: allowlist secret
-    passwordDefault: 'supervisor-demo-2026', // pragma: allowlist secret
+  maria: {
+    email: 'maria@sandbox.example.com',
+    passwordEnv: 'SBS_DEMO_MARIA_PASSWORD', // pragma: allowlist secret
+    passwordDefault: 'maria-demo-2026', // pragma: allowlist secret
   },
-  analyst: {
-    email: 'analyst@sandbox.example.com',
-    passwordEnv: 'SBS_DEMO_ANALYST_PASSWORD', // pragma: allowlist secret
-    passwordDefault: 'analyst-demo-2026', // pragma: allowlist secret
+  lucia: {
+    email: 'lucia@sandbox.example.com',
+    passwordEnv: 'SBS_DEMO_LUCIA_PASSWORD', // pragma: allowlist secret
+    passwordDefault: 'lucia-demo-2026', // pragma: allowlist secret
   },
-  'unit-head': {
-    email: 'unit-head@sandbox.example.com',
-    passwordEnv: 'SBS_DEMO_UNIT_HEAD_PASSWORD', // pragma: allowlist secret
-    passwordDefault: 'unit-head-demo-2026', // pragma: allowlist secret
+  jorge: {
+    email: 'jorge@sandbox.example.com',
+    passwordEnv: 'SBS_DEMO_JORGE_PASSWORD', // pragma: allowlist secret
+    passwordDefault: 'jorge-demo-2026', // pragma: allowlist secret
   },
 } as const;
 
 export type DemoPersonaKey = keyof typeof DEMO_PERSONAS;
 
-export const DEMO_PERSONA_KEYS: readonly DemoPersonaKey[] = ['supervisor', 'analyst', 'unit-head'];
+export const DEMO_PERSONA_KEYS: readonly DemoPersonaKey[] = ['maria', 'lucia', 'jorge'];
 
 function passwordFor(key: DemoPersonaKey): string {
   const config = DEMO_PERSONAS[key];
@@ -57,8 +58,8 @@ function passwordFor(key: DemoPersonaKey): string {
 
 /**
  * Acquire tokens for all three demo personas in parallel. Returns a
- * record keyed by persona key (`supervisor` / `analyst` / `unit-head`)
- * suitable for direct assignment into the ServerSession.personas map.
+ * record keyed by persona key (`maria` / `lucia` / `jorge`) suitable
+ * for direct assignment into the ServerSession.personas map.
  */
 export async function loadAllPersonaTokens(): Promise<Record<DemoPersonaKey, PersonaSession>> {
   if (!authConfig.demoMode) {

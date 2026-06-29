@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """FastAPI exception handlers that emit RFC 9457 ``application/problem+json``.
 
 ADR 0028 §2 locks the choice of handlers over middleware: handlers compose

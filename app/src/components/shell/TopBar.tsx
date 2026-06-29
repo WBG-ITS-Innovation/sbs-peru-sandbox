@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Top bar. Institutional navy band — white SBS diamond on a navy
 // plaque, lockup in mono caps, then ConnectionStateDot · language
 // toggle · (demo-mode) persona switcher on the right. ADR 0040 §D5
@@ -20,7 +21,7 @@ interface TopBarProps {
   lockup: string;
   locale: Locale;
   demoMode: boolean;
-  activePersonaKey: 'supervisor' | 'analyst' | 'unit-head' | null;
+  activePersonaKey: 'maria' | 'lucia' | 'jorge' | null;
   csrfToken: string | null;
   labels: {
     connectionLabel: { connecting: string; connected: string; disconnected: string };
@@ -28,9 +29,9 @@ interface TopBarProps {
     persona: {
       switch_persona: string;
       active_persona: string;
-      supervisor: string;
-      analyst: string;
-      'unit-head': string;
+      maria: string;
+      lucia: string;
+      jorge: string;
       cancel: string;
     };
   };

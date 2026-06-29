@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """SQLAlchemy 2.0 declarative base shared by every ORM model.
 
 ADR 0028 keeps the ORM thin: each model is a simple ``DeclarativeBase``

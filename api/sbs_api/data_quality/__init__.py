@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Deterministic data-quality checks for the P11A demo ingestion path.
 
 ADR 0045 documents the rule contract. The checker is regex-and-rule

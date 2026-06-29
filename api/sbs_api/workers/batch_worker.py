@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """arq batch processing worker (ADR 0034).
 
 ``process_batch`` drains pending Tier 2 batches: reads the CSV from

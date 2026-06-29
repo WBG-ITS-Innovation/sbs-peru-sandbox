@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tool registry unit tests — pure-Python, no DB.
 
 Each test exercises the deterministic-fixture path used by the

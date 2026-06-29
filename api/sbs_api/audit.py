@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Audit-event recording — the single entrypoint for the cross-screen audit chain.
 
 Every screen that mutates state writes through :func:`record_audit_event`.
@@ -12,11 +13,11 @@ Usage from a route handler::
     await record_audit_event(
         session,
         actor_type="user",
-        actor_id="supervisor@sandbox.example.com",
+        actor_id="maria@sandbox.example.com",
         action="switch-persona",
         object_type="session",
         object_id=session_id,
-        meta={"from": "supervisor@sandbox.example.com", "to": "analyst@sandbox.example.com"},
+        meta={"from": "maria@sandbox.example.com", "to": "lucia@sandbox.example.com"},
     )
     await session.commit()
 

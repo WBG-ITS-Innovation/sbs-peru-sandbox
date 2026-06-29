@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Findings list + detail assembly.
 
 The list endpoint serves the /app/findings table. The detail endpoint
@@ -56,7 +57,7 @@ def default_filters_for_role(roles: frozenset[str]) -> FindingsFilters:
 
     now = datetime.now(tz=timezone.utc)
     if "sbs:conduct:analyst" in roles:
-        # the Conduct Analyst: high-confidence findings last 24 hours.
+        # Lucía: high-confidence findings last 24 hours.
         return FindingsFilters(
             confidence_band="high",
             from_received_at=now - DEFAULT_WINDOW_SUPERVISOR,

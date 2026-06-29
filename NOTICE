@@ -1,0 +1,11 @@
+SBS SupTech Prototype
+Copyright (c) 2025 World Bank
+
+This product is licensed under the MIT License (see LICENSE).
+
+All complaint data in this repository is synthetic. It was generated for the
+sandbox and does not contain real consumer complaints or personal data. See
+DATA_PROVENANCE.md for details.
+
+This repository bundles third-party components under their own licenses,
+including Stoplight Elements (see vendor/stoplight-elements/LICENSE).

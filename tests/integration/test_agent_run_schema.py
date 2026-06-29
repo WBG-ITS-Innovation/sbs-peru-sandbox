@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """P10 ↔ P12 integration gate.
 
 Validates the ``agent_run`` JSON Schema (the contract documented at

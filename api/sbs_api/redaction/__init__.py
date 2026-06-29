@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Deterministic PII redaction for the P11A demo ingestion path.
 
 ADR 0044 documents the policy choice. The engine is regex-and-allowlist

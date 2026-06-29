@@ -4,7 +4,7 @@
 # sandbox set; it must be validated against SBS's canonical
 # tipo_documento table.
 #
-# review_status: TBD — validate with the SBS taxonomy reviewers
+# review_status: TBD — validate with Luis/Diego
 # source: TBD — sandbox-plausible defaults pending SBS sign-off
 spec_source: "Anexo 1-A field 2 (codes referenced, not enumerated in annexo.pdf)"
 spec_file: "annexo.pdf"

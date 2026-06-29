@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """ORM models — one module per aggregate.
 
 Importing this package eagerly imports every model so Alembic's autogenerate

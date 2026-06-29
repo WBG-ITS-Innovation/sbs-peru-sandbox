@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Per-institution business-bucket rate limiter — workstream E.
 
 Tests cover the ADR 0033 contract surface:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Synthetic corpus generator — Workstream E (ADR 0036).
 
 Asserts:

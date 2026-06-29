@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """JWT shape and claims for tokens issued by /v1/oauth/token — workstream C.
 
 Asserts the contract surface SDK consumers see: kid in the header from

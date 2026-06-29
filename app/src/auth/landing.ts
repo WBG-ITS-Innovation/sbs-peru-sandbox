@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Role-based default landing — ADR 0042. The map lives in code so a
 // reviewer reading the diff sees the routing decision in the same PR
 // as the screen it accompanies.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Generate the paste-ready context bundle for opening a new prompt chat.
 #
 # Cold-start chats can't see repo files; they need the current state of key

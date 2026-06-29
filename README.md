@@ -2,6 +2,9 @@
 
 Reference implementation of a multi-agent supervisory technology platform for consumer complaint ingestion and analytics. Built for SBS Peru.
 
+All complaint data in this repository is **synthetic** — the SBS never shared
+real complaint data with the project team. See [DATA_PROVENANCE.md](DATA_PROVENANCE.md).
+
 ## Architecture
 
 Three-layer agent architecture:
@@ -43,6 +46,17 @@ bash scripts/run-api.sh          # AUTH_STUB_ENABLED=true by default
 bash scripts/smoke-test.sh
 ```
 
+The API binds `0.0.0.0:8000` by default; the supervisor UI Next.js dev
+server binds `0.0.0.0:3000`. Both are reachable from another machine
+on the same network without further configuration, which supports a
+two-laptop sandbox demo (institution sender on one laptop, SBS sandbox
+plus cockpit on the other).
+The browser-facing override is `NEXT_PUBLIC_API_BASE_URL`; the API's
+CORS allow-list (`SBS_API_CORS_ALLOW_ORIGINS`) ships with the
+`localhost`, `*.local`, and `192.168.0.0/16:3000` patterns the demo
+needs and should be tightened to a single literal origin before
+production.
+
 The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's
 auto-generated `/openapi.json`, `/docs`, and `/redoc` are disabled per
 ADR 0028 §6 — the curated YAML is the contract. The running API also
@@ -64,7 +78,7 @@ If you are an institution integrating with the SBS sandbox:
    catalog, hand-maintained webhook-verification helpers, OpenAPI
    Generator recipes, example payloads, and a provenance manifest:
    ```bash
-   make standards-pack    # produces dist/standards-pack-v0.2.0.tar.gz
+   make standards-pack    # produces dist/standards-pack-v0.1.0.tar.gz
    ```
    See [standards-pack/README.md](standards-pack/README.md) for the
    contents and verification steps.
@@ -104,3 +118,9 @@ ADRs that document the v0.1 institutional-integrator surface:
 - [docs/DEMO.md](docs/DEMO.md) — demo script
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — workflow + branch conventions
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
+- [DATA_PROVENANCE.md](DATA_PROVENANCE.md) — how the synthetic data is produced
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and
+[NOTICE](NOTICE).

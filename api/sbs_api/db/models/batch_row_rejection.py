@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Per-row rejection detail for Tier 2 batch processing.
 
 One row per failed row in a batch CSV. Populated by the arq worker

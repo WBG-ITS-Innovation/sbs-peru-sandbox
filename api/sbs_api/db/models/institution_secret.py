@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Per-institution HMAC secrets — ADR 0027 amendment.
 
 Each institution has at most one row. The ``active_secret`` is the one

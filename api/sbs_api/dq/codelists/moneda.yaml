@@ -5,7 +5,7 @@
 # list below is the minimum SBS-supervised-institution set; expand
 # during onboarding sign-off.
 #
-# review_status: TBD — validate with the SBS taxonomy reviewers
+# review_status: TBD — validate with Luis/Diego
 # source: TBD — ISO 4217 alphabetic codes; spec is silent on the field
 spec_source: "ISO 4217 — spec silent on field 20 currency"
 spec_file: "annexo.pdf"

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // URL-driven filter strip. State lives in query params so deep links
 // to a filtered view work and the URL is shareable. The "Apply" /
 // "Reset" buttons push to the URL via router.push; the server

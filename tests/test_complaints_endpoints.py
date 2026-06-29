@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """End-to-end complaint endpoint tests against a real Postgres testcontainer.
 
 Covers every endpoint and the cross-cutting rules from the Prompt 6 spec:

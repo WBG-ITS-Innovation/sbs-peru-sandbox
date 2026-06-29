@@ -11,7 +11,7 @@
 
 Prompt 10 lands the supervisor UI at `/app/`. The institutional-edge API at `/v1/*` already has its auth chain (ADR 0031 mTLS + ADR 0032 OAuth 2.0 client_credentials with cert-bound JWTs + ADR 0033 rate limiting + the ADR 0027 amendment HMAC contract). That chain authenticates *institutions* on the wire and does not involve interactive users.
 
-The supervisor UI is a different perimeter: interactive sessions from SBS staff (Supervisor, Analyst, Unit Head) sitting inside the regulator's network, talking to the same backend over HTTPS. Reusing the institutional auth chain at this perimeter is the wrong fit — mTLS would require every supervisor's browser to present a cert, HMAC signing would need a per-supervisor secret, and the cert-bound OAuth tokens are sized for service-to-service traffic, not for interactive sessions with their own expiry and refresh semantics. The two perimeters need two auth chains; this ADR locks the supervisor-edge chain.
+The supervisor UI is a different perimeter: interactive sessions from SBS staff (María, Lucía, Jorge) sitting inside the regulator's network, talking to the same backend over HTTPS. Reusing the institutional auth chain at this perimeter is the wrong fit — mTLS would require every supervisor's browser to present a cert, HMAC signing would need a per-supervisor secret, and the cert-bound OAuth tokens are sized for service-to-service traffic, not for interactive sessions with their own expiry and refresh semantics. The two perimeters need two auth chains; this ADR locks the supervisor-edge chain.
 
 Six framing questions interact:
 
@@ -97,9 +97,9 @@ The realm is re-exportable: a developer who edits the realm in the Keycloak admi
 
 The realm seeds three users + three realm-roles:
 
-- `supervisor@sandbox.example.com` — role `sbs:conduct:supervisor`. Lands on `/app/cockpit`.
-- `analyst@sandbox.example.com` — role `sbs:conduct:analyst`. Lands on `/app/findings`.
-- `unit-head@sandbox.example.com` — role `sbs:conduct:head`. Lands on `/app/approvals`.
+- `maria@sandbox.example.com` — role `sbs:conduct:supervisor`. Lands on `/app/cockpit`.
+- `lucia@sandbox.example.com` — role `sbs:conduct:analyst`. Lands on `/app/findings`.
+- `jorge@sandbox.example.com` — role `sbs:conduct:head`. Lands on `/app/approvals`.
 
 Role-based default landing is the subject of ADR 0042 and is the only consumer of the role claim in Prompt 10. The role-to-route mapping is in code (`@/auth/landing.ts`), not in Keycloak.
 
@@ -111,7 +111,7 @@ The demo-mode persona switcher (ADR 0042 covers its routing implications; the im
 
 This is gated behind `SBS_DEMO_MODE=true`. In production, the flag is off, the `directAccessGrantsEnabled` setting on the Keycloak client is off, and the ROPC path is not reachable. The deprecation framing of ROPC (RFC 9700 §2.4) applies to new external integrations; first-party use against a sandbox realm with known passwords for a demo-only feature flag is the explicit exception RFC 9700 carves out.
 
-Every persona switch lands one row in `audit_events` (ADR 0040 alone does not own `audit_events`; that's the WS2 audit-substrate commit). The row carries `action='switch-persona'`, `actor_id=<operator email>`, `meta={'from_persona': …, 'to_persona': …}`. The `from`/`to` shape is the contract that makes the audit row useful — without it, the row only says "the WBG technical lead switched persona at 14:32", which is not an audit trail.
+Every persona switch lands one row in `audit_events` (ADR 0040 alone does not own `audit_events`; that's the WS2 audit-substrate commit). The row carries `action='switch-persona'`, `actor_id=<operator email>`, `meta={'from_persona': …, 'to_persona': …}`. The `from`/`to` shape is the contract that makes the audit row useful — without it, the row only says "the operator switched persona at 14:32", which is not an audit trail.
 
 ## Precedent
 

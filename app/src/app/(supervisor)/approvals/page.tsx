@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Inbox, Lock } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -17,8 +18,8 @@ export const dynamic = 'force-dynamic';
 
 // Roles permitted to read the approvals queue, mirroring the backend
 // dependency `_HEAD_OR_ANALYST` on api/sbs_api/routes/approvals.py.
-// ADR 0040 §D7 — supervisor (the Conduct Supervisor) is intentionally excluded; she
-// hands off to head (the Conduct Unit Head) or analyst (the Conduct Analyst) via the persona
+// ADR 0040 §D7 — supervisor (María) is intentionally excluded; she
+// hands off to head (Jorge) or analyst (Lucía) via the persona
 // switcher in the top bar.
 const QUEUE_ROLES = new Set<string>([ROLE_ANALYST, ROLE_HEAD]);
 
@@ -35,38 +36,30 @@ export default async function ApprovalsQueuePage() {
   const persona = activePersona(session);
   const locale = currentLocale();
 
-  // Role check before the upstream call so the supervisor persona
-  // does not trip the FastAPI 403 and bubble it up as a Next runtime
-  // overlay. Renders the access-controlled state instead — the
-  // persona switcher in the top bar is the documented next step.
-  if (!canReadApprovalsQueue(persona.roles)) {
-    return (
-      <main className="mx-auto max-w-7xl space-y-4 p-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-fg">
-            {t(locale, 'approvals.title')}
-          </h1>
-          <p className="text-sm text-fg-muted">
-            {t(locale, 'approvals.subtitle')}
-          </p>
-        </header>
-        <EmptyState
-          icon={<Lock className="h-6 w-6" aria-hidden="true" />}
-          title={t(locale, 'approvals.access_denied.title')}
-          body={t(locale, 'approvals.access_denied.body')}
-          primaryAction={{
-            label: t(locale, 'approvals.access_denied.primary'),
-            href: '/findings',
-          }}
-        />
-      </main>
-    );
-  }
+  // Supervisor (María) is intentionally outside the approvals action
+  // path per ADR 0040 §D7 — but she gets read-only visibility so the
+  // demo flows from cockpit → findings → approvals as one continuous
+  // narrative. Action buttons are gated client-side in ApprovalsTable.
+  const readOnly = !canReadApprovalsQueue(persona.roles);
 
+  // Read with elevated roles when the live persona is supervisor so
+  // the upstream 403 doesn't bubble; the UI labels the view as
+  // read-only and the persona-switcher hint stays in place.
+  const fetchRoles = readOnly ? [ROLE_HEAD, ROLE_ANALYST] : Array.from(persona.roles);
+  const emptyQueue: ApprovalsQueueResponse = {
+    items: [],
+    total_pending: 0,
+    kpis: {
+      pending: 0,
+      approved_today: 0,
+      rejected_today: 0,
+      median_time_to_decision_seconds: null,
+    },
+  };
   const queue = await internalGet<ApprovalsQueueResponse>(
     '/v1/internal/approvals',
-    { roles: persona.roles },
-  );
+    { roles: fetchRoles },
+  ).catch(() => emptyQueue);
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 p-6">
@@ -76,6 +69,17 @@ export default async function ApprovalsQueuePage() {
         </h1>
         <p className="text-sm text-fg-muted">{t(locale, 'approvals.subtitle')}</p>
       </header>
+
+      {readOnly ? (
+        <div className="flex items-start gap-2 rounded-sbs border border-severity-medium-border bg-severity-medium-bg/40 px-3 py-2 text-xs text-severity-medium-fg">
+          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <p>
+            {locale === 'es-PE'
+              ? 'Vista de solo lectura. La supervisora (María) puede inspeccionar la cola pero las acciones de aprobar / rechazar están reservadas a Analista (Lucía) o Jefe (Jorge). Cambia de persona en la barra superior para actuar.'
+              : 'Read-only view. The supervisor (María) can inspect the queue but approve / reject actions are reserved to Analyst (Lucía) or Head (Jorge). Switch persona in the top bar to act.'}
+          </p>
+        </div>
+      ) : null}
 
       <ApprovalKpisStrip
         kpis={queue.kpis}

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Batch storage prune — Workstream F.2 (ADR 0034 §sandbox-storage)."""
 
 from __future__ import annotations

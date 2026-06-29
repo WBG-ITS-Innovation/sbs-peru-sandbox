@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Connection-state indicator — ADR 0040 §D5. The audience seeing the
 // dot go amber while reconnecting is reassuring; the audience seeing
 // a frozen UI is not. Always visible on every screen that consumes

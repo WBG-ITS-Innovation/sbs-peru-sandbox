@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """TriageAgent — classify, surface DQ + taxonomy issues, route.
 
 The first agent in the chain. Reads the pre-computed DQ report,

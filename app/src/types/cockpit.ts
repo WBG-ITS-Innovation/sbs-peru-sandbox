@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Cockpit data shapes — mirrors api/sbs_api/cockpit/builder.py.
 // Kept in this dedicated module so the SSE deltas, the server-component
 // fetch, and the client-side merger all reference one type definition.

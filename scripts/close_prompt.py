@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Closeout pipeline for a prompt. Runs subagent reviews (stub hooks for now),
 cross-review, an adversarial pass, an optional fresh-machine deploy test, then
 PAUSES for a typed approval before doing any git operations.
@@ -253,7 +254,7 @@ def write_session_journal(
         "",
         "## What landed",
         "",
-        "_Operator fills in: one paragraph, plain language, readable by an SBS reviewer._",
+        "_Operator fills in: one paragraph, plain language, readable by the Executive._",
         "",
         "## Decisions locked",
         "",

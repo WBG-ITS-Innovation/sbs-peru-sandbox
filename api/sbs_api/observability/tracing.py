@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OpenTelemetry SDK wiring.
 
 ADR 0028 §4 makes OpenTelemetry the single owner of W3C trace context.

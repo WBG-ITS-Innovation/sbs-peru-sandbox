@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Developer portal routes.
 
 Two public routes serve the developer portal, both registered under

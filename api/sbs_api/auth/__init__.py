@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Authentication primitives — mTLS subject extraction, HMAC signing, OAuth.
 
 The dependency wiring is in :mod:`sbs_api.dependencies`; this package

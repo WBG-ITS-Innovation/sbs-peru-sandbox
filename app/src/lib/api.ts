@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Server-side helper for the Next.js → FastAPI server-to-server hop.
 // Adds the shared-secret Authorization header, the X-SBS-Role header
 // for role-scoping, and cache: 'no-store' so React Server Components

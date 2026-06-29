@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Deterministic demo replay for the May 25 sandbox kickoff.
 #
 # Generates synthetic Anexo 1-A complaints across the three demo
@@ -7,10 +8,18 @@
 # worker, polls until each batch reaches a terminal state, and tails
 # the webhook-listener for the three PASS lines.
 #
-# Determinism: CSV inputs are byte-identical across runs at the same
-# --seed. Webhook signature timestamps are current-time-stamped per
-# request (NOT deterministic; documented as expected — the canonical
-# request includes the timestamp, so signatures differ per run).
+# Determinism: row CONTENT is byte-identical across runs at the same
+# --seed. The one deliberate exception is complaint_id: this script
+# passes a fresh --run-token to the generator on every run, which folds
+# a per-run salt into the complaint_id tail (staying inside the route
+# contract). Without it, re-running ingestion against a live database
+# would collide on the complaint_id primary key and accept zero rows.
+# The golden corpus and the determinism tests call the generator with
+# no run token, so they stay byte-stable.
+#
+# Webhook signature timestamps are current-time-stamped per request
+# (NOT deterministic; documented as expected — the canonical request
+# includes the timestamp, so signatures differ per run).
 #
 # See ADR 0036 (synthetic corpus fidelity tiers) for the data shape
 # and Prompt 8's session journal for the live-stack contract.
@@ -44,13 +53,14 @@ MAX_WAIT="60"
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
-# Part 12 — agent pipeline. The demo path force-exports both the
-# pipeline-on flag and the replay provider so a previous shell-level
-# export cannot silently route the demo through vLLM / mock-fallback
-# and miss the locked BCO-2026-000001 invariants. Operators who need
-# the on_prem path should run the API directly, not through demo.sh.
+# Part 12 — agent pipeline. The demo path force-enables the pipeline so a
+# previous shell-level export cannot silently route the demo away from the
+# agent chain. The model provider defaults to the deterministic `mock`
+# layer (which exercises the real agents end-to-end) but an operator may
+# pin a different provider by pre-exporting SBS_API_MODEL_PROVIDER, e.g.
+# `SBS_API_MODEL_PROVIDER=replay bash scripts/demo.sh`.
 export SBS_API_AGENTS_PIPELINE_ENABLED=true
-export SBS_API_MODEL_PROVIDER=replay
+export SBS_API_MODEL_PROVIDER="${SBS_API_MODEL_PROVIDER:-mock}"
 echo "demo.sh: SBS_API_AGENTS_PIPELINE_ENABLED=${SBS_API_AGENTS_PIPELINE_ENABLED}" \
      "SBS_API_MODEL_PROVIDER=${SBS_API_MODEL_PROVIDER}"
 
@@ -163,10 +173,17 @@ step "Generating synthetic corpus (scale=$SCALE seed=$SEED rows/inst=$ROWS_PER_I
 CORPUS_DIR="$OUTDIR/corpus"
 mkdir -p "$CORPUS_DIR"
 
+# Fresh per-run token so complaint_ids do not collide with rows already in
+# the live database from a previous run. The generator folds it into the
+# complaint_id tail (see scripts/generate-synthetic-corpus.py --run-token).
+RUN_TOKEN="${TIMESTAMP}-${RANDOM}"
+note "run token: $RUN_TOKEN"
+
 if ! "${PY_RUN[@]}" scripts/generate-synthetic-corpus.py \
       --out "$CORPUS_DIR" \
       --rows-per-institution "$ROWS_PER_INSTITUTION" \
-      --seed "$SEED" >"$OUTDIR/generate.log" 2>&1; then
+      --seed "$SEED" \
+      --run-token "$RUN_TOKEN" >"$OUTDIR/generate.log" 2>&1; then
   fail "synthetic corpus generation failed; see $OUTDIR/generate.log" 3
 fi
 
@@ -188,6 +205,19 @@ if ! "${PY_RUN[@]}" scripts/demo_replay.py \
       --institutions "${INSTITUTIONS[@]}"; then
   fail "demo replay failed; see $OUTDIR/summary.json for details" 4
 fi
+
+# --- Agent pipeline on the freshly-ingested complaints -----------------------
+# The arq worker container ingests the batch but does not run the agent
+# chain (its env keeps the pipeline off). Run it here, host-side, where
+# SBS_API_MODEL_PROVIDER is set, so each new complaint gets agent_runs.
+
+step "Running agent pipeline on new complaints"
+
+if ! "${PY_RUN[@]}" scripts/run_agent_pipeline_on_new.py \
+      >"$OUTDIR/agent-pipeline.log" 2>&1; then
+  fail "agent pipeline on new complaints failed; see $OUTDIR/agent-pipeline.log" 4
+fi
+tail -n 3 "$OUTDIR/agent-pipeline.log" | sed 's/^/  /'
 
 # --- Summary -----------------------------------------------------------------
 

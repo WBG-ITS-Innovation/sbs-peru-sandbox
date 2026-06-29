@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """InvestigationAgent — build the evidence bundle for analyst review.
 
 Runs after Triage routes to ``investigation``. Calls

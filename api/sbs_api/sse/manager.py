@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """In-process Server-Sent Events bus.
 
 Topics are strings; events carry a monotonically-increasing per-topic

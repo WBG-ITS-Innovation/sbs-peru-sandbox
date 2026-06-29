@@ -46,9 +46,9 @@ narrator can sign in during the live demo without consulting a vault:
 
 | User | Password |
 | --- | --- |
-| `supervisor@sandbox.example.com` | `supervisor-demo-2026` |
-| `analyst@sandbox.example.com` | `analyst-demo-2026` |
-| `unit-head@sandbox.example.com` | `unit-head-demo-2026` |
+| `maria@sandbox.example.com` | `maria-demo-2026` |
+| `lucia@sandbox.example.com` | `lucia-demo-2026` |
+| `jorge@sandbox.example.com` | `jorge-demo-2026` |
 
 These are **sandbox-only** credentials. The Keycloak service in
 `docker-compose.yaml` is the dev/demo IdP; production deploys against
@@ -92,18 +92,3 @@ sandbox realm in:
 
 The Helm chart's values file is the right place to encode these. The
 realm JSON in this directory is the dev/demo source of truth only.
-
-## Local bring-up (after reboot or fresh clone)
-
-1. `bash scripts/dev-up.sh`          — postgres+redis, migrations, seeds
-2. `bash scripts/run-api.sh`          — API on :8000 (own terminal)
-3. `cd app && npm run build && npm run start -- --hostname localhost`   — UI on :3000 (own terminal)
-4. `bash scripts/demo.sh --scale small`   — demo data
-5. Login at http://localhost:3000 → "Enter evaluation sandbox"
-
-**Keycloak note:** any change to realm-sbs-demo.json requires wiping the volume
-(`docker compose stop keycloak && docker compose rm -f keycloak && docker volume rm
-sbs-suptech-prototype_sbs_keycloak_data && docker compose up -d keycloak`) — the
-import strategy is IGNORE_EXISTING and silently skips if the realm already exists.
-The Keycloak healthcheck reports "unhealthy" falsely; verify with
-`curl localhost:8081/realms/sbs-demo/.well-known/openid-configuration` instead.

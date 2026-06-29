@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1 complaint endpoints.
 
 Five endpoints from the canonical OpenAPI spec land here:

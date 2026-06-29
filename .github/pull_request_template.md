@@ -2,7 +2,7 @@
 
 ## Summary
 
-One paragraph. What changed and why. Plain language. Readable by an SBS reviewer.
+One paragraph. What changed and why. Plain language. Readable by the Executive.
 
 ## Linked ADR(s)
 

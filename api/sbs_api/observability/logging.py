@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Structured logging via structlog.
 
 Every log line carries three correlation identifiers when available:

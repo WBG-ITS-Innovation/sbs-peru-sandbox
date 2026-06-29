@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """The standards-pack CI workflow reads the version dynamically (CI fix).
 
 A hardcoded tarball version in .github/workflows/standards-pack-validate.yml

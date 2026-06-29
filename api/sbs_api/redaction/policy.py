@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Policy constants for deterministic PII redaction (P11A / ADR 0044).
 
 Two things live in this module:
@@ -46,6 +47,6 @@ DEMO_KNOWN_NAMES: tuple[str, ...] = (
     "Carlos Rodriguez Mendoza",
     "Juan Pérez",
     "Juan Perez",
-    "Andrés Cabrera",
-    "Andres Cabrera",
+    "María Velásquez",
+    "Maria Velasquez",
 )

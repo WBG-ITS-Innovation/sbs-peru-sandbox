@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tool registry and the ``Tool`` base class.
 
 Every agent tool subclasses :class:`Tool`, declares a JSON Schema

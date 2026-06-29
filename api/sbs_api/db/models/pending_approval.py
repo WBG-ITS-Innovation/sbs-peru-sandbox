@@ -1,8 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
 """Pending-approvals queue.
 
-When the Conduct Analyst clicks "Send to Approvals" on a Findings drilldown, a row
+When Lucía clicks "Send to Approvals" on a Findings drilldown, a row
 lands here in status='pending'. WS5's Approvals screen reads this
-table to populate the Conduct Unit Head's queue. The decision endpoints (approve /
+table to populate Jorge's queue. The decision endpoints (approve /
 approve-with-edits / reject / send-back) update the same row's status
 + decided_at + decided_by + decision_rationale.
 

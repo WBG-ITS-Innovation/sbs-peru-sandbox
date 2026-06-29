@@ -2,7 +2,7 @@
 
 Next.js 14 (App Router) application served at `/app/`. Five screens:
 cockpit, risk queue, findings, approvals, audit. Three demo personas:
-the Conduct Supervisor, the Conduct Analyst, the Conduct Unit Head (CAD unit head).
+María (supervisor), Lucía (analyst), Jorge (CAD unit head).
 
 ## Layout
 

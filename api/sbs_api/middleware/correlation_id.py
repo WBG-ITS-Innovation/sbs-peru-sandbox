@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Generate (or echo) ``X-Correlation-Id`` and bind it to structlog.
 
 The correlation_id is logged alongside the OTel ``trace_id`` and ``span_id``.

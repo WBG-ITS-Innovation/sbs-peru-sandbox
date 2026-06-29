@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """SynthesisAgent — plain-Spanish brief for the Superintendent.
 
 Runs after Investigation. Reads the audit chain for context and

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Cookie names and flags. One module so renaming a cookie is a
 // single-file change and the rest of the auth layer never spells out a
 // raw cookie name.

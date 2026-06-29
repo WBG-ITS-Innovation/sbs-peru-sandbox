@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """CloudProvider — gated scaffold per ADR 0001.
 
 A cloud-LLM path is plausible for v0.2 but requires legal sign-off

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Cross-model review: send a target (file path, glob, or 'staged') to Azure
 OpenAI (WBG ITS tenancy) for an independent critique. Output is written to
 docs/reviews/.

@@ -16,8 +16,8 @@ as a developer-workstation aid and deferred a deployment-grade portal
 to Prompt 9.
 
 Prompt 9 closes Part 7 (developer-portal-and-onboarding). The portal
-is the surface an institutional integrator (a Tier-1 bank compliance officer (illustrative) the Compliance
-Officer, a mid-size financiera operations manager (illustrative), a COOPAC risk officer (illustrative) the COOPAC risk
+is the surface an institutional integrator (Diego the Compliance
+Officer, Patricia the Operations Manager, Roberto the COOPAC risk
 officer) opens first. The Lima sprint kickoff on May 25 demonstrates
 the portal against a venue wifi that is not under regulator control;
 a CDN that is unreachable during the demonstration is a demo-day

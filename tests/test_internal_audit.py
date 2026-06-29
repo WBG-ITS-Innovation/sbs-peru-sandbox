@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the supervisor-UI-facing audit endpoint.
 
 POST /v1/internal/audit is the single path by which the Next.js
@@ -69,7 +70,7 @@ async def test_audit_post_happy_path(app_with_internal_secret, internal_secret):
             headers={"Authorization": f"Bearer {internal_secret}"},
             json={
                 "actor_type": "user",
-                "actor_id": "supervisor@sandbox.example.com",
+                "actor_id": "maria@sandbox.example.com",
                 "action": "login",
                 "object_type": "session",
                 "object_id": "session-abc-123",
@@ -90,7 +91,7 @@ async def test_audit_post_rejects_missing_authorization(app_with_internal_secret
             "/v1/internal/audit",
             json={
                 "actor_type": "user",
-                "actor_id": "supervisor@sandbox.example.com",
+                "actor_id": "maria@sandbox.example.com",
                 "action": "login",
                 "object_type": "session",
                 "object_id": "session-abc-123",
@@ -108,7 +109,7 @@ async def test_audit_post_rejects_wrong_secret(app_with_internal_secret):
             headers={"Authorization": "Bearer wrong-secret"},
             json={
                 "actor_type": "user",
-                "actor_id": "supervisor@sandbox.example.com",
+                "actor_id": "maria@sandbox.example.com",
                 "action": "login",
                 "object_type": "session",
                 "object_id": "session-abc-123",
@@ -132,7 +133,7 @@ async def test_audit_post_returns_404_when_secret_not_configured(
             headers={"Authorization": "Bearer anything"},
             json={
                 "actor_type": "user",
-                "actor_id": "supervisor@sandbox.example.com",
+                "actor_id": "maria@sandbox.example.com",
                 "action": "login",
                 "object_type": "session",
                 "object_id": "session-abc-123",
@@ -152,7 +153,7 @@ async def test_audit_post_rejects_non_kebab_action(
             headers={"Authorization": f"Bearer {internal_secret}"},
             json={
                 "actor_type": "user",
-                "actor_id": "supervisor@sandbox.example.com",
+                "actor_id": "maria@sandbox.example.com",
                 "action": "SwitchPersona",
                 "object_type": "session",
                 "object_id": "session-abc-123",

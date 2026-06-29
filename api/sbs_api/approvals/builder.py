@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Approvals queue + detail assembly.
 
 The queue endpoint surfaces pending_approvals rows + per-day KPIs.

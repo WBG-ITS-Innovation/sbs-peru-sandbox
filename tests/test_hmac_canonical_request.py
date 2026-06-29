@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Canonical-request construction and signing primitives — workstream B.
 
 Pure unit tests of :mod:`sbs_api.auth.hmac` — no DB, no Redis, no HTTP.

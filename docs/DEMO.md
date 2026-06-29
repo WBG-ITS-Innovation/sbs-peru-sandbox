@@ -31,11 +31,11 @@ Open the case file. Show: the cluster of related complaints, the temporal patter
 
 > "Five specialist agents collaborated on this. Each runs its own LangGraph internally. They speak A2A to each other and MCP to the shared tool layer. The Investigation Agent pulled regulatory citations from Resolución 04036-2022 itself. None of this is hard-coded — these are agents reasoning over the data."
 
-**Beat 4 — the SBS Conduct department head's two lenses (60 seconds)**
+**Beat 4 — The Supervisor's two lenses (60 seconds)**
 
 Switch to Radar dashboard — prudential view, institution-level risk scores trending. The three flagged institutions are climbing. Switch to Alarm — conduct view, incident-level spike on the investment product category.
 
-> "the SBS Conduct department head's two supervisory lenses, same data, different vantage points. Prudential supervision sees institutional risk concentration. Market conduct sees the consumer harm pattern. Both views feed the same decision."
+> "The Supervisor's two supervisory lenses, same data, different vantage points. Prudential supervision sees institutional risk concentration. Market conduct sees the consumer harm pattern. Both views feed the same decision."
 
 **Beat 5 — Human-in-the-loop (60 seconds)**
 
@@ -71,3 +71,28 @@ Open VS Code. Show `/docs/adr/`, `/docs/extension-guide.md`, `helm/`, `terraform
 - "Production" (use "deployable" or "reference implementation")
 - Latency numbers as benchmarks (use "illustrative" or "target")
 - Anything about Apache 2.0 or repository publication (subject to legal review)
+
+## Reading the agent output (operator notes)
+
+These notes explain two behaviors a first-time viewer often mistakes for a stall
+or an error. Both are correct by design.
+
+**The agent pipeline is selective, not exhaustive.** Triage runs inline on every
+complaint as it is ingested. Investigation and synthesis do not. They run only on
+the complaints triage flagged as high-signal — the pipeline routes a complaint
+onward only when triage sets `route_to == 'investigation'`; otherwise it stops at
+triage (see `api/sbs_api/agents/orchestrator.py`). As a result, most complaints
+show "triaged, not escalated" in the workspace. That is the supervisory filter
+working — separating the few cases that warrant investigation from the many that
+do not — not the pipeline stalling. A demo run where most complaints stop at
+triage is the expected, healthy state.
+
+**`agent_runs.status = 'partial'` on the live-ingestion-orchestrator means a data-
+quality rule fired, not that the run failed.** The ingestion orchestrator records
+a run as `partial` when the data-quality validator (the legacy six-rule check or
+the Annex 1-A rule set) returns one or more blocking errors for that complaint
+(`api/sbs_api/demo_ingestion/orchestrator.py`, `run_status = "partial" if
+has_blocking_errors else "success"`). `partial` is a non-failure terminal status:
+the complaint was ingested and the DQ validator did its job by catching the issue.
+It is distinct from `failed` and `timeout`, which do indicate the run did not
+complete its work.

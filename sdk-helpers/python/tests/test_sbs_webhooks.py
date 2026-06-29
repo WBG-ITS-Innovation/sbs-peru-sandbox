@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the Python webhook verification helper.
 
 Pure-stdlib coverage — no network, no docker, no database. The matrix

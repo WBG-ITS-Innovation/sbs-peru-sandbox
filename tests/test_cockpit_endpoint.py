@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the supervisor-UI cockpit data endpoint.
 
 Covers the shared-secret auth gate and the snapshot shape against a

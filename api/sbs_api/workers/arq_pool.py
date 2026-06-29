@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """arq Redis pool lifecycle for the API process.
 
 The API process holds one arq Redis pool for enqueueing jobs onto the

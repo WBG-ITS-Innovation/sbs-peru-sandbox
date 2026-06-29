@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OAuth scope-enforcing dependency factory — ADR 0032.
 
 Use as:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // CrossSourceStrip — five channel chips (complaints / social /
 // INDECOPI / Plavia / internal). Per the WS3 directive, each chip
 // renders a real sparkline + a delta indicator, not a generic up/down

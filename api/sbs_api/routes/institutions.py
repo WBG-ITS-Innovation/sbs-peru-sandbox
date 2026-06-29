@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Institution operational status endpoint."""
 
 from __future__ import annotations

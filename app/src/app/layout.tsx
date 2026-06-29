@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Inter, Source_Serif_4 } from 'next/font/google';
 

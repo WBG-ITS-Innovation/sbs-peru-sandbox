@@ -1,4 +1,5 @@
 'use client';
+// SPDX-License-Identifier: Apache-2.0
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 

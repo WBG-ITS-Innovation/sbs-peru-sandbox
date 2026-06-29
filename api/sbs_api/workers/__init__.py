@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """arq worker entry points (Prompt 8, ADR 0034).
 
 The batch worker drains ``process_batch`` jobs queued by the

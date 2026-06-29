@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tool registry import side-effect surface.
 
 Importing this module registers every tool with the central

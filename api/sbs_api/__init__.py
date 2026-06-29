@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """SBS SupTech API surface.
 
 This package holds the Pydantic v2 data model, the OpenAPI-derived response

@@ -9,7 +9,7 @@
 
 ## What this document is
 
-This is the plain-language explainer for Prompt 1. It covers what was built, why we built each piece, every technical term we used, how the pieces fit together, and what each component does in practice. It's written for someone who isn't a software engineer — the SBS Conduct department head, the Superintendent, an SBS reviewer, the WBG engagement manager — but who needs to understand the foundation of the project to review it, sign off on it, or join the work.
+This is the plain-language explainer for Prompt 1. It covers what was built, why we built each piece, every technical term we used, how the pieces fit together, and what each component does in practice. It's written for someone who isn't a software engineer — the Supervisor, the Superintendent, the Executive, a second reviewer — but who needs to understand the foundation of the project to review it, sign off on it, or join the work.
 
 If you're a software engineer reading this, you'll find some parts obvious. Skim those. The depth is for the non-engineer audience.
 
@@ -61,7 +61,7 @@ Three sections.
 2. **Configuration over code.** Every environment-specific value (endpoints, model names, retention policies) lives in declarative configuration files, not hardcoded. The same container image deploys to dev, staging, prod, and SBS by changing config.
 3. **Observability as a first-class feature.** Every service emits structured logs, metrics, and traces from the first commit. Operators can see what the system is doing without asking the developers.
 4. **Standards over inventions, and onboarding is part of the product.** We use OpenAPI 3.1, RFC 9457, OAuth 2.0, mTLS, and other industry standards instead of inventing our own. Institutions integrating with SBS get a developer portal, sandbox, generated SDKs, and a conformance test suite — not just a README.
-5. **Plain-language explainability.** Every technical artifact has a parallel plain-language version. the SBS Conduct department head, the Superintendent, and an SBS reviewer can read what the system does without an engineer translating.
+5. **Plain-language explainability.** Every technical artifact has a parallel plain-language version. The Supervisor, the Superintendent, and the Executive can read what the system does without an engineer translating.
 6. **Built on benchmarked precedent, not invention.** Every major design decision cites a comparator from `docs/research/market-comparators.md` (CFPB, FCA, BCB, EBA, ECB, HMRC, BIS, World Bank, CGAP). When we diverge from a precedent, an ADR explains why.
 
 **Middle section — pointers.** Links to the other key documents: `PLAN.md` (the full plan), `DECISIONS.md` (decision log), `docs/adr/README.md` (ADR index), `docs/sessions/` (session journals), `docs/reviews/` (cross-review reports), `docs/sprint-input-log.md` (Peru sprint feedback log), `docs/research/market-comparators.md` (market research).
@@ -105,7 +105,7 @@ The same underlying model (Claude Opus 4.7) runs every subagent. The difference 
 
 **3. `doc-sync`** — Catches code-documentation drift. If a code change implies a documentation change and the documentation isn't updated, this subagent flags it. Example: if PLAN.md says "five specialist agents" but the agent restructure absorbed those into other parts without updating PLAN.md, doc-sync catches it.
 
-**4. `regulator-readability`** — Runs on documents an SBS reviewer, the Superintendent, and the SBS Conduct department head will read. Flags AI-sounding phrasing (words like "leverage", "robust", "seamless", "cutting-edge"), jargon without plain-language framing, latency-as-benchmark errors (using "real-time" when "near-real-time" is correct), pilot bank language (when "sandbox" is correct), and metric claims stated as facts when they should be flagged as illustrative examples.
+**4. `regulator-readability`** — Runs on documents the Executive, the Superintendent, and the Supervisor will read. Flags AI-sounding phrasing (words like "leverage", "robust", "seamless", "cutting-edge"), jargon without plain-language framing, latency-as-benchmark errors (using "real-time" when "near-real-time" is correct), pilot bank language (when "sandbox" is correct), and metric claims stated as facts when they should be flagged as illustrative examples.
 
 **5. `second-opinion`** — Deliberately adversarial. Its job is to argue against the proposed approach, surface what the primary reviewer missed, and produce a structured critique with concrete weaknesses. Catches groupthink failures.
 
@@ -247,7 +247,7 @@ This pattern is called **GitHub Flow** (or "trunk-based development with PRs"). 
 
 **Pull request template** at `.github/pull_request_template.md`. Every new PR is pre-populated with sections: Summary, Linked ADR, North-star principles affected, Exit criteria progress, Test plan, Subagent verdicts. Reduces the chance of opening a PR with no context.
 
-**CODEOWNERS** at `.github/CODEOWNERS`. Defines who must review which paths. Currently you're the only owner; commented placeholders for the WBG technical lead on `/infra/` and `/agents/`, the WBG engagement manager on `/docs/adr/`, ready to activate when those people join the repo.
+**CODEOWNERS** at `.github/CODEOWNERS`. Defines who must review which paths. Currently you're the only owner; commented placeholders for a second reviewer on `/infra/` and `/agents/`, and the ADR reviewer on `/docs/adr/`, ready to activate when those people join the repo.
 
 **Issue templates** at `.github/ISSUE_TEMPLATE/`. Four templates: bug report, feature request, ADR request, second-opinion-needed. Makes work visible and trackable.
 
@@ -366,7 +366,7 @@ The full ADR queue currently has 15 entries, all status "Proposed":
 - **0011** — Anexo 1-A as canonical taxonomy + machine-readable distribution.
 - **0012** — Normalized complaint indicators (BCB-pattern denominators).
 - **0013** — Standards pack versioning policy (how SBS amends taxonomy without breaking institutions).
-- **0014** — Dev LLM stack (Ollama vs Qwen vs remote GPU). Flagged for second-opinion with the WBG technical lead.
+- **0014** — Dev LLM stack (Ollama vs Qwen vs remote GPU). Flagged for second-opinion with a second reviewer.
 - **0015** — Cross-review LLM backend: Azure OpenAI via WBG tenancy. Added mid-prompt when we corrected from personal OpenAI to WBG-tenanted Azure OpenAI.
 
 Each ADR is written when the work for that decision begins. We do not pre-write ADRs in batch; we write them when the decision is being made so they reflect actual context.
@@ -380,7 +380,7 @@ Prompt 1 deliberately did not do these things — each is deferred to a specific
 - **uv project initialization** — Prompt 3
 - **Static analysis toolchain** (ruff, pyright strict, gitleaks, commitlint, spectral) — Prompt 4
 - **Docker Compose data plane** (Postgres+pgvector, Redis) — Prompt 5
-- **Docker Compose LLM bridge** (Ollama local + vLLM in prod) — Prompt 6 (flagged for second-opinion with the WBG technical lead)
+- **Docker Compose LLM bridge** (Ollama local + vLLM in prod) — Prompt 6 (flagged for second-opinion with a second reviewer)
 - **Docker Compose observability** (OpenTelemetry, Prometheus, Loki, Grafana) — Prompt 7
 - **GitHub Actions CI** — Prompt 8
 - **ADR 0001 content** — Prompt 9

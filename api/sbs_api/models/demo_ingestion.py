@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Pydantic request/response models for the P11A demo ingestion endpoint.
 
 These models are deliberately separate from the institutional

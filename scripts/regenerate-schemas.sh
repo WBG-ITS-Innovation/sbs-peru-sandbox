@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Regenerate the standalone JSON Schema files under api/openapi/schemas/.
 #
 # Runs the Pydantic-side schema exporter. Commit any changes to the schemas

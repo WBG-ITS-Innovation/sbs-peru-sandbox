@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """P11 demo-ready overlay — extend complaints + raw_complaints with the
 Annex 1-A resolution-side columns the real SBS sample exercises.
 

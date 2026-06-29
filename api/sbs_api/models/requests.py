@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Request envelopes for the SBS SupTech API.
 
 The :class:`ComplaintSubmission` is the body of ``POST /v1/complaints``.

@@ -36,7 +36,7 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 - **Status:** `main` branch protection has `required_approving_review_count: 0`.
 - **Why deferred:** Solo work cannot self-approve. Setting it to 1 today would block every PR.
 - **Action needed:** Bump to 1 when a second human joins the repo as a collaborator with review rights.
-- **Target:** When the WBG technical lead or the WBG engagement manager (or any second human reviewer) is added as a collaborator. Not Part-bound; happens at the personnel event.
+- **Target:** When a second human reviewer is added as a collaborator. Not Part-bound; happens at the personnel event.
 - **Trail:** This entry.
 
 ### Closeout: `--slug` symmetry with `--prompt`
@@ -121,7 +121,7 @@ Reviewed at the end of each Part. Anything still here at the start of Part 9 (pr
 ### Zscaler CA bundle path mismatch with setup doc
 - **Status:** Surfaced during Prompt 4 closeout when `scripts/cross_review.py` failed with `CERTIFICATE_VERIFY_FAILED`.
 - **What's deferred:** Updating `docs/setup/corporate-proxy-and-zscaler.md` to reflect what actually works on the maintainer's machine.
-- **What was observed:** (a) The conventional `~/certs/corp-ca-bundle.pem` path the setup doc references does not exist on the maintainer's machine. (b) The corporate root CAs are installed in the macOS System keychain (visible via `security find-certificate -a /Library/Keychains/System.keychain`). (c) The openai SDK uses `httpx`, which honours `SSL_CERT_FILE` but does NOT consult the macOS System keychain by default. (d) Working path: export the keychain certs (`security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/keychain.pem`), concatenate with certifi's bundle (`cat $(python -c 'import certifi;print(certifi.where())') /tmp/keychain.pem > combined.pem`), and set `SSL_CERT_FILE=combined.pem REQUESTS_CA_BUNDLE=combined.pem`.
+- **What was observed:** (a) The conventional `~/certs/wbg-ca-bundle.pem` path the setup doc references does not exist on the maintainer's machine. (b) The WBG CAs are installed in the macOS System keychain (`security find-certificate -a /Library/Keychains/System.keychain` shows "WBG Issuing CA1 G2", "...CA2 G2", "...CA6 G2", "...CA7 G2" plus "World Bank Group JSS Built-in Certificate Authority"). (c) The openai SDK uses `httpx`, which honours `SSL_CERT_FILE` but does NOT consult the macOS System keychain by default. (d) Working path: export the keychain certs (`security find-certificate -a -p /Library/Keychains/System.keychain > /tmp/keychain.pem`), concatenate with certifi's bundle (`cat $(python -c 'import certifi;print(certifi.where())') /tmp/keychain.pem > combined.pem`), and set `SSL_CERT_FILE=combined.pem REQUESTS_CA_BUNDLE=combined.pem`.
 - **Why deferred:** Out of scope for Prompt 4 (paper-only scope-lock).
 - **Action when triggered:** Update `docs/setup/corporate-proxy-and-zscaler.md` to document the macOS keychain path explicitly, with a recipe for combining keychain + certifi bundles. Consider also adding a helper script `scripts/build-ca-bundle.sh` that produces the combined bundle.
 - **Target:** Next time the setup doc is touched.
@@ -238,7 +238,7 @@ This is the bridge until uvicorn ships the ASGI TLS extension or we
 migrate to hypercorn. Part 9 deliverable: pick one path and remove the
 frame-walking middleware.
 
-### PR squash-merge style (Day-2 conversation with the WBG engagement manager / the WBG technical lead)
+### PR squash-merge style (Day-2 conversation with a second reviewer)
 PR #33 squash-merged 13 commits of Prompt 7 work and lost ~3,700 lines
 during the squash conflict resolution. Switch the repo's default merge
 style for large multi-file PRs from squash to merge-commit or

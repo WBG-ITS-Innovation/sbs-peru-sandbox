@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Auth-free smoke test against a locally running API.
 #
 # As of Prompt 7 / workstream F.7 the complaint, batch, and institution

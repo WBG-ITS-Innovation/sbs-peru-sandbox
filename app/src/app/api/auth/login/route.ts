@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // GET /app/api/auth/login — start the OAuth Authorization Code with PKCE
 // flow. Generate state + verifier, set a short-lived HttpOnly cookie
 // holding both, redirect to Keycloak.

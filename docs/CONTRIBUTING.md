@@ -226,7 +226,7 @@ Closes ADR 0003. Emits to Redis Streams.
    - `reviewer` — general code review.
    - `architect-guard` — refuses changes that contradict locked decisions without an ADR amendment.
    - `doc-sync` — catches code-doc drift.
-   - `regulator-readability` — gates anything an SBS reviewer or the Superintendent will read.
+   - `regulator-readability` — gates anything the Executive or the Superintendent will read.
    - `benchmark-checker` — verifies design changes cite a comparator.
    - `second-opinion` — adversarial reviewer, surfaces at least one weakness.
 

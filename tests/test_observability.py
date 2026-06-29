@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Observability: structlog binds trace_id / span_id / correlation_id.
 
 ADR 0028 §5 — every log line must carry all three identifiers when

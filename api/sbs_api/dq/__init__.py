@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Annex 1-A data-quality package.
 
 Hosts the canonical code-list YAML files under ``codelists/`` and the

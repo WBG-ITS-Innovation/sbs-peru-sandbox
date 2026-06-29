@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """mTLS subject extraction — ADR 0031 (with pressure-test amendments).
 
 Two modes, gated on :data:`Settings.mtls_mode`:

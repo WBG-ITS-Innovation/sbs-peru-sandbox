@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Tier 2 batch ingestion smoke test (Prompt 8).
 #
 # Stage flags (per spec §4):

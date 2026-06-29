@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Per-institution outbound HMAC secret (ADR 0035).
 
 Distinct table from :class:`InstitutionSecret` (inbound) so the two

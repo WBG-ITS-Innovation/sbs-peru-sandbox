@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // POST /app/api/auth/logout — destroy the server-side session and
 // redirect to Keycloak's end-session endpoint. POST so this is not
 // triggered by a stray <a href> click; the logout button in the nav

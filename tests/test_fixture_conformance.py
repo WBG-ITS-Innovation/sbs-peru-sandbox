@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Test-fixture conformance — Workstream F.1 (closes Prompt 7 Day-2 deferral).
 
 ADR 0028 amendment §test-fixture-conformance. The standard ``app``

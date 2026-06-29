@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Tear down the local-dev stack.
 #   bash scripts/dev-down.sh        — stop containers, keep the data volume
 #   bash scripts/dev-down.sh -v     — also delete the data volume

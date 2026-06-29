@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """audit_events — cross-screen audit chain
 
 Revision ID: 20260522_0002

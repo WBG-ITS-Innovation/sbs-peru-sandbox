@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Run the FastAPI app locally for development.
 #
 # This script loads .env (if present) and runs the app via uvicorn with reload.

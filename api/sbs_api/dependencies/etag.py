@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """ETag helpers.
 
 The ETag is a strong tag derived from the complaint's monotonic

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Extract example payloads from the OpenAPI spec to standards-pack/examples/.
 
 Generates three JSON files:

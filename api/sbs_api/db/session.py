@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Async SQLAlchemy session management.
 
 The engine is constructed lazily so a process that never opens a database

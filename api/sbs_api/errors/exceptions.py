@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Python exception classes that map to RFC 9457 ProblemDetail responses.
 
 Each subclass carries the stable `code` (matching `api/openapi/error-catalog.md`),

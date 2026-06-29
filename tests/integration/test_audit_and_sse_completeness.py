@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """WS6 + WS7 integration tests.
 
 Covers:
@@ -121,14 +122,14 @@ async def test_audit_endpoint_returns_paginated_rows(
 async def test_audit_endpoint_filters_by_action(app_with_secret, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="supervisor@sandbox.example.com",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s1",
     )
     await _seed_audit_row(
         test_database_url,
-        actor_id="supervisor@sandbox.example.com",
+        actor_id="maria@sandbox.example.com",
         action="logout",
         object_type="session",
         object_id="s1",
@@ -157,7 +158,7 @@ async def test_audit_endpoint_accepts_supervisor_role(
 ):
     await _seed_audit_row(
         test_database_url,
-        actor_id="supervisor@sandbox.example.com",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s1",
@@ -177,7 +178,7 @@ async def test_audit_endpoint_accepts_supervisor_role(
 async def test_audit_login_row_carries_landed_route(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="supervisor@sandbox.example.com",
+        actor_id="maria@sandbox.example.com",
         action="login",
         object_type="session",
         object_id="s-1",
@@ -207,15 +208,15 @@ async def test_audit_login_row_carries_landed_route(db_schema, test_database_url
 async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="test-operator",
+        actor_id="operator",
         action="switch-persona",
         object_type="session",
         object_id="s-1",
         meta={
-            "from_persona": "supervisor",
-            "from_email": "supervisor@sandbox.example.com",
-            "to_persona": "unit-head",
-            "to_email": "unit-head@sandbox.example.com",
+            "from_persona": "maria",
+            "from_email": "maria@sandbox.example.com",
+            "to_persona": "jorge",
+            "to_email": "jorge@sandbox.example.com",
         },
     )
     from sqlalchemy import select
@@ -235,16 +236,16 @@ async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_data
     assert len(rows) >= 1
     meta = rows[0].meta or {}
     # Non-droppable: from/to both filled.
-    assert meta["from_persona"] == "supervisor"
-    assert meta["to_persona"] == "unit-head"
-    assert rows[0].actor_id == "test-operator"
+    assert meta["from_persona"] == "maria"
+    assert meta["to_persona"] == "jorge"
+    assert rows[0].actor_id == "operator"
 
 
 @pytest.mark.asyncio
 async def test_audit_edit_draft_narrative_row_carries_before_and_after(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="analyst@sandbox.example.com",
+        actor_id="lucia@sandbox.example.com",
         action="edit-draft-narrative",
         object_type="complaint",
         object_id="BCO-2026-000001",

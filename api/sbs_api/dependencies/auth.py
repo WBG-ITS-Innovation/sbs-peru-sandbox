@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tenancy-binding dependency — stub until Prompt 7.
 
 Behaviour gated on :data:`Settings.auth_stub_enabled`:

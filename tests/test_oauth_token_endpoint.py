@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """POST /v1/oauth/token endpoint tests — workstream C.
 
 Exercises the happy path plus every RFC 6749 §5.2 error code path the

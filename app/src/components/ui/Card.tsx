@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';

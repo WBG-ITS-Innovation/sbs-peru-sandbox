@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // TaxonomyStatsTile — small stat tile showing today's taxonomy
 // normalization activity. Reads from
 // GET /v1/internal/cockpit/taxonomy-stats via the Next.js bridge.

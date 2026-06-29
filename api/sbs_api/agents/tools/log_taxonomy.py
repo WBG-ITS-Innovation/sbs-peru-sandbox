@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """log_taxonomy_unknown — record a proposed dictionary entry.
 
 This is the only side-effectful tool in the registry. It writes a

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Anexo 1-A taxonomy tests.
 
 Each test asserts a constraint of the 15-field subset documented in ADR 0026

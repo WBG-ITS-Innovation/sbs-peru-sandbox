@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OnPremProvider — talks to a self-hosted vLLM endpoint.
 
 The endpoint is OpenAI-compatible (``/v1/chat/completions``). When

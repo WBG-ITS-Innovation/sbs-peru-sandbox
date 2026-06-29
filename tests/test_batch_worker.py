@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """arq batch worker — end-to-end happy path + mixed-row processing.
 
 Calls ``process_batch`` directly (bypassing the arq daemon) against

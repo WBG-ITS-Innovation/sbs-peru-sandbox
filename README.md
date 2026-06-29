@@ -5,6 +5,15 @@ Reference implementation of a multi-agent supervisory technology platform for co
 All complaint data in this repository is **synthetic** — the SBS never shared
 real complaint data with the project team. See [DATA_PROVENANCE.md](DATA_PROVENANCE.md).
 
+## Features
+
+- **Multi-agent pipeline** — triage, investigation, synthesis, cross-source correlation, taxonomy harmonization, and content validation over consumer complaints.
+- **Live ingestion** — real-time (Tier 1, signed OAuth + HMAC + mTLS) and CSV batch (Tier 2) complaint intake through the sandbox API.
+- **Supervisor cockpit** — interactive dashboard for complaint aggregates, market-conduct analytics, red-flag detection, and per-complaint agent traceability.
+- **Aggregates & analytics** — build-a-chart, motive/product/channel/severity breakdowns, and cross-source signal views.
+- **Findings & audit** — agent-classified cases with confidence bands, full audit trail, and supervisor decision workflow.
+- **Synthetic-data sandbox** — 100% synthetic complaint data; no real consumer information or PII.
+
 ## Architecture
 
 Three-layer agent architecture:

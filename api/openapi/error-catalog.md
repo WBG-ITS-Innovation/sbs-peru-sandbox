@@ -8,7 +8,7 @@ it, and remediation guidance.
 The `type` URI namespace `https://sbs.gob.pe/errors/{type_suffix}` is a
 **placeholder pending SBS sign-off**. Until confirmed, institutions should
 treat the `code` field as the stable identifier and the `type` URI as
-advisory. See `docs/sessions/2026-05-18-prompt-05-open-questions.md` §1.1
+advisory.
 and §2 for the status of namespace confirmation.
 
 Error codes follow the pattern `SBS-<http-status-class>-<sequence>`, where

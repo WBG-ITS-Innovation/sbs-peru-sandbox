@@ -15,7 +15,7 @@ Who needs this and what problem does it solve? Cite a sprint input log entry or 
 
 ## Scope / Part
 
-Which Part in [docs/PLAN.md](../../docs/PLAN.md) does this belong to? If it doesn't fit any existing Part, flag it — the Part list may need to change.
+Where does this fit the current scope? Flag it if it doesn't.
 
 ## Precedent
 
@@ -31,4 +31,4 @@ What this is explicitly NOT.
 
 ## Done looks like
 
-How will we know it's complete? Tie to a PLAN.md exit-criterion-style bullet.
+How will we know it's complete? State the acceptance criteria.

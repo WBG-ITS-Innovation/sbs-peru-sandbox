@@ -42,7 +42,7 @@ Some regulator-adjacent repos block at `moderate` from day one. This is defensib
 
 ## Flagged for cross-review
 
-Yes. Cross-review owner: Othman. The question for the reviewer is whether `high` is the right block level for a regulator-grade handoff project, or whether tightening to `moderate` should happen sooner than Part 9. Triage line will record the disposition.
+Yes. Cross-review owner: Maintainer. The question for the reviewer is whether `high` is the right block level for a regulator-grade handoff project, or whether tightening to `moderate` should happen sooner than Part 9. Triage line will record the disposition.
 
 ## Amendment — 2026-05-16
 

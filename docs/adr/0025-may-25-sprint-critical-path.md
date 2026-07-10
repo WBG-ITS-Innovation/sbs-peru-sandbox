@@ -72,4 +72,4 @@ The decision also diverges from informal scope management. The honesty principle
 - Whether the Part 9/10 deferrals are credible to the audience — cross-review should push back if either deferral is plausibly required for May 25 demo credibility.
 - Whether the Prompts 5-8 fallback in Consequences is actually credible as a demonstration — cross-review should push back if the API-only fallback is too thin to earn trust at sprint kickoff.
 
-Owner: Othman (maintainer).
+Owner: Maintainer.

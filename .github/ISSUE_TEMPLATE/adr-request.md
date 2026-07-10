@@ -34,7 +34,7 @@ Which comparator from [docs/research/market-comparators.md](../../docs/research/
 
 ## Target Part / prompt
 
-Which Part in [docs/PLAN.md](../../docs/PLAN.md) is this scheduled for? When does the decision need to land?
+When does the decision need to land?
 
 ## Owner
 

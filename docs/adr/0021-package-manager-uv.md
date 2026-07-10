@@ -40,4 +40,4 @@ The second is from Poetry. Poetry is the most widely deployed of the newer Pytho
 
 ## Flagged for cross-review
 
-Maturity for a regulator-grade project that must be maintainable in 2028 and beyond. uv has fewer years of production use than pip-tools, but Astral's self-hosting, FastAPI's recommendation, and the MCP SDK's requirement (all cited in §6) are first-party signals from the projects that would suffer most if uv proved unstable. Cross-review owner: Othman. The triage line will record whether the maintenance horizon argues for a slower-moving tool, or whether the precedents already cited carry the decision.
+Maturity for a regulator-grade project that must be maintainable in 2028 and beyond. uv has fewer years of production use than pip-tools, but Astral's self-hosting, FastAPI's recommendation, and the MCP SDK's requirement (all cited in §6) are first-party signals from the projects that would suffer most if uv proved unstable. Cross-review owner: Maintainer. The triage line will record whether the maintenance horizon argues for a slower-moving tool, or whether the precedents already cited carry the decision.

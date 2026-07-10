@@ -45,7 +45,7 @@ updates:
       include: "scope"
 
   - package-ecosystem: "npm"
-    directory: "/frontend"
+    directory: "/app"
     schedule:
       interval: "weekly"
       day: "monday"

@@ -60,7 +60,7 @@ Each member has its own `pyproject.toml` for package-local dependencies; the roo
 
 If `uv sync` or `uv python install 3.12` fails with a TLS error, the WBG CA bundle is not visible to uv. See [corporate-proxy-and-zscaler.md](corporate-proxy-and-zscaler.md) for the full troubleshooting path; the short version is: set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the WBG bundle, retry. Both `uv` and its child processes (pytest, the harness scripts, the Azure OpenAI client) inherit those variables, so one fix covers the whole tree.
 
-The end-to-end verification for cert inheritance is: `uv run python scripts/cross_review.py --target docs/PLAN.md`. If that succeeds, both `uv` itself and its subprocesses are correctly routed through Zscaler. The maintainer's first run on the WBG laptop completed in 53.8 seconds without any explicit CA-bundle configuration; the bundle was already in the system trust store. Your mileage may vary depending on how your laptop was provisioned.
+The end-to-end verification for cert inheritance is: `uv run python -c 'import urllib.request as u; print(u.urlopen("https://pypi.org").status)'`. If that prints 200, both `uv` itself and its Python subprocesses are correctly routed through Zscaler. The maintainer's first run on the WBG laptop completed in 53.8 seconds without any explicit CA-bundle configuration; the bundle was already in the system trust store. Your mileage may vary depending on how your laptop was provisioned.
 
 ## Common errors
 

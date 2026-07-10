@@ -98,7 +98,7 @@ These shapes are part of this contract. Adding a field is non-breaking; removing
 
 ### `bert_classifier`
 
-Spanish complaint-narrative classifier. BETO / RoBERTa-BNE via ONNX (see [Locked architectural decisions](../PLAN.md#locked-architectural-decisions)).
+Spanish complaint-narrative classifier. BETO / RoBERTa-BNE via ONNX (see [ADR 0001](../adr/0001-three-layer-mcp-a2a-langgraph.md)).
 
 - **`input`**: `{text: string, locale: "es-PE", max_tokens: integer}`. `text` is the anonymized narrative (post-`anonymizer`).
 - **`output`**: `{label: string, confidence: number (0..1, two-decimal precision in the UI), top_k: [{label: string, confidence: number}], model_version: string}`. `label` is an Annex 1-A category code. `top_k` carries the top three classes for the UI's "top 3 probabilities" panel.

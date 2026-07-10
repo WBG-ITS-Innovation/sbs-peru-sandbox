@@ -1,6 +1,6 @@
 # Research index
 
-This directory holds the comparator research that anchors the project's design decisions. North-star principle 6 (CLAUDE.md): every major design decision cites a comparator from a research file under `docs/research/`. The `benchmark-checker` subagent enforces this — the rule is *specificity of section and comparator*, not the filename.
+This directory holds the comparator research that anchors the project's design decisions. Project rule: every major design decision cites a comparator from a research file under `docs/research/`. The rule is *specificity of section and comparator*, not the filename.
 
 ## Files
 
@@ -11,7 +11,7 @@ Cite specific sections, not the document as a whole. Both files are valid citati
 
 ## How to cite
 
-In an ADR, PLAN.md design section, or any user-facing spec, use this pattern. The `## Precedent` section points at a specific section of any research file under `docs/research/`; `## Divergence` records where SBS departs and why.
+In an ADR or any user-facing spec, use this pattern. The `## Precedent` section points at a specific section of any research file under `docs/research/`; `## Divergence` records where SBS departs and why.
 
 ```markdown
 ## Precedent
@@ -29,7 +29,7 @@ If no existing file covers a topic, the author has three options:
 2. Cite the closest analogue and label it as such ("closest analogue: BIS Innovation Hub …").
 3. Declare the design exploratory and accept higher second-opinion scrutiny.
 
-## Comparator → PLAN.md cross-reference
+## Comparator cross-reference
 
 Section numbers below refer to headings inside [market-comparators.md](market-comparators.md). Cite `docs/research/market-comparators.md §X.Y` in ADRs and design docs; `benchmark-checker` enforces specificity.
 
@@ -65,10 +65,10 @@ When any research file is edited:
 
 1. Update the table above if section numbers shift.
 2. Re-run `benchmark-checker` against the ADRs that cite the moved sections.
-3. Add a one-line entry to [docs/DECISIONS.md](../DECISIONS.md) noting the research update.
+3. Note the update in the PR description.
 
 When a new research file is added under `docs/research/`:
 
 1. Add a one-line entry in the "Files" section above naming its scope.
 2. Update the `benchmark-checker` subagent definition if the citation rule needs adjusting (the default rule is "any file under `docs/research/`" — usually no change needed).
-3. Add a one-line entry in [docs/DECISIONS.md](../DECISIONS.md).
+3. Note the update in the PR description.

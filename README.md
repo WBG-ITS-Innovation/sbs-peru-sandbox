@@ -1,33 +1,15 @@
-# SBS SupTech Prototype
+# SBS SupTech Sandbox — AI-Enabled Conduct Supervision
 
-Reference implementation of a multi-agent supervisory technology platform for consumer complaint ingestion and analytics. Built for SBS Peru.
+A synthetic-data reference implementation of a supervisory-technology (SupTech) platform for consumer-complaint ingestion and analytics. Developed by the World Bank ITS Technology & Innovation Office (ITSTI) in support of an engagement with Peru's financial regulator, the Superintendencia de Banca, Seguros y AFP (SBS). Everything in this repository runs locally on synthetic data: it demonstrates a two-tier complaint-data channel (near-real-time API and authenticated batch), an auditable analytics pipeline, and a supervisor cockpit.
 
-All complaint data in this repository is **synthetic** — the SBS never shared
-real complaint data with the project team. See [DATA_PROVENANCE.md](DATA_PROVENANCE.md).
+This is a prototype for demonstration and reuse, not an official SBS system, and it contains no SBS data.
 
-## Features
+<!-- Optional: add a cockpit screenshot before publication (synthetic data only): -->
+<!-- ![Supervisor cockpit](docs/assets/cockpit.png) -->
 
-- **Multi-agent pipeline** — triage, investigation, synthesis, cross-source correlation, taxonomy harmonization, and content validation over consumer complaints.
-- **Live ingestion** — real-time (Tier 1, signed OAuth + HMAC + mTLS) and CSV batch (Tier 2) complaint intake through the sandbox API.
-- **Supervisor cockpit** — interactive dashboard for complaint aggregates, market-conduct analytics, red-flag detection, and per-complaint agent traceability.
-- **Aggregates & analytics** — build-a-chart, motive/product/channel/severity breakdowns, and cross-source signal views.
-- **Findings & audit** — agent-classified cases with confidence bands, full audit trail, and supervisor decision workflow.
-- **Synthetic-data sandbox** — 100% synthetic complaint data; no real consumer information or PII.
+## Getting started
 
-## Architecture
-
-Three-layer agent architecture:
-- **MCP** (Model Context Protocol) — tools and data sources
-- **A2A** (Agent-to-Agent) — inter-agent communication
-- **LangGraph** — internal agent state machines
-
-See [docs/adr/](docs/adr/) for architectural decisions.
-
-## Status
-
-In active development. See [docs/PLAN.md](docs/PLAN.md) for current state.
-
-## Quickstart
+Prerequisites: Docker + Docker Compose, Python 3.12 with [uv](https://docs.astral.sh/uv/), Node.js 20+ (for the web app under `app/`), bash, and openssl (for the local dev CA).
 
 A fresh clone reaches a working signed-request stack in three commands:
 
@@ -36,8 +18,7 @@ A fresh clone reaches a working signed-request stack in three commands:
 #    HMAC secrets, generate the dev CA + leaf certs, seed oauth_clients.
 bash scripts/dev-up.sh
 
-# 2. Run the API with mTLS direct mode + the real auth chain
-#    (workstreams A/B/C/E/F.7 lit up):
+# 2. Run the API with mTLS direct mode + the real auth chain:
 SBS_API_MTLS_MODE=direct \
 SBS_API_AUTH_STUB_ENABLED=false \
   bash scripts/run-api.sh
@@ -55,81 +36,58 @@ bash scripts/run-api.sh          # AUTH_STUB_ENABLED=true by default
 bash scripts/smoke-test.sh
 ```
 
-The API binds `0.0.0.0:8000` by default; the supervisor UI Next.js dev
-server binds `0.0.0.0:3000`. Both are reachable from another machine
-on the same network without further configuration, which supports a
-two-laptop sandbox demo (institution sender on one laptop, SBS sandbox
-plus cockpit on the other).
-The browser-facing override is `NEXT_PUBLIC_API_BASE_URL`; the API's
-CORS allow-list (`SBS_API_CORS_ALLOW_ORIGINS`) ships with the
-`localhost`, `*.local`, and `192.168.0.0/16:3000` patterns the demo
-needs and should be tightened to a single literal origin before
-production.
+Run `make help` for the full set of convenience targets (tests, smoke suite, corpus regeneration, developer portal, standards pack).
 
-The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's
-auto-generated `/openapi.json`, `/docs`, and `/redoc` are disabled per
-ADR 0028 §6 — the curated YAML is the contract. The running API also
-serves the rendered developer portal at `/v1/portal/` (Stoplight
-Elements, vendored locally per ADR 0037, no CDN dependency).
+The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's auto-generated `/openapi.json`, `/docs`, and `/redoc` are disabled per ADR 0028 §6 — the curated YAML is the contract. The running API also serves the rendered developer portal at `/v1/portal/` (Stoplight Elements, vendored locally per ADR 0037, no CDN dependency).
+
+## Architecture
+
+Three layers per [ADR 0001](docs/adr/0001-three-layer-mcp-a2a-langgraph.md) (Accepted): **agents** orchestrate, **tools** execute, **supervisors** approve. Specialist agents (complaint triage, investigation, synthesis, plus scaffolded extensions) drive an in-house tool-calling loop over deterministic tools — classification, data-quality validation against the 27-field Annex 1-A schema, PII redaction, taxonomy normalization — behind a provider-pluggable model interface (`on_prem`, `replay`, `mock`; `cloud` gated off by default). Every run is recorded as an auditable `agent_run` (see [docs/schemas/](docs/schemas/)).
+
+See [docs/adr/](docs/adr/) for all architectural decision records (current head: ADR 0045).
+
+## Data
+
+All complaint records in this repository are synthetic. The committed golden sample (`data/synthetic-corpus-golden/`, 200 rows per demo institution, checksummed manifests) is produced by a seeded, deterministic generator; regenerate with `make corpus-golden`. Demo personas use reserved `@sandbox.example.com` addresses. See [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) and ADR 0036 (synthetic-corpus fidelity tiers).
 
 ## For institutional integrators
 
 If you are an institution integrating with the SBS sandbox:
 
-1. **Read the portal.** Open `http://<host>/v1/portal/` (Lima sandbox
-   host TBD pending SBS confirmation). The portal renders the
-   canonical OpenAPI 3.1 specification interactively. "Try It" is
-   disabled because mTLS cannot be satisfied from a browser — actual
-   integration uses curl plus the helpers below.
+1. **Read the portal.** Open `http://<host>/v1/portal/`. The portal renders the canonical OpenAPI 3.1 specification interactively. "Try It" is disabled because mTLS cannot be satisfied from a browser — actual integration uses curl plus the helpers below.
 
-2. **Download the standards pack** as a versioned tarball. v0.1.0 lands
-   here at sprint kickoff with the OpenAPI spec, JSON Schemas, error
-   catalog, hand-maintained webhook-verification helpers, OpenAPI
-   Generator recipes, example payloads, and a provenance manifest:
-   ```bash
-   make standards-pack    # produces dist/standards-pack-v0.1.0.tar.gz
-   ```
-   See [standards-pack/README.md](standards-pack/README.md) for the
-   contents and verification steps.
+2. **Download the standards pack** as a versioned tarball, with the OpenAPI spec, JSON Schemas, error catalog, webhook-verification helpers, OpenAPI Generator recipes, example payloads, and a provenance manifest:
+```bash
+   make standards-pack
+```
+   See [standards-pack/README.md](standards-pack/README.md) for the contents and verification steps.
 
-3. **Use the SDK helpers.** Python integrators install
-   `sdk-helpers/python/` (pure stdlib, no `cryptography` dependency
-   — installs anywhere Python 3.10+ runs). Node.js integrators install
-   `sdk-helpers/typescript/` (dual ESM + CJS exports). Both implement
-   the webhook signature verification surface and round-trip against
-   the server's outbound signer in CI. Java and Go integrators use
-   the tested ~30-line reference snippets at
-   `standards-pack/recipes/webhook-verification-{java,go}.md`. .NET
-   integrators adapt the Java snippet via the
-   `standards-pack/recipes/openapi-generator-csharp-netcore.md`
-   recipe.
+3. **Use the SDK helpers.** Python integrators install `sdk-helpers/python/` (pure stdlib, Python 3.10+). Node.js integrators install `sdk-helpers/typescript/` (dual ESM + CJS). Both implement the webhook signature verification surface and round-trip against the server's outbound signer in CI. Java and Go integrators use the tested reference snippets at `standards-pack/recipes/webhook-verification-{java,go}.md`; .NET integrators adapt the Java snippet via the `openapi-generator-csharp-netcore.md` recipe.
 
 4. **Try the demo replay.** With docker compose running:
-   ```bash
+```bash
    docker compose up -d worker webhook-listener
    bash scripts/demo.sh --scale small --seed 20260520
-   ```
-   Generates 51 deterministic synthetic complaints (17 per institution
-   × 3 demo institutions), uploads them as Tier 2 batches, polls until
-   each completes, and tails the webhook-listener for the three PASS
-   lines. Output lands in `tmp/demo-run/<timestamp>/`.
+```
+   Generates 51 deterministic synthetic complaints (17 per institution × 3 demo institutions), uploads them as Tier 2 batches, polls until each completes, and tails the webhook-listener for the three PASS lines.
 
-ADRs that document the v0.1 institutional-integrator surface:
-[ADR 0037 portal serving](docs/adr/0037-developer-portal-serving-mechanism.md) /
-[ADR 0038 SDK helpers](docs/adr/0038-sdk-helper-scope-and-distribution.md) /
-[ADR 0039 standards pack](docs/adr/0039-standards-pack-v0-1-distribution-and-manifest.md).
+Integrator-surface ADRs: [0037 portal serving](docs/adr/0037-developer-portal-serving-mechanism.md) · [0038 SDK helpers](docs/adr/0038-sdk-helper-scope-and-distribution.md) · [0039 standards pack](docs/adr/0039-standards-pack-v0-1-distribution-and-manifest.md).
 
 ## Documentation
 
-- [docs/PLAN.md](docs/PLAN.md) — build plan and progress
-- [docs/DECISIONS.md](docs/DECISIONS.md) — decision log
-- [docs/adr/](docs/adr/) — architectural decision records (current head: ADR 0039)
-- [docs/DEMO.md](docs/DEMO.md) — demo script
-- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — workflow + branch conventions
+- [docs/adr/](docs/adr/) — architectural decision records
+- [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — synthetic-data provenance
+- [docs/demo/institution-api-workflow.md](docs/demo/institution-api-workflow.md) — institution API walkthrough
+- [docs/DEPLOY.md](docs/DEPLOY.md) — deployment scaffold
+- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — contributor guide
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
-- [DATA_PROVENANCE.md](DATA_PROVENANCE.md) — how the synthetic data is produced
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and
-[NOTICE](NOTICE).
+This project is licensed under the MIT License together with the World Bank IGO Rider. The Rider is purely procedural: it reserves all privileges and immunities enjoyed by the World Bank, without adding restrictions to the MIT permissions. Please review both files before using, distributing or contributing.
+
+See [LICENSE](LICENSE) and [WB-IGO-RIDER.md](WB-IGO-RIDER.md).
+
+## Contact
+
+World Bank ITS Technology & Innovation Office (ITSTI) — sbs-suptech-sandbox@worldbank.org

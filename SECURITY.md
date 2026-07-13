@@ -6,7 +6,7 @@ This repository is a synthetic-data sandbox: it contains no production data and 
 
 **Do not** open a public GitHub issue for a security vulnerability.
 
-Use GitHub's **private vulnerability reporting** on this repository (Security tab → "Report a vulnerability"). If that is unavailable, email **sbs-suptech-sandbox@worldbank.org** with the repository name, a description, and steps to reproduce.
+Use GitHub's **private vulnerability reporting** on this repository (Security tab → "Report a vulnerability"). If that is unavailable, email **omakhlouk@worldbank.org** with the repository name, a description, and steps to reproduce.
 
 You should receive an acknowledgement within five business days. Please allow maintainers reasonable time to remediate before public disclosure.
 

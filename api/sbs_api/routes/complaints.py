@@ -21,6 +21,8 @@ import json
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
+
+from sbs_api.ingestion.circuit_breaker import assert_ingestion_allowed
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -184,6 +186,11 @@ async def create_complaint(
         raise ResourceNotFound(
             detail="institution_id in body does not match the authenticated caller."
         )
+
+    # Stage 0 — circuit breaker (P-RESHAPE-9). SBS IT can PAUSE ingestion
+    # for one FI; reject before idempotency claims a slot. The Tier-2
+    # batch path runs the same check in ingestion/pipeline.py.
+    await assert_ingestion_allowed(session, token.institution_id)
 
     # Idempotency: build context from the raw body so the hash matches across
     # equivalent JSON serialisations.

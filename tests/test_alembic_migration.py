@@ -23,35 +23,19 @@ pytestmark = pytestmark_db
 
 
 async def _drop_schema(test_database_url: str) -> None:
+    """Reset the test database schema-wide (list-free).
+
+    The previous implementation dropped a hardcoded table list that predated
+    the P-RESHAPE migrations; tables not on the list survived and made the
+    subsequent ``alembic upgrade head`` collide (DuplicateTableError).
+    """
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    engine = create_async_engine(test_database_url)
-    async with engine.begin() as conn:
-        # Drop in reverse-dependency order so FKs are released before
-        # their parents. CASCADE handles indirect dependents.
-        for table in (
-            "alembic_version",
-            "agent_feedback",
-            "supervisory_observations",
-            "pending_approvals",
-            "complaint_narrative_drafts",
-            "audit_events",
-            "agent_runs",
-            "raw_complaints",
-            "webhook_deliveries",
-            "outbound_webhook_secrets",
-            "institution_webhook_configs",
-            "batch_row_rejections",
-            "oauth_clients",
-            "institution_secrets",
-            "institution_certificates",
-            "idempotency_records",
-            "batches",
-            "complaints",
-            "institutions",
-        ):
-            await conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+    engine = create_async_engine(test_database_url, isolation_level="AUTOCOMMIT")
+    async with engine.connect() as conn:
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
     await engine.dispose()
 
 

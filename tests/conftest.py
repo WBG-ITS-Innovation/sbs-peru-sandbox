@@ -217,6 +217,69 @@ async def db_schema(test_database_url):
         )
         # Flush institutions before complaints so the FK constraint sees them.
         await session.flush()
+
+        # Outbound webhook wiring for BANCO_DEMO_001 — the DIValeVale
+        # validation-delivery path (ADR 0035) refuses to deliver without
+        # a config + secret row. Secret mirrors the tests' b"0" * 32.
+        from sbs_api.db.models.institution_webhook_config import InstitutionWebhookConfig
+        from sbs_api.db.models.outbound_webhook_secret import OutboundWebhookSecret
+        session.add_all(
+            [
+                InstitutionWebhookConfig(
+                    institution_id="SBS-001234",
+                    callback_url="https://fi.sandbox.example.com/sbs-callback",
+                    enabled=True,
+                ),
+                OutboundWebhookSecret(
+                    institution_id="SBS-001234",
+                    kid="sandbox-v1",
+                    active_secret=b"0" * 32,
+                ),
+            ]
+        )
+
+        # Brand aliases + the 14-signal social fixture campaign
+        # (P-RESHAPE-6) that tests/ingestion/social expects seeded.
+        from datetime import datetime, timezone
+        from decimal import Decimal
+        from sbs_api.db.models.fi_brand_alias import FIBrandAlias
+        from sbs_api.db.models.social_signal import SocialSignalFixture
+        from sbs_api.ingestion.social.entity_resolver import normalize_alias
+        session.add_all(
+            [
+                FIBrandAlias(
+                    institution_id="SBS-001234",
+                    alias_normalized=normalize_alias(raw),
+                    alias_kind=kind,
+                )
+                for raw, kind in [
+                    ("banco demo", "display"),
+                    ("bancodemo", "handle"),
+                    ("bcodemo.pe", "domain"),
+                ]
+            ]
+        )
+        _fx = datetime(2026, 5, 27, 12, 0, tzinfo=timezone.utc)
+        session.add_all(
+            [
+                SocialSignalFixture(
+                    signal_id=f"FIX-2026-{i:04d}",
+                    source="FIXTURE",
+                    source_post_id=f"fixture-post-{i:04d}",
+                    captured_at=_fx,
+                    post_authored_at=_fx,
+                    post_text_es=(
+                        "Cuidado con el phishing de banco demo — enlace "
+                        f"sospechoso reportado, caso {i}. [HANDLE] eliminado."
+                    ),
+                    detected_institution_codes=["SBS-001234"],
+                    detected_fraud_indicators=["PHISHING_KEYWORD"],
+                    engagement_score=Decimal("10.500"),
+                    raw_url=f"https://social.sandbox.example.com/post/{i}",
+                )
+                for i in range(1, 15)
+            ]
+        )
         session.add_all(
             [
                 ComplaintRecord(

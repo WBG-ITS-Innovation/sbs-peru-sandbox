@@ -61,6 +61,7 @@ rather than reassigned.
 | SBS-503-001 | 503 | `SBS-503-001` | Service degraded or down | Recoverable | A required dependency (database, Redis, event bus) is unreachable. | Retry with exponential backoff. Monitor https://status-sandbox.sbs.gob.pe (illustrative URL). |
 | SBS-503-002 | 503 | `AUTH_NOT_CONFIGURED` | Authentication not configured | Critical | The legacy fail-closed tenancy stub returned this when `AUTH_STUB_ENABLED=false`. After workstream F.7 (Prompt 7) the protected routes use the real mTLS+OAuth chain and this code is retained for back-compat with any unmigrated path; new requests on protected routes now return `SBS-401-001 CERT_REQUIRED` when the mTLS layer rejects them. | Confirm the build has mTLS, HMAC, and OAuth wired (Prompt 7+); for local-only paths that still consult the stub, set `AUTH_STUB_ENABLED=true`. |
 | SBS-503-003 | 503 | `HMAC_SECRET_NOT_CONFIGURED` | HMAC secret not configured | Critical | The HMAC verification dependency could not load an `institution_secrets` row for the institution resolved from the mTLS cert — onboarding is incomplete. | Contact SBS onboarding to provision the institution's HMAC secret. |
+| SBS-503-004 | 503 | `FI_CIRCUIT_BREAKER_PAUSED` | Ingestion paused by SBS circuit breaker | Recoverable | SBS IT paused ingestion for this institution during an incident (P-RESHAPE-9 remediation); applies to Tier-1 POSTs and Tier-2 batches alike. | Wait for SBS to resume ingestion, then retry. Contact SBS supervision if the pause is unexpected. |
 
 ## Severity classifications
 

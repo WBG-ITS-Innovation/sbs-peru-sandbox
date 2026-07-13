@@ -333,6 +333,16 @@ class TokenExpired(SBSAPIException):
     type_suffix = "TOKEN_EXPIRED"
 
 
+# --- FI circuit breaker (P-RESHAPE-9) --------------------------------------
+
+
+class CircuitBreakerPaused(SBSAPIException):
+    code = "SBS-503-004"
+    status = 503
+    title = "Ingestion paused by SBS circuit breaker"
+    type_suffix = "FI_CIRCUIT_BREAKER_PAUSED"
+
+
 class TokenCertThumbprintMismatch(SBSAPIException):
     code = "SBS-401-023"
     status = 401

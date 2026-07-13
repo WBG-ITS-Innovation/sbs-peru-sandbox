@@ -89,4 +89,4 @@ See [LICENSE](LICENSE) and [WB-IGO-RIDER.md](WB-IGO-RIDER.md).
 
 ## Contact
 
-World Bank ITS Technology & Innovation Office (ITSTI) — sbs-suptech-sandbox@worldbank.org
+World Bank ITS Technology & Innovation Office (ITSTI) — omakhlouk@worldbank.org

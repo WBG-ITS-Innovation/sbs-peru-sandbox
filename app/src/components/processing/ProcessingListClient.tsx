@@ -12,7 +12,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Loader2, Minus } from 'lucide-react';
 
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui';
 import type { Locale } from '@/i18n';
@@ -41,7 +41,22 @@ const PIPELINE_AGENTS: Array<{ name: string; label_es: string; label_en: string 
   { name: 'synthesis', label_es: 'Síntesis', label_en: 'Synthesis' },
 ];
 
+const TERMINAL_GRACE_MS = 20_000;
+
+// Triage can route a complaint info-only (score below the 0.70 threshold):
+// triage finishes and the downstream stages are never scheduled. The journey
+// payload carries no route_to field, so this is inferred presentationally:
+// triage done + investigation/synthesis absent + a grace window elapsed.
+function isInfoOnlyTerminal(item: RecentItem): boolean {
+  const triage = item.agents['triage'];
+  if (!triage || (triage.status !== 'success' && triage.status !== 'partial')) return false;
+  if (item.agents['investigation'] || item.agents['synthesis']) return false;
+  const ts = Date.parse(triage.ended_at ?? triage.started_at);
+  return Number.isFinite(ts) && Date.now() - ts > TERMINAL_GRACE_MS;
+}
+
 function isInFlight(item: RecentItem): boolean {
+  if (isInfoOnlyTerminal(item)) return false;
   return PIPELINE_AGENTS.some(({ name }) => {
     const a = item.agents[name];
     if (!a) return true;
@@ -135,6 +150,7 @@ export function ProcessingListClient({ locale }: Props) {
 
 function Row({ item, locale }: { item: RecentItem; locale: Locale }) {
   const es = locale === 'es-PE';
+  const infoOnly = isInfoOnlyTerminal(item);
   return (
     <Link
       href={`/processing/${item.complaint_id}`}
@@ -157,6 +173,11 @@ function Row({ item, locale }: { item: RecentItem; locale: Locale }) {
                 ⚠ {item.anomaly_score.toFixed(2)}
               </span>
             ) : null}
+            {infoOnly ? (
+              <span className="rounded-sm bg-surface-subtle px-1.5 py-0.5 font-mono text-2xs text-fg-muted">
+                {es ? 'solo informativo' : 'info-only'}
+              </span>
+            ) : null}
           </div>
           <p className="mt-0.5 font-mono text-2xs text-fg-muted">
             {item.motivo_code} · {item.product_category} ·{' '}
@@ -167,6 +188,7 @@ function Row({ item, locale }: { item: RecentItem; locale: Locale }) {
             {PIPELINE_AGENTS.map(({ name, label_es, label_en }) => {
               const a = item.agents[name];
               const done = a?.status === 'success' || a?.status === 'partial';
+              const skipped = infoOnly && (name === 'investigation' || name === 'synthesis');
               return (
                 <span
                   key={name}
@@ -179,6 +201,8 @@ function Row({ item, locale }: { item: RecentItem; locale: Locale }) {
                 >
                   {done ? (
                     <CheckCircle2 className="h-3 w-3" />
+                  ) : skipped ? (
+                    <Minus className="h-3 w-3" />
                   ) : (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   )}

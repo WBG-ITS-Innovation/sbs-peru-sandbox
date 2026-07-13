@@ -4,8 +4,7 @@ A synthetic-data reference implementation of a supervisory-technology (SupTech) 
 
 This is a prototype for demonstration and reuse, not an official SBS system, and it contains no SBS data.
 
-<!-- Optional: add a cockpit screenshot before publication (synthetic data only): -->
-<!-- ![Supervisor cockpit](docs/assets/cockpit.png) -->
+![Supervisor cockpit](docs/assets/cockpit.png)
 
 ## Getting started
 

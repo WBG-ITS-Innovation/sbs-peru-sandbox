@@ -36,6 +36,9 @@ async def _drop_schema(test_database_url: str) -> None:
     async with engine.connect() as conn:
         await conn.execute(text("DROP SCHEMA public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
+        # The schema drop also removed the pgvector extension conftest
+        # installed at session start; restore it for every later test.
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     await engine.dispose()
 
 

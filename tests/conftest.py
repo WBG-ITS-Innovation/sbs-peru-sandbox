@@ -174,8 +174,14 @@ async def db_schema(test_database_url):
     from sbs_api.db.models.institution import InstitutionRecord
 
     async with engine.begin() as conn:
-        await conn.execute(text("DROP TABLE IF EXISTS alembic_version CASCADE"))
-        await conn.run_sync(Base.metadata.drop_all)
+        # Schema-wide reset. Tests that apply real alembic migrations
+        # (test_alembic_migration) create tables that have no model in
+        # Base.metadata; metadata.drop_all cannot remove those, and their
+        # FKs block dropping the tables it CAN see — erroring every
+        # later db_schema setup. Nuking the schema is order-proof.
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(
             text(

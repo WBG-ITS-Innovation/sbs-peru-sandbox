@@ -1,30 +1,58 @@
-# CONTRIBUTING
+# Contributing
 
-Thank you for considering contributing! We appreciate your interest in helping us improve our project. By contributing, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome — bug reports, fixes, documentation, and design proposals alike.
 
-Please take a moment to review this document for important information on how to contribute effectively.
+## One-time setup
 
-## How Can I Contribute?
+Prerequisites are listed in the [README](README.md#getting-started).
 
-- **Bug Reports:** If you encounter a bug or unexpected behavior, please open an issue on our GitHub issue tracker. Be sure to include as much detail as possible to help us identify and fix the problem.
-- **Feature Requests:** If you have an idea for a new feature or enhancement, please open an issue and label it as a "feature request." Describe the feature and its use case in detail.
-- **Pull Requests:** If you'd like to contribute code or documentation changes, please follow the guidelines in the Contributing Code section below.
-- **Documentation:** If you find errors or have suggestions for improving our documentation, submit changes directly through a pull request.
+```bash
+# Install all project + dev dependencies (uv workspace):
+uv sync
 
-## Contributing Code
+# Install the pre-push hook (enforces branch naming):
+bash scripts/setup_hooks.sh
 
-1. **Fork the Repository.**
-2. **Create a Branch** with a clear, descriptive name (e.g. `feature/my-new-feature`).
-3. **Make Changes** that adhere to the project's coding standards.
-4. **Test:** Ensure your changes do not break existing functionality and add tests for new features or fixes.
-5. **Commit and Push** with a clear, concise commit message referencing any related issues.
-6. **Create a Pull Request** against the main branch with a clear description of your changes.
-7. **Review and Iterate:** Expect feedback and be prepared to make additional changes.
+# Install pre-commit hooks (gitleaks, detect-secrets, whitespace, .env guard):
+uv run pre-commit install
 
-## Code of Conduct
+# Copy the environment template. The defaults run fully locally —
+# no cloud credentials are required (model providers default to
+# mock/replay; on-prem vLLM is optional).
+cp .env.example .env
+```
 
-Please note that we have a [Code of Conduct](CODE_OF_CONDUCT.md) in place. We expect all contributors to adhere to it.
+## Repository layout
 
-## Licensing
+The Python side is a uv workspace ([ADR 0023](docs/adr/0023-workspace-layout-uv-members.md)) with members `api/` (FastAPI service), `agents/` (agent layer), `tools/` (tool servers), and `sdk/` (client surface). The web app lives in `app/` (Next.js); infrastructure under `infra/`.
 
-By contributing to this project, you agree that your contributions will be licensed under the project's [LICENSE](LICENSE).
+## Development loop
+
+`make help` lists the common targets. The three-command run loop and smoke tests are in the [README](README.md#getting-started). Run the test suite with:
+
+```bash
+uv run pytest -q
+```
+
+## OpenAPI contract
+
+The OpenAPI document at [api/openapi/sbs-api-v1.yaml](api/openapi/sbs-api-v1.yaml) is the canonical contract ([ADR 0027](docs/adr/0027-openapi-as-canonical-contract.md)); the Pydantic models implement it. After changing models, regenerate the JSON Schemas and run the match test:
+
+```bash
+bash scripts/regenerate-schemas.sh
+uv run pytest tests/test_openapi_pydantic_match.py -v
+```
+
+The developer portal renders the spec via locally vendored Stoplight Elements ([ADR 0037](docs/adr/0037-developer-portal-serving-mechanism.md)): `bash scripts/serve-devportal.sh`. To update the vendored assets, follow [vendor/stoplight-elements/VENDOR.md](vendor/stoplight-elements/VENDOR.md).
+
+## Branches, commits, PRs
+
+- Branch names (enforced by the pre-push hook): `docs/<slug>`, `fix/<slug>`, `chore/<slug>` — or `part-NN/<slug>` for maintainer milestone work.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
+- Every PR needs green CI and one maintainer review.
+- Never commit secrets. Pre-commit runs gitleaks and detect-secrets against the committed `.secrets.baseline`; if a legitimate high-entropy string trips it, refresh the baseline (`uv run detect-secrets scan > .secrets.baseline`) and include it in the PR.
+- Design decisions are recorded as ADRs under [docs/adr/](docs/adr/) — open an issue with the "ADR request" template to propose one.
+
+## Security
+
+Never open a public issue for a vulnerability — see [SECURITY.md](SECURITY.md).

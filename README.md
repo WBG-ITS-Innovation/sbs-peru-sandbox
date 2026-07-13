@@ -79,7 +79,7 @@ Integrator-surface ADRs: [0037 portal serving](docs/adr/0037-developer-portal-se
 - [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — synthetic-data provenance
 - [docs/demo/institution-api-workflow.md](docs/demo/institution-api-workflow.md) — institution API walkthrough
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deployment scaffold
-- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — contributor guide
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contributor guide
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
 
 ## License

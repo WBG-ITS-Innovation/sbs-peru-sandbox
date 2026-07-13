@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """FiCircuitBreaker — per-institution ingestion kill switch (P-RESHAPE-9).
 
-SBS IT (Rosa) can PAUSE ingestion for one institution during a serious
+SBS IT (ITOps) can PAUSE ingestion for one institution during a serious
 incident. The ingestion pipeline reads this on every request and rejects
 with 503 ``fi_circuit_breaker_paused`` while PAUSED. RESUME returns the
 institution to NORMAL. High-privilege, so the action carries a 50-char

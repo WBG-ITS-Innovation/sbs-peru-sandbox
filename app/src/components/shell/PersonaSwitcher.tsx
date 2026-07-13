@@ -19,7 +19,7 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
-const PERSONA_KEYS = ['maria', 'lucia', 'jorge'] as const;
+const PERSONA_KEYS = ['supervisor', 'analyst', 'head'] as const;
 type PersonaKey = (typeof PERSONA_KEYS)[number];
 
 interface PersonaSwitcherProps {
@@ -27,9 +27,9 @@ interface PersonaSwitcherProps {
   labels: {
     switch_persona: string;
     active_persona: string;
-    maria: string;
-    lucia: string;
-    jorge: string;
+    supervisor: string;
+    analyst: string;
+    head: string;
     cancel: string;
   };
   csrfToken: string;
@@ -69,7 +69,7 @@ export function PersonaSwitcher({
   };
 
   const labelFor = (key: PersonaKey): string =>
-    ({ maria: labels.maria, lucia: labels.lucia, jorge: labels.jorge })[key];
+    ({ supervisor: labels.supervisor, analyst: labels.analyst, head: labels.head })[key];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

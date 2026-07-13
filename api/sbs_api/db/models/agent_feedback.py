@@ -3,7 +3,7 @@
 
 Two cases land rows here:
 
-* ``decision='reject'`` — Jorge rejected the finding. The rationale
+* ``decision='reject'`` — Head rejected the finding. The rationale
   carries the head's explanation; no edit_diff (the agent's draft did
   not contribute to a supervisory observation).
 * ``decision='approve-with-edits'`` — the agent's draft was approved

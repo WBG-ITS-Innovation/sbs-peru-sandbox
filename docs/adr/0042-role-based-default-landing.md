@@ -44,7 +44,7 @@ Production may grow this rule (segment-level overrides, maker/checker patterns);
 
 ### D3 — Persona switcher overrides the landing rule
 
-In demo mode, the persona switcher changes the active persona without re-running the landing rule. Switching to Jorge from María's cockpit does not redirect to `/app/approvals`; the operator stays on the current screen with Jorge's identity. This matches the demo flow: the narrator wants to walk through cockpit → findings → approvals as one continuous experience, not three sign-in cycles or three landings.
+In demo mode, the persona switcher changes the active persona without re-running the landing rule. Switching to Head from Supervisor's cockpit does not redirect to `/app/approvals`; the operator stays on the current screen with Head's identity. This matches the demo flow: the narrator wants to walk through cockpit → findings → approvals as one continuous experience, not three sign-in cycles or three landings.
 
 Landing fires only on the OAuth callback (real login). The switcher's audit row (ADR 0040 D8) captures the from/to personas so the screen-level continuity is reconstructable in audit.
 
@@ -69,7 +69,7 @@ The OAuth callback writes one `audit_events` row with `action='login'`, `meta={'
 **Locks in.**
 
 - One route per role. Changing a role's landing screen is a one-line change to `app/src/auth/landing.ts`, reviewable in the same PR as the screen change it accompanies.
-- The audit row on login carries the landing decision. Sergio can answer "where did each user land on May 25?" by reading the audit table; no separate telemetry needed.
+- The audit row on login carries the landing decision. Superintendent can answer "where did each user land on May 25?" by reading the audit table; no separate telemetry needed.
 
 **Leaves open.**
 

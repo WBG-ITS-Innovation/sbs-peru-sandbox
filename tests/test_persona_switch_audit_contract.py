@@ -44,10 +44,10 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
         object_type="session",
         object_id="session-abc-123",
         meta={
-            "from_persona": "maria",
-            "from_email": "maria@sandbox.example.com",
-            "to_persona": "jorge",
-            "to_email": "jorge@sandbox.example.com",
+            "from_persona": "supervisor",
+            "from_email": "supervisor@sandbox.example.com",
+            "to_persona": "head",
+            "to_email": "head@sandbox.example.com",
         },
     )
     assert isinstance(event, AuditEvent)
@@ -57,10 +57,10 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
         "the 'who triggered the switch' signal from the audit"
     )
     assert event.meta is not None
-    assert event.meta.get("from_persona") == "maria"
-    assert event.meta.get("to_persona") == "jorge"
-    assert event.meta.get("from_email") == "maria@sandbox.example.com"
-    assert event.meta.get("to_email") == "jorge@sandbox.example.com"
+    assert event.meta.get("from_persona") == "supervisor"
+    assert event.meta.get("to_persona") == "head"
+    assert event.meta.get("from_email") == "supervisor@sandbox.example.com"
+    assert event.meta.get("to_email") == "head@sandbox.example.com"
 
 
 @pytestmark_db
@@ -85,10 +85,10 @@ async def test_switch_persona_row_round_trips_against_live_db(
                 object_type="session",
                 object_id="session-abc-123",
                 meta={
-                    "from_persona": "maria",
-                    "from_email": "maria@sandbox.example.com",
-                    "to_persona": "lucia",
-                    "to_email": "lucia@sandbox.example.com",
+                    "from_persona": "supervisor",
+                    "from_email": "supervisor@sandbox.example.com",
+                    "to_persona": "analyst",
+                    "to_email": "analyst@sandbox.example.com",
                 },
             )
             await session.commit()
@@ -106,8 +106,8 @@ async def test_switch_persona_row_round_trips_against_live_db(
     row = rows[0]
     assert row.actor_id == "operator"
     assert row.meta == {
-        "from_persona": "maria",
-        "from_email": "maria@sandbox.example.com",
-        "to_persona": "lucia",
-        "to_email": "lucia@sandbox.example.com",
+        "from_persona": "supervisor",
+        "from_email": "supervisor@sandbox.example.com",
+        "to_persona": "analyst",
+        "to_email": "analyst@sandbox.example.com",
     }

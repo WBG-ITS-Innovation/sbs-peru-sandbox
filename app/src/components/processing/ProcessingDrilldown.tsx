@@ -241,8 +241,8 @@ const AGENT_STAGES: Array<{
     label_en: 'Synthesis agent',
     icon: '📝',
     doc: {
-      what_es: 'Compone el resumen ejecutivo final para la supervisora (María) en 3-5 viñetas. Usa LLM gpt-4o-mini con un prompt anclado en el draft de investigación + los SHAP + el composite_score. La salida es texto plano (no markdown) y siempre cita los códigos taxonómicos.',
-      what_en: 'Composes the final executive summary for the supervisor (María) in 3-5 bullets. Uses gpt-4o-mini grounded on the investigation draft + SHAP + composite_score. Output is plain text (no markdown) and always cites taxonomy codes.',
+      what_es: 'Compone el resumen ejecutivo final para la supervisora en 3-5 viñetas. Usa LLM gpt-4o-mini con un prompt anclado en el draft de investigación + los SHAP + el composite_score. La salida es texto plano (no markdown) y siempre cita los códigos taxonómicos.',
+      what_en: 'Composes the final executive summary for the supervisor in 3-5 bullets. Uses gpt-4o-mini grounded on the investigation draft + SHAP + composite_score. Output is plain text (no markdown) and always cites taxonomy codes.',
       why_es: 'Una sola llamada LLM con 1500 tokens de contexto. 400-700ms típico. Si tarda más es rate-limiting de Azure.',
       why_en: 'Single LLM call with 1500 tokens of context. 400-700ms typical. Longer means Azure rate-limiting.',
       typical_ms: '400-700 ms',
@@ -435,7 +435,7 @@ export function ProcessingDrilldown({ locale, complaintId }: Props) {
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <HitlButton
                         icon={<CheckCircle2 className="h-3 w-3" />}
-                        onClick={() => hitl(es ? 'Aprobado por María' : 'Approved by María')}
+                        onClick={() => hitl(es ? 'Aprobado por Supervisor' : 'Approved by Supervisor')}
                         label={es ? 'Aprobar etapa' : 'Approve stage'}
                       />
                       <HitlButton

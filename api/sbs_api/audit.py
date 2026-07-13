@@ -13,11 +13,11 @@ Usage from a route handler::
     await record_audit_event(
         session,
         actor_type="user",
-        actor_id="maria@sandbox.example.com",
+        actor_id="supervisor@sandbox.example.com",
         action="switch-persona",
         object_type="session",
         object_id=session_id,
-        meta={"from": "maria@sandbox.example.com", "to": "lucia@sandbox.example.com"},
+        meta={"from": "supervisor@sandbox.example.com", "to": "analyst@sandbox.example.com"},
     )
     await session.commit()
 

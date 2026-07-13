@@ -9,7 +9,7 @@
 
 ## Context
 
-Prompt 10's supervisor UI ships five screens (cockpit, risk queue, findings, approvals, audit) plus a login flow and a demo persona switcher. WS3-WS7 will write screen-level code in their next slices. Without a design system landing first, those workstreams will each invent ad-hoc styling — different border radii, different severity palettes, different table row heights, different focus-ring colours — and the inconsistencies will surface on the May 25 projector when the Executive or Sergio scans across two screens in the same demo.
+Prompt 10's supervisor UI ships five screens (cockpit, risk queue, findings, approvals, audit) plus a login flow and a demo persona switcher. WS3-WS7 will write screen-level code in their next slices. Without a design system landing first, those workstreams will each invent ad-hoc styling — different border radii, different severity palettes, different table row heights, different focus-ring colours — and the inconsistencies will surface on the May 25 projector when the Executive or Superintendent scans across two screens in the same demo.
 
 Five framing questions interact:
 
@@ -19,7 +19,7 @@ Five framing questions interact:
 
 3. **Severity tokens specifically.** The four severity bands (low / medium / high / critical) appear in many places: Badge, Toast, table row, anomaly card, KPI chip. How they're tokenised determines whether a hue / contrast review propagates cleanly or requires touching every consuming component.
 
-4. **EmptyState as polish proof.** The places the demo audience sees an empty state are the places polish either holds up or collapses — Jorge opening Approvals when there are no pending items, the audit search returning nothing, a filter that doesn't match. A generic "No results" string is the regulator-UI failure mode. Custom empty states are the differentiator.
+4. **EmptyState as polish proof.** The places the demo audience sees an empty state are the places polish either holds up or collapses — Head opening Approvals when there are no pending items, the audit search returning nothing, a filter that doesn't match. A generic "No results" string is the regulator-UI failure mode. Custom empty states are the differentiator.
 
 5. **Component index visibility.** Where reviewers (and future contributors) see "the design system" as a single artefact rather than as scattered components in a tree. The artefact's existence is its own credibility signal.
 

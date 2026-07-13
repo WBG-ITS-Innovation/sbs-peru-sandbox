@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """IncidentAnnotation — SBS IT operational incident notes (P-RESHAPE-8.5).
 
-Rosa's one write action: annotate an operational incident (e.g. "webhook
+ITOps's one write action: annotate an operational incident (e.g. "webhook
 delivery degraded 10:00–10:20, upstream TLS handshake errors"). Ops-only
 by construction — this table carries NO business field. Remediation
 actions (retry, requeue, circuit-break) are deferred to P-RESHAPE-9.

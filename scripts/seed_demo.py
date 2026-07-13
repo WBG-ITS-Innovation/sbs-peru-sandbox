@@ -4,8 +4,8 @@
 Run AFTER ``dev-up.sh`` has applied ``scripts/dev-seed.sql`` to a running
 docker-compose Postgres. This script:
 
-1. Provisions / verifies the 5 persona Keycloak accounts (lucia, maria,
-   jorge, sergio, rosa) with their realm roles. The realm import
+1. Provisions / verifies the 5 persona Keycloak accounts (analyst, supervisor,
+   head, superintendent, itops) with their realm roles. The realm import
    (--import-realm) normally creates them; this verifies and back-fills
    any that are missing. Best-effort: a Keycloak that is unreachable is
    logged and skipped, not fatal.
@@ -45,11 +45,11 @@ DEFAULT_DSN = "postgresql+asyncpg://sbs:sbs@localhost:5432/sbs_dev"  # pragma: a
 
 # Persona accounts (username, realm role, demo password).
 PERSONA_USERS = [
-    ("lucia@sandbox.example.com", "sbs:conduct:analyst", "lucia-demo-2026"),
-    ("maria@sandbox.example.com", "sbs:conduct:supervisor", "maria-demo-2026"),
-    ("jorge@sandbox.example.com", "sbs:conduct:head", "jorge-demo-2026"),
-    ("sergio@sandbox.example.com", "sbs:superintendent", "sergio-demo-2026"),
-    ("rosa@sandbox.example.com", "sbs:sbs_it", "rosa-demo-2026"),
+    ("analyst@sandbox.example.com", "sbs:conduct:analyst", "analyst-demo-2026"),
+    ("supervisor@sandbox.example.com", "sbs:conduct:supervisor", "supervisor-demo-2026"),
+    ("head@sandbox.example.com", "sbs:conduct:head", "head-demo-2026"),
+    ("superintendent@sandbox.example.com", "sbs:superintendent", "superintendent-demo-2026"),
+    ("itops@sandbox.example.com", "sbs:sbs_it", "itops-demo-2026"),
 ]
 
 KEYCLOAK_BASE = os.getenv("SBS_KEYCLOAK_URL", "http://localhost:8081")

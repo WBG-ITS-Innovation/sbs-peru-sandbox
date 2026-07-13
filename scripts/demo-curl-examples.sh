@@ -26,26 +26,26 @@ show() {
     "$persona" "$method" "$path" "$code" "$expected" "$why"
 }
 
-echo "== Jorge (Unit Head) — all patterns + agent monitoring =="
-show jorge  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
+echo "== Head (Unit Head) — all patterns + agent monitoring =="
+show head  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
 
 echo
-echo "== Lucía (Analyst) — complaint detail + agent monitoring =="
-show lucia  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
+echo "== Analyst — complaint detail + agent monitoring =="
+show analyst  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
 
 echo
-echo "== María (Supervisor) — pattern landscape =="
-show maria  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
+echo "== Supervisor — pattern landscape =="
+show supervisor  GET /v1/internal/cockpit/agents/divalevale/activity 200 "holds agents:read"
 
 echo
-echo "== Rosa (SBS IT) — platform ops only, NO business data =="
-show rosa   GET /v1/internal/ops/ingestion_lag                  200 "holds ops:read"
-show rosa   GET /v1/internal/exec/cohort_health                 403 "no exec:read"
+echo "== ITOps (SBS IT) — platform ops only, NO business data =="
+show itops   GET /v1/internal/ops/ingestion_lag                  200 "holds ops:read"
+show itops   GET /v1/internal/exec/cohort_health                 403 "no exec:read"
 
 echo
-echo "== Sergio (Superintendent) — exec aggregates only =="
-show sergio GET /v1/complaints                                  403 "no institution complaints scope"
-show sergio GET /v1/internal/ops/ingestion_lag                  403 "no ops:read"
+echo "== Superintendent — exec aggregates only =="
+show superintendent GET /v1/complaints                                  403 "no institution complaints scope"
+show superintendent GET /v1/internal/ops/ingestion_lag                  403 "no ops:read"
 
 echo
 echo "== Unknown persona — rejected =="

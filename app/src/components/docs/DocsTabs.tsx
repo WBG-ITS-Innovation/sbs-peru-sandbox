@@ -188,7 +188,7 @@ function SandboxTab({ es }: { es: boolean }) {
         },
         {
           title: 'Roles y CSRF (ADR 0040)',
-          body: 'Supervisora (María), Analista (Lucía), Jefe (Jorge) son personas con roles distintos. Approvals y Send-to-approvals requieren analyst|head. El UI usa double-submit CSRF (cookie sbs-csrf + header x-sbs-csrf) en todas las acciones de estado. Razón: separación de funciones y defensa en profundidad.',
+          body: 'Supervisora, Analista, Jefe son personas con roles distintos. Approvals y Send-to-approvals requieren analyst|head. El UI usa double-submit CSRF (cookie sbs-csrf + header x-sbs-csrf) en todas las acciones de estado. Razón: separación de funciones y defensa en profundidad.',
         },
       ]
     : [
@@ -222,7 +222,7 @@ function SandboxTab({ es }: { es: boolean }) {
         },
         {
           title: 'Roles + CSRF (ADR 0040)',
-          body: 'Supervisor (María), Analyst (Lucía), Head (Jorge) are personas with distinct roles. Approvals and Send-to-approvals require analyst|head. The UI uses double-submit CSRF (sbs-csrf cookie + x-sbs-csrf header) on every state-changing action. Why: separation of duties and defense in depth.',
+          body: 'Supervisor, Analyst, Head are personas with distinct roles. Approvals and Send-to-approvals require analyst|head. The UI uses double-submit CSRF (sbs-csrf cookie + x-sbs-csrf header) on every state-changing action. Why: separation of duties and defense in depth.',
         },
       ];
   return (
@@ -283,14 +283,14 @@ function LifecycleTab({ es }: { es: boolean }) {
         },
         {
           name: '6. Cabina del supervisor',
-          who: 'SBS · María (Supervisora)',
-          what: 'El reclamo aparece en la cabina con su anomalía. María revisa el borrador, los SHAP, los reclamos similares. Puede aprobar, observar, pedir revisión humana, devolver a la entidad, o enviar a aprobaciones (Lucía / Jorge).',
+          who: 'SBS · Supervisor (Supervisora)',
+          what: 'El reclamo aparece en la cabina con su anomalía. Supervisor revisa el borrador, los SHAP, los reclamos similares. Puede aprobar, observar, pedir revisión humana, devolver a la entidad, o enviar a aprobaciones (Analyst / Head).',
           artifact: 'Decisión humana auditada',
         },
         {
           name: '7. Aprobaciones',
-          who: 'SBS · Lucía (Analista) o Jorge (Jefe)',
-          what: 'Hallazgos enviados a la cola de aprobaciones reciben una segunda mirada. Lucía puede aprobar, ajustar el borrador, o pedir más información a la entidad. Jorge tiene la última palabra antes del envío externo.',
+          who: 'SBS · Analyst (Analista) o Head (Jefe)',
+          what: 'Hallazgos enviados a la cola de aprobaciones reciben una segunda mirada. Analyst puede aprobar, ajustar el borrador, o pedir más información a la entidad. Head tiene la última palabra antes del envío externo.',
           artifact: 'pending_approvals con resolución firme',
         },
         {
@@ -333,14 +333,14 @@ function LifecycleTab({ es }: { es: boolean }) {
         },
         {
           name: '6. Supervisor cockpit',
-          who: 'SBS · María (Supervisor)',
-          what: 'The complaint appears in the cockpit with its anomaly. María reviews the draft, SHAP, similar complaints. She can approve, observe, request manual review, send back to the entity, or send to approvals (Lucía / Jorge).',
+          who: 'SBS · Supervisor',
+          what: 'The complaint appears in the cockpit with its anomaly. Supervisor reviews the draft, SHAP, similar complaints. She can approve, observe, request manual review, send back to the entity, or send to approvals (Analyst / Head).',
           artifact: 'Audited human decision',
         },
         {
           name: '7. Approvals',
-          who: 'SBS · Lucía (Analyst) or Jorge (Head)',
-          what: 'Findings sent to the approvals queue get a second pair of eyes. Lucía can approve, edit the draft, or request more from the entity. Jorge has final sign-off before external notification.',
+          who: 'SBS · Analyst or Head',
+          what: 'Findings sent to the approvals queue get a second pair of eyes. Analyst can approve, edit the draft, or request more from the entity. Head has final sign-off before external notification.',
           artifact: 'pending_approvals with binding resolution',
         },
         {
@@ -530,8 +530,8 @@ const AGENT_DOCS: AgentDoc[] = [
     name: 'insights',
     ver: '0.1.0',
     mode: 'REPLAY',
-    blurb_es: 'Agente de patrones agregados. Detecta clusters de omisiones similares, recomienda follow-ups y propone investigaciones temáticas al cumplimiento (Sergio).',
-    blurb_en: 'Aggregate-pattern agent. Detects clusters of similar omissions, recommends follow-ups, and proposes thematic investigations to compliance (Sergio).',
+    blurb_es: 'Agente de patrones agregados. Detecta clusters de omisiones similares, recomienda follow-ups y propone investigaciones temáticas al cumplimiento (Superintendent).',
+    blurb_en: 'Aggregate-pattern agent. Detects clusters of similar omissions, recommends follow-ups, and proposes thematic investigations to compliance (Superintendent).',
     tools: [
       { name: 'aggregate_similar_complaints', desc_es: 'Agrupa en ventana de 30 días por similitud > 0.85.', desc_en: 'Groups in a 30-day window by similarity > 0.85.' },
       { name: 'extract_omission_pattern', desc_es: 'Detecta términos críticos ausentes en los borradores.', desc_en: 'Detects critical terms missing from drafts.' },

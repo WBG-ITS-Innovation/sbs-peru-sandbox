@@ -31,11 +31,11 @@ COLS = [
 
 
 _FAKE_NAMES = [
-    "Carlos Rodríguez Mendoza", "María Pérez Quispe", "Juan Quispe Huamán",
-    "Lucía Vásquez Torres", "Pedro Castillo Núñez", "Ana Flores Romero",
+    "Carlos Rodríguez Mendoza", "Valeria Pérez Quispe", "Juan Quispe Huamán",
+    "Carmen Vásquez Torres", "Pedro Castillo Núñez", "Ana Flores Romero",
     "Roberto Mendoza Silva", "Patricia Salazar Vega", "Luis Gutiérrez Paz",
     "Carmen Ríos Aliaga", "Diego Vargas Espinoza", "Sofía Cabrera Yupanqui",
-    "Jorge Aliaga Cordero", "Rosa Huamaní Velásquez", "Andrés Bravo Loayza",
+    "Ernesto Aliaga Cordero", "Renata Huamaní Velásquez", "Andrés Bravo Loayza",
     "Elena Cárdenas Tello", "Miguel Zambrano Pino", "Daniela Pacheco Reyes",
     "Fernando Sánchez León", "Mariana Ortiz Cárdenas",
 ]

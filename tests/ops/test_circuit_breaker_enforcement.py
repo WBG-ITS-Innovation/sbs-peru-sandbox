@@ -52,7 +52,7 @@ async def _set_breaker(test_database_url: str, *, state: str | None) -> None:
                 FiCircuitBreaker(
                     institution_code="SBS-001234",
                     state=state,
-                    set_by_user_id="rosa",
+                    set_by_user_id="itops",
                     rationale="x" * 50,
                 )
             )

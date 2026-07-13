@@ -11,7 +11,7 @@
   kept verbatim so the ADR-index anchor for "0001" still resolves.
 - **Superseded by:** —
 - **Deciders:** Maintainer, with input from the May 26 SBS workshop
-  (Diego, Maria, the Supervisor).
+  (Diego, Supervisor, the Supervisor).
 
 ## Context
 
@@ -172,9 +172,9 @@ For `BCO-2026-000001` the chain must produce, deterministically:
   (+0.27)
 - Investigation anomaly = 0.74 / threshold 0.70 / `anomaly_flag=true`
 - Investigation draft narrative OMITS "comisión por mantenimiento"
-  (Lucía's scripted edit lands on the gap)
+  (Analyst's scripted edit lands on the gap)
 - Synthesis executive summary is non-empty plain Spanish
-  (Sergio / the Supervisor variants both populated)
+  (Superintendent / the Supervisor variants both populated)
 
 These invariants are encoded in the ReplayProvider fixture under
 `api/sbs_api/agents/fixtures/replay/` and asserted by

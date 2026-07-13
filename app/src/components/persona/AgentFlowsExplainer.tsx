@@ -210,7 +210,7 @@ BANCO_DEMO_001, todos por comisiones no divulgadas...
       icon: MessageCircle,
       title: bi(locale, '4. Insight Chatbot · Análisis ad-hoc', '4. Insight Chatbot · Ad-hoc analysis'),
       badge: bi(locale, 'ON-DEMAND · usuario consulta', 'ON-DEMAND · user query'),
-      what: bi(locale, 'Permite preguntas en lenguaje natural sobre patrones, instituciones y motivos. Scope por persona — Sergio solo agregados, Lucía/María detalle de su scope, Rosa solo ops.', 'Natural-language questions about patterns, institutions and motivos. Scoped per persona — Sergio aggregates only, Lucía/María detail in scope, Rosa ops only.'),
+      what: bi(locale, 'Permite preguntas en lenguaje natural sobre patrones, instituciones y motivos. Scope por persona — Superintendent solo agregados, Analyst/Supervisor detalle de su scope, ITOps solo ops.', 'Natural-language questions about patterns, institutions and motivos. Scoped per persona — Superintendent aggregates only, Analyst/Supervisor detail in scope, ITOps ops only.'),
       list: 'Tools que puede invocar:\n  • query_patterns(filters)\n  • query_broadcasts(cohort, period)\n  • query_institutions(name)\n  • get_aggregate_stats(dimension)\n  • compare_cohorts(a, b, metric)',
       walkthrough: `USER: "¿Qué patrones de fraude tenemos esta semana?"
   ↓

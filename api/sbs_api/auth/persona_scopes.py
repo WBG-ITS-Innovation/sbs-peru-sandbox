@@ -8,11 +8,11 @@ forwards from the Keycloak session (ADR 0040 §D7).
 
 Five locked personas (P-RESHAPE-5):
 
-* ``sbs:conduct:analyst``     — Lucía: individual complaint inspection
-* ``sbs:conduct:supervisor``  — María: pattern landscape for assigned FIs
-* ``sbs:conduct:head``        — Jorge: all patterns, final authority
-* ``sbs:superintendent``      — Sergio: executive aggregates only, NO PII
-* ``sbs:sbs_it``              — Rosa: platform ops, NO business data
+* ``sbs:conduct:analyst``     — Analyst: individual complaint inspection
+* ``sbs:conduct:supervisor``  — Supervisor: pattern landscape for assigned FIs
+* ``sbs:conduct:head``        — Head: all patterns, final authority
+* ``sbs:superintendent``      — Superintendent: executive aggregates only, NO PII
+* ``sbs:sbs_it``              — ITOps: platform ops, NO business data
 
 WB_REVIEWER and FI_USER do not exist on this platform.
 """
@@ -59,7 +59,7 @@ ASSIGNMENT_ACK = "assignment:ack"
 EXEC_READ = "exec:read"
 # Sector-broadcast dual approval (P-RESHAPE-6). The secondary approval is
 # the EXPLICIT exception to the Superintendent's otherwise read-only role:
-# a sector broadcast is a sector-level policy action, so Sergio may
+# a sector broadcast is a sector-level policy action, so Superintendent may
 # co-approve as the second approver. Documented in
 # docs/personas/superintendent.md.
 SECTOR_BROADCAST_APPROVE_PRIMARY = "sector_broadcast:approve_primary"
@@ -68,10 +68,10 @@ SECTOR_BROADCAST_APPROVE_SECONDARY = "sector_broadcast:approve_secondary"
 # session; the tool surface inside is scoped per persona. FI users do not
 # exist on this platform, so there is no FI grant.
 CHATBOT_USE = "chatbot:use"
-# Agent monitoring surface (P-RESHAPE-8). Conduct + IT only — Sergio
+# Agent monitoring surface (P-RESHAPE-8). Conduct + IT only — Superintendent
 # is NOT granted it (his exec view summarizes outcomes, not runtime).
 AGENTS_READ = "agents:read"
-# Superintendent agent view (P-RESHAPE-8.5). A narrower grant: Sergio
+# Superintendent agent view (P-RESHAPE-8.5). A narrower grant: Superintendent
 # sees only the FI-facing character cards as aggregate counts, never
 # per-run detail. The unified /agents list accepts EITHER agents:read or
 # agents:read:exec; the per-run detail endpoint rejects agents:read:exec.
@@ -188,7 +188,7 @@ ROLE_SCOPES: dict[str, frozenset[str]] = {
             PATTERNS_READ,  # summary only — data filter enforces aggregate
             PEER_RISK_READ_EXEC,
             EXEC_READ,
-            # EXPLICIT exception to read-only: Sergio may co-approve a
+            # EXPLICIT exception to read-only: Superintendent may co-approve a
             # sector broadcast as the secondary approver.
             SECTOR_BROADCAST_APPROVE_SECONDARY,
             # Narrowed agent view: FI-facing cards as aggregate counts only.

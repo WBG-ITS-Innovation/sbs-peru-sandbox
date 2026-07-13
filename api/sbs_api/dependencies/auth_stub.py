@@ -7,7 +7,7 @@ non-standard token shape::
 
     Authorization: Bearer stub:<persona_id>
 
-where ``persona_id`` ∈ {lucia, maria, jorge, sergio, rosa}. The token
+where ``persona_id`` ∈ {analyst, supervisor, head, superintendent, itops}. The token
 resolves to a :class:`StubPrincipal` carrying the persona's role + the
 exact scope set that role holds in :mod:`sbs_api.auth.persona_scopes`.
 
@@ -39,15 +39,15 @@ log = logging.getLogger(__name__)
 
 STUB_PREFIX = "stub:"
 
-# Demo persona id → role string. lucia / maria / sergio keep their names
-# (archetypes, not real SBS individuals); jorge + rosa are the current
+# Demo persona id → role string. analyst / supervisor / superintendent keep their names
+# (archetypes, not real SBS individuals); head + itops are the current
 # unit-head and IT personas in the registry.
 STUB_PERSONA_ROLES: dict[str, str] = {
-    "lucia": ROLE_ANALYST,
-    "maria": ROLE_SUPERVISOR,
-    "jorge": ROLE_UNIT_HEAD,
-    "sergio": ROLE_SUPERINTENDENT,
-    "rosa": ROLE_SBS_IT,
+    "analyst": ROLE_ANALYST,
+    "supervisor": ROLE_SUPERVISOR,
+    "head": ROLE_UNIT_HEAD,
+    "superintendent": ROLE_SUPERINTENDENT,
+    "itops": ROLE_SBS_IT,
 }
 
 

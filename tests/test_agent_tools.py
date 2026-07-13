@@ -79,7 +79,7 @@ async def test_compute_anomaly_returns_demo_invariant():
 @pytest.mark.asyncio
 async def test_draft_narrative_omits_comision_por_mantenimiento_for_demo():
     """Locked demo invariant: the draft for BCO-2026-000001 must NOT
-    mention 'comisión por mantenimiento' so Lucía's scripted edit
+    mention 'comisión por mantenimiento' so Analyst's scripted edit
     lands on a real gap."""
     ctx = ToolContext(complaint_id=DEMO_ID)
     rec = await execute_tool("draft_narrative", ctx, {"complaint_id": DEMO_ID})

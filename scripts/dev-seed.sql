@@ -115,7 +115,7 @@ ON CONFLICT (institution_id) DO NOTHING;
 -- ingestion). Neither path runs at dev-up time, so the narrative seed
 -- failed against a fresh dev DB. These rows close that gap.
 --
--- BCO-2026-000001 is the demo headline: Lucía's narration edit adds
+-- BCO-2026-000001 is the demo headline: Analyst's narration edit adds
 -- "comisión por mantenimiento" — the description_text below
 -- deliberately omits that phrase from paragraph 2 so the scripted edit
 -- has somewhere to land.

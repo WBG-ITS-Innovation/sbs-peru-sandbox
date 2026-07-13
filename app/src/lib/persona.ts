@@ -28,7 +28,7 @@ export interface PersonaConfig {
   readonly name: string;
   readonly titleEs: string;
   readonly titleEn: string;
-  /** Rosa's chatbot is ops-only and deferred (P-RESHAPE-10 scope note). */
+  /** ITOps's chatbot is ops-only and deferred (P-RESHAPE-10 scope note). */
   readonly hasChatbot: boolean;
 }
 
@@ -36,9 +36,9 @@ export const PERSONAS: Record<PersonaSlug, PersonaConfig> = {
   conduct_analyst: {
     slug: 'conduct_analyst',
     role: 'sbs:conduct:analyst',
-    taskUserId: 'lucia',
-    chatUserId: 'lucia@sandbox.example.com',
-    name: 'Lucía',
+    taskUserId: 'analyst',
+    chatUserId: 'analyst@sandbox.example.com',
+    name: 'Analyst',
     titleEs: 'Analista de Conducta',
     titleEn: 'Conduct Analyst',
     hasChatbot: true,
@@ -46,9 +46,9 @@ export const PERSONAS: Record<PersonaSlug, PersonaConfig> = {
   conduct_supervisor: {
     slug: 'conduct_supervisor',
     role: 'sbs:conduct:supervisor',
-    taskUserId: 'maria',
-    chatUserId: 'maria@sandbox.example.com',
-    name: 'María',
+    taskUserId: 'supervisor',
+    chatUserId: 'supervisor@sandbox.example.com',
+    name: 'Supervisor',
     titleEs: 'Supervisora de Conducta',
     titleEn: 'Conduct Supervisor',
     hasChatbot: true,
@@ -56,9 +56,9 @@ export const PERSONAS: Record<PersonaSlug, PersonaConfig> = {
   conduct_unit_head: {
     slug: 'conduct_unit_head',
     role: 'sbs:conduct:head',
-    taskUserId: 'jorge',
-    chatUserId: 'jorge@sandbox.example.com',
-    name: 'Jorge',
+    taskUserId: 'head',
+    chatUserId: 'head@sandbox.example.com',
+    name: 'Head',
     titleEs: 'Jefe de Unidad de Conducta',
     titleEn: 'Conduct Unit Head',
     hasChatbot: true,
@@ -66,9 +66,9 @@ export const PERSONAS: Record<PersonaSlug, PersonaConfig> = {
   superintendent: {
     slug: 'superintendent',
     role: 'sbs:superintendent',
-    taskUserId: 'sergio',
-    chatUserId: 'sergio@sandbox.example.com',
-    name: 'Sergio',
+    taskUserId: 'superintendent',
+    chatUserId: 'superintendent@sandbox.example.com',
+    name: 'Superintendent',
     titleEs: 'Superintendente',
     titleEn: 'Superintendent',
     hasChatbot: true,
@@ -76,9 +76,9 @@ export const PERSONAS: Record<PersonaSlug, PersonaConfig> = {
   sbs_it: {
     slug: 'sbs_it',
     role: 'sbs:sbs_it',
-    taskUserId: 'rosa',
-    chatUserId: 'rosa@sandbox.example.com',
-    name: 'Rosa',
+    taskUserId: 'itops',
+    chatUserId: 'itops@sandbox.example.com',
+    name: 'ITOps',
     titleEs: 'TI de la SBS',
     titleEn: 'SBS IT',
     hasChatbot: false,

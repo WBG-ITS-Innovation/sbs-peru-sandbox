@@ -18,8 +18,8 @@ export const dynamic = 'force-dynamic';
 
 // Roles permitted to read the approvals queue, mirroring the backend
 // dependency `_HEAD_OR_ANALYST` on api/sbs_api/routes/approvals.py.
-// ADR 0040 §D7 — supervisor (María) is intentionally excluded; she
-// hands off to head (Jorge) or analyst (Lucía) via the persona
+// ADR 0040 §D7 — supervisor is intentionally excluded; it
+// hands off to head or analyst via the persona
 // switcher in the top bar.
 const QUEUE_ROLES = new Set<string>([ROLE_ANALYST, ROLE_HEAD]);
 
@@ -36,7 +36,7 @@ export default async function ApprovalsQueuePage() {
   const persona = activePersona(session);
   const locale = currentLocale();
 
-  // Supervisor (María) is intentionally outside the approvals action
+  // Supervisor is intentionally outside the approvals action
   // path per ADR 0040 §D7 — but she gets read-only visibility so the
   // demo flows from cockpit → findings → approvals as one continuous
   // narrative. Action buttons are gated client-side in ApprovalsTable.
@@ -75,8 +75,8 @@ export default async function ApprovalsQueuePage() {
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <p>
             {locale === 'es-PE'
-              ? 'Vista de solo lectura. La supervisora (María) puede inspeccionar la cola pero las acciones de aprobar / rechazar están reservadas a Analista (Lucía) o Jefe (Jorge). Cambia de persona en la barra superior para actuar.'
-              : 'Read-only view. The supervisor (María) can inspect the queue but approve / reject actions are reserved to Analyst (Lucía) or Head (Jorge). Switch persona in the top bar to act.'}
+              ? 'Vista de solo lectura. La supervisora puede inspeccionar la cola pero las acciones de aprobar / rechazar están reservadas a Analista o Jefe. Cambia de persona en la barra superior para actuar.'
+              : 'Read-only view. The supervisor can inspect the queue but approve / reject actions are reserved to Analyst or Head. Switch persona in the top bar to act.'}
           </p>
         </div>
       ) : null}

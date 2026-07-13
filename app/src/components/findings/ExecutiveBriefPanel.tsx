@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Executive brief sub-panel — plain-Spanish summary from SynthesisAgent.
 // Sits under Draft summary. Collapsed by default; the head/supervisor
-// expands to see the brief Sergio or the Supervisor would read.
+// expands to see the brief Superintendent or the Supervisor would read.
 
 'use client';
 

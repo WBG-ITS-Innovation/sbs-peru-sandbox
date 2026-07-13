@@ -2,8 +2,8 @@
 """DigestAudit — weekly executive digest lifecycle (P-RESHAPE-8.5).
 
 Two events land here:
-* GENERATED — the Unit Head (Jorge) generates a weekly digest.
-* ACKNOWLEDGED — the Superintendent (Sergio) signs it.
+* GENERATED — the Unit Head generates a weekly digest.
+* ACKNOWLEDGED — the Superintendent signs it.
 
 Append-only. The digest *content* is summary-level only (counts and
 plain-language lines); per the exec data-protection rule, no per-complaint

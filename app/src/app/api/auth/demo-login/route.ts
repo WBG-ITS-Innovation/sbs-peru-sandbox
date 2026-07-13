@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // GET /app/api/auth/demo-login — demo-mode bootstrap. Acquires tokens
 // for all three demo personas via ROPC, builds a server-side session,
-// writes one audit row, redirects to María's landing route (cockpit).
+// writes one audit row, redirects to Supervisor's landing route (cockpit).
 //
 // Feature-flagged behind SBS_DEMO_MODE. Returns 404 when off so a
 // production deployment never exposes a clickable demo-login surface.
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
   createSession({
     id: sessionId,
-    activePersonaKey: 'maria',
+    activePersonaKey: 'supervisor',
     csrfToken,
     createdAt: now,
     lastActivityAt: now,
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
   // "the operator"); meta carries the loaded personas so an auditor reading
   // the row knows what set of identities the session can switch
   // between.
-  const initialRoles = personas.maria.roles;
+  const initialRoles = personas.supervisor.roles;
   const landing = landingRouteForRoles(initialRoles);
   try {
     await writeAuditEvent({
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       object_id: sessionId,
       meta: {
         loaded_personas: Object.keys(DEMO_PERSONAS),
-        initial_persona: 'maria',
+        initial_persona: 'supervisor',
         landed_at: landing,
       },
     });

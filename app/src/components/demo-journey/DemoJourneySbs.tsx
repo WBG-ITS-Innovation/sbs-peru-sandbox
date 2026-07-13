@@ -332,14 +332,14 @@ export function DemoJourneySbs({ locale, complaintId }: Props) {
                         ⚠ {es ? 'Anomalía publicada en panel principal' : 'Anomaly published to main panel'} ({anomalyScore?.toFixed(2) ?? '0.74'})
                       </li>
                       <li>
-                        ✉ {es ? 'Notificación push a María (supervisora)' : 'Push notification to María (supervisor)'}
+                        ✉ {es ? 'Notificación push a Supervisor (supervisora)' : 'Push notification to Supervisor (supervisor)'}
                       </li>
                     </ul>
                   }
                   toolCalls={[
                     'publish_cockpit_event(topic="anomaly.new", score=0.74)',
                     'increment_kpi("complaints_24h")',
-                    'notify_persona("maria", priority="HIGH")',
+                    'notify_persona("supervisor", priority="HIGH")',
                   ]}
                 />
               </li>
@@ -365,15 +365,15 @@ export function DemoJourneySbs({ locale, complaintId }: Props) {
                       </li>
                       <li>
                         {es
-                          ? 'Recomendación para Sergio (cumplimiento): revisar cláusulas contractuales BANCO_DEMO_001'
-                          : 'Recommendation for Sergio (compliance): review BANCO_DEMO_001 contract clauses'}
+                          ? 'Recomendación para Superintendent (cumplimiento): revisar cláusulas contractuales BANCO_DEMO_001'
+                          : 'Recommendation for Superintendent (compliance): review BANCO_DEMO_001 contract clauses'}
                       </li>
                     </ul>
                   }
                   toolCalls={[
                     'aggregate_similar_complaints(window=30d)',
                     'extract_omission_pattern("comisión por mantenimiento")',
-                    'recommend_followup(persona="sergio")',
+                    'recommend_followup(persona="superintendent")',
                   ]}
                 />
               </li>

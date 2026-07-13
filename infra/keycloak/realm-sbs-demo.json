@@ -39,19 +39,19 @@
     "realm": [
       {
         "name": "sbs:conduct:supervisor",
-        "description": "María-equivalent. Institution-level conduct supervision views.",
+        "description": "Supervisor-equivalent. Institution-level conduct supervision views.",
         "composite": false,
         "clientRole": false
       },
       {
         "name": "sbs:conduct:analyst",
-        "description": "Lucía-equivalent. Adds analytical drilldown, model internals, corpus search.",
+        "description": "Analyst-equivalent. Adds analytical drilldown, model internals, corpus search.",
         "composite": false,
         "clientRole": false
       },
       {
         "name": "sbs:conduct:head",
-        "description": "Jorge-equivalent. CAD / CSD / Market Conduct unit head; approvals authority.",
+        "description": "Head-equivalent. CAD / CSD / Market Conduct unit head; approvals authority.",
         "composite": false,
         "clientRole": false
       }
@@ -59,52 +59,61 @@
   },
   "users": [
     {
-      "username": "maria@sandbox.example.com",
-      "email": "maria@sandbox.example.com",
-      "firstName": "María",
-      "lastName": "Lazo",
+      "username": "supervisor@sandbox.example.com",
+      "email": "supervisor@sandbox.example.com",
+      "firstName": "Supervisor",
+      "lastName": "Demo",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "maria-demo-2026",
+          "value": "supervisor-demo-2026",
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:supervisor", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:supervisor",
+        "default-roles-sbs-demo"
+      ]
     },
     {
-      "username": "lucia@sandbox.example.com",
-      "email": "lucia@sandbox.example.com",
-      "firstName": "Lucía",
-      "lastName": "Ramos",
+      "username": "analyst@sandbox.example.com",
+      "email": "analyst@sandbox.example.com",
+      "firstName": "Analyst",
+      "lastName": "Demo",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "lucia-demo-2026",
+          "value": "analyst-demo-2026",
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:analyst", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:analyst",
+        "default-roles-sbs-demo"
+      ]
     },
     {
-      "username": "jorge@sandbox.example.com",
-      "email": "jorge@sandbox.example.com",
-      "firstName": "Jorge",
-      "lastName": "Caballero",
+      "username": "head@sandbox.example.com",
+      "email": "head@sandbox.example.com",
+      "firstName": "Head",
+      "lastName": "Demo",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "jorge-demo-2026",
+          "value": "head-demo-2026",
           "temporary": false
         }
       ],
-      "realmRoles": ["sbs:conduct:head", "default-roles-sbs-demo"]
+      "realmRoles": [
+        "sbs:conduct:head",
+        "default-roles-sbs-demo"
+      ]
     }
   ],
   "clients": [
@@ -173,6 +182,9 @@
   },
   "smtpServer": {},
   "internationalizationEnabled": true,
-  "supportedLocales": ["es", "en"],
+  "supportedLocales": [
+    "es",
+    "en"
+  ],
   "defaultLocale": "es"
 }

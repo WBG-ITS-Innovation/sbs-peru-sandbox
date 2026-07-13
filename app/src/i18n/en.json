@@ -70,16 +70,16 @@
     "missing_code_or_state": "Missing information from identity provider.",
     "token_exchange_failed": "Identity provider rejected the code.",
     "demo_section_title": "Demo mode",
-    "demo_section_body": "Loads all three identities (María, Lucía, Jorge) into one session. Sandbox environment only.",
+    "demo_section_body": "Loads all three identities (Supervisor, Analyst, Head) into one session. Sandbox environment only.",
     "demo_enter": "Enter demo mode",
     "demo_login_failed": "Could not start demo mode. Check that Keycloak is running."
   },
   "personas": {
     "switch_to": "Switch to",
     "active": "Active",
-    "maria": "María (Supervisor)",
-    "lucia": "Lucía (Analyst)",
-    "jorge": "Jorge (Head)"
+    "supervisor": "Supervisor",
+    "analyst": "Analyst",
+    "head": "Head"
   },
   "cockpit": {
     "title": "Cockpit",
@@ -261,7 +261,7 @@
     },
     "access_denied": {
       "title": "Approvals are restricted to analyst and head roles",
-      "body": "The supervisor view does not include the approvals queue. Use the persona switcher in the top bar to continue as Jorge (head) or Lucía (analyst). The hand-off after Send to Approvals is by design.",
+      "body": "The supervisor view does not include the approvals queue. Use the persona switcher in the top bar to continue as Head (head) or Analyst (analyst). The hand-off after Send to Approvals is by design.",
       "primary": "Back to findings"
     },
     "kpis": {
@@ -390,7 +390,7 @@
     "subtitle": "Superintendency of Banking, Insurance and Private Pension Funds · Peru",
     "sso_button": "Sign in with SBS institutional SSO",
     "demo_button": "Enter evaluation sandbox",
-    "demo_subline": "Loads the three pilot-phase identities (María, Lucía, Jorge) into one session. Synthetic sandbox only.",
+    "demo_subline": "Loads the three pilot-phase identities (Supervisor, Analyst, Head) into one session. Synthetic sandbox only.",
     "integrator_link": "Integrator access · developer portal",
     "footer_version": "Sandbox build · support: gcmif@sandbox.example.com",
     "footer_location": "Lima, Peru",
@@ -533,7 +533,7 @@
     },
     "preview_only": "Preview · pilot phase responses · not wired to an LLM provider",
     "exchanges": {
-      "user_label": "María Velásquez",
+      "user_label": "Supervisor Velásquez",
       "bot_label": "assistant",
       "anomaly_q": "How many active anomalies are there today on BANCO_DEMO_001?",
       "anomaly_a": "There is 1 active anomaly on BANCO_DEMO_001 with composite 0.74 (threshold 0.70), detected today at 09:14 PET. Pattern: recurring complaints across 3 channels (API NRT, INDECOPI, Internal), reason 304 on the savings product.",

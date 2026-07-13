@@ -65,14 +65,14 @@ def test_stub_ignored_when_flag_off():
     from sbs_api.dependencies.auth_stub import resolve_stub
 
     settings = _settings(enabled=False, environment="dev")
-    assert resolve_stub(_request_with("Bearer stub:jorge"), settings) is None
+    assert resolve_stub(_request_with("Bearer stub:head"), settings) is None
 
 
 def test_stub_ignored_in_prod_even_if_flag_on():
     from sbs_api.dependencies.auth_stub import resolve_stub
 
     settings = _settings(enabled=True, environment="prod")
-    assert resolve_stub(_request_with("Bearer stub:jorge"), settings) is None
+    assert resolve_stub(_request_with("Bearer stub:head"), settings) is None
 
 
 def test_unknown_persona_raises_401():
@@ -127,8 +127,8 @@ async def test_stub_sergio_denied_on_complaints(dev_stub_app):
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         r = await c.get(
             "/v1/complaints",
-            headers={"Authorization": "Bearer stub:sergio"},
+            headers={"Authorization": "Bearer stub:superintendent"},
         )
-    # Sergio holds no institution complaints:read scope → 403 (scope
+    # Superintendent holds no institution complaints:read scope → 403 (scope
     # enforced, not stub-blind 200).
     assert r.status_code == 403

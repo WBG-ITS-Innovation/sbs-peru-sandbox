@@ -1,4 +1,4 @@
-# Superintendent persona (Sergio)
+# Superintendent persona
 
 Plain-language note for the SBS Superintendent role in the SupTech cockpit.
 

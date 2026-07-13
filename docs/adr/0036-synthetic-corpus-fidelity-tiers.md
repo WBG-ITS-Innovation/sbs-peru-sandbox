@@ -22,7 +22,7 @@ Peruvian INEI list. The corpus has to be generated.
 Three things vary across uses:
 
 - **Demo credibility.** Narratives need to look like real complaints
-  to the Supervisor and Sergio, not "Lorem ipsum about banking".
+  to the Supervisor and Superintendent, not "Lorem ipsum about banking".
 - **Validation coverage.** Every row must be Anexo 1-A
   structurally valid so the ingestion pipeline accepts it.
 - **Statistical realism for ML.** The Prompt 11 pattern detection

@@ -70,6 +70,11 @@ tags:
     description: Per-institution operational status.
   - name: Meta
     description: Health and version metadata.
+  - name: Sandbox (Institution)
+    description: |
+      Sandbox-only surfaces. Same authentication chain as the production
+      routes (mTLS + OAuth client credentials + HMAC), but intended for
+      integration rehearsal rather than regulatory submission.
 
 # Global default: least-privileged read scope. Write operations override
 # per-operation with `complaints:write` or `batch:upload`. Public probes
@@ -418,6 +423,78 @@ paths:
         "401": { $ref: "#/components/responses/Problem401" }
         "403": { $ref: "#/components/responses/Problem403" }
         "404": { $ref: "#/components/responses/Problem404" }
+        "500": { $ref: "#/components/responses/Problem500" }
+
+  /sandbox/complaints/granular:
+    post:
+      tags: [Sandbox (Institution)]
+      summary: Submit one granular complaint to the sandbox pipeline
+      operationId: submitGranularSandboxComplaint
+      security:
+        - mtls: []
+          oauth2_client_credentials: [complaints:write]
+          hmac_signature: []
+      description: |
+        Submit one Anexo-1A-shaped complaint over the sandbox institutional
+        path. Authentication is identical to `POST /v1/complaints` — mTLS,
+        an OAuth client-credentials token and an HMAC-signed canonical
+        request — and the same `Idempotency-Key` semantics apply.
+
+        Two things differ from the canonical Tier-1 route:
+
+        * **Richer payload.** This route accepts the granular
+          demo-ingestion shape (identity, resolution, bancaseguros and
+          monetary fields) rather than the Anexo 1-A 15-field subset that
+          `POST /v1/complaints` takes, so it can exercise the full data
+          quality rule set.
+        * **Synchronous receipt.** The response carries the complete
+          ingestion timeline — taxonomy normalisation, PII redaction,
+          canonical persistence, data-quality and Anexo 1-A rule results,
+          and the agent-pipeline outcome — instead of the lean 201 the
+          canonical route returns.
+
+        Both routes persist the same canonical complaint record and, when
+        `SBS_API_AGENTS_PIPELINE_ENABLED` is set, both run the same agent
+        chain. Use `POST /v1/complaints` for regulatory submission; use
+        this route to see the pipeline's reasoning in one response.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+        - $ref: "#/components/parameters/TraceparentHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SandboxGranularSubmission"
+      responses:
+        "201":
+          description: Complaint ingested; receipt carries the pipeline timeline.
+          headers:
+            traceparent: { $ref: "#/components/headers/TraceparentResponse" }
+            Idempotency-Replayed: { $ref: "#/components/headers/IdempotencyReplayedResponse" }
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: URL of the created canonical complaint resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxGranularReceipt"
+        "200":
+          description: |
+            Idempotent replay of a previous submission. Carries
+            `Idempotency-Replayed: true`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxGranularReceipt"
+        "400": { $ref: "#/components/responses/Problem400" }
+        "401": { $ref: "#/components/responses/Problem401" }
+        "403": { $ref: "#/components/responses/Problem403" }
+        "409": { $ref: "#/components/responses/Problem409" }
+        "422": { $ref: "#/components/responses/Problem422" }
+        "429": { $ref: "#/components/responses/Problem429" }
         "500": { $ref: "#/components/responses/Problem500" }
 
   /institutions/{institution_id}/status:
@@ -833,6 +910,132 @@ components:
           schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   schemas:
+
+    SandboxGranularSubmission:
+      type: object
+      additionalProperties: true
+      description: |
+        Granular sandbox submission. Only `institution_id` and `narrative`
+        are required; every other Anexo 1-A field is optional and its
+        absence is reported back through the receipt's data-quality
+        envelope rather than rejected outright, which is what makes this
+        route useful for rehearsing a mapping. The full accepted field set
+        is the demo-ingestion shape in
+        `api/sbs_api/models/demo_ingestion.py`; `additionalProperties` is
+        open here deliberately so an institution can post its own extra
+        columns and see them reported as unrecognised.
+      required:
+        - institution_id
+        - narrative
+      properties:
+        institution_id:
+          type: string
+          description: Must match the authenticated caller's institution.
+          example: SBS-001234
+        institution_complaint_id:
+          type: string
+          description: The institution's own complaint reference.
+        narrative:
+          type: string
+          description: Free-text complaint narrative. PII is redacted server-side before any agent sees it.
+        product:
+          type: string
+          description: Anexo 1-A product category (Anexo B code list).
+          example: TARJETA_CREDITO
+        motive:
+          type: string
+          description: Anexo 1-A motive (Anexo C code list).
+          example: COBRO_INDEBIDO
+        submotive:
+          type: string
+          description: Anexo 1-A sub-motive (Anexo D code list).
+        severity:
+          type: string
+          example: HIGH
+        channel_in:
+          type: string
+          description: Channel of intake (Anexo A code list).
+        amount_claimed:
+          type: number
+          description: Claimed amount; pairs with `moneda`.
+        moneda:
+          type: string
+          description: ISO 4217 currency for `amount_claimed`.
+          example: PEN
+        bancaseguros:
+          type: string
+          description: Bancassurance trigger (Anexo 1-A campo 24). When `si`, the three conditional bancaseguros fields become required.
+          example: "no"
+
+    SandboxGranularReceipt:
+      type: object
+      additionalProperties: true
+      description: |
+        Synchronous ingestion receipt. The `timeline` is the audit-visible
+        stage sequence the record actually went through, ending with the
+        agent-pipeline outcome when the pipeline is enabled.
+      required:
+        - submission_id
+        - institution_id
+        - complaint_id
+        - raw_complaint_id
+        - status
+        - idempotency_key
+        - received_at
+        - timeline
+        - data_quality
+        - redaction_policy_version
+        - data_quality_policy_version
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        institution_id:
+          type: string
+          example: SBS-001234
+        complaint_id:
+          type: string
+          description: Identifier of the canonical complaint this submission produced. Retrievable via `GET /v1/complaints/{complaint_id}`.
+        raw_complaint_id:
+          type: string
+          format: uuid
+          description: Identifier of the restricted, PII-bearing raw record.
+        status:
+          type: string
+          enum: [accepted, accepted_with_warnings, rejected, duplicate]
+        idempotency_key:
+          type: string
+        received_at:
+          type: string
+          format: date-time
+        event_id:
+          type: [integer, "null"]
+          description: Audit-chain event id, when one was emitted.
+        timeline:
+          type: array
+          description: Ordered ingestion stages, each with the instant it completed.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              event:
+                type: string
+                example: canonical_complaint_persisted
+              at:
+                type: string
+                format: date-time
+              detail:
+                type: string
+        data_quality:
+          type: object
+          additionalProperties: true
+          description: Errors, warnings and suggested enrichments from the demo data-quality policy.
+        redaction_policy_version:
+          type: string
+          example: pii-redaction-demo-v1
+        data_quality_policy_version:
+          type: string
+          example: dq-demo-v1
 
     Complaint:
       type: object

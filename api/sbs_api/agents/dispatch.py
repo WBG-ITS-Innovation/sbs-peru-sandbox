@@ -44,13 +44,13 @@ async def dispatch_agent_pipeline(complaint_id: str, *, tier: str) -> None:
     # Imported lazily: the agent package pulls in the tool registry and the
     # provider clients, which the request path has no reason to load when
     # the pipeline is switched off.
-    from sbs_api.agents.orchestrator import run_agent_pipeline
+    from sbs_api.agents.ingest_entry import run_agents_for_complaint
     from sbs_api.db.session import get_sessionmaker
 
     try:
         sessionmaker = get_sessionmaker()
         async with sessionmaker() as session:
-            outcome = await run_agent_pipeline(
+            outcome = await run_agents_for_complaint(
                 session, complaint_id=complaint_id
             )
             await session.commit()
@@ -58,6 +58,7 @@ async def dispatch_agent_pipeline(complaint_id: str, *, tier: str) -> None:
             "agents.dispatch.completed",
             complaint_id=complaint_id,
             tier=tier,
+            validation_verdict=outcome.validation_verdict,
             route_to=outcome.route_to,
         )
     except Exception as exc:  # noqa: BLE001 — best effort by contract

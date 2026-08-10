@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 """Model-provider factory and re-exports.
 
-Selects the active provider from the ``SBS_API_MODEL_PROVIDER`` env
-var. The factory caches a single instance per provider name so
-agents in the same process share the same client.
+Selects the active provider from ``Settings.agents_pipeline_provider``,
+which reads either ``SBS_API_MODEL_PROVIDER`` (documented name) or
+``SBS_API_AGENTS_PIPELINE_PROVIDER``. Configuration reaches this module
+only through ``Settings`` — one seam, per the config module contract.
+The factory caches a single instance per provider name so agents in the
+same process share the same client.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 from threading import Lock
 from typing import Any
 
@@ -61,19 +63,26 @@ def _build(name: str) -> ModelProvider:
 
 
 def _provider_from_settings() -> str | None:
-    """Resolve provider name via ``Settings`` so the field is not dead config.
+    """Resolve the provider name through ``Settings`` — the only env seam.
 
-    Returns ``None`` (so the caller falls back to env var / default) if the
-    settings module cannot be imported in the current context — which keeps
-    the unit tests that exercise this module without booting the full app
-    runnable.
+    Builds a fresh ``Settings`` rather than calling the ``lru_cache``-d
+    ``get_settings``: ``reset_provider_cache()`` is the documented way to
+    switch providers mid-process (the demo scripts and the test suite both
+    do it), and a cached ``Settings`` would pin the value read at import
+    time. ``Settings`` resolves both ``SBS_API_MODEL_PROVIDER`` and
+    ``SBS_API_AGENTS_PIPELINE_PROVIDER`` via the field's AliasChoices, so
+    this module no longer reads ``os.environ`` itself.
+
+    Returns ``None`` (caller falls back to the default) if the settings
+    module cannot be imported in the current context — which keeps the unit
+    tests that exercise this module without booting the full app runnable.
     """
     try:
-        from sbs_api.config import get_settings  # local import: avoid cycle
+        from sbs_api.config import Settings  # local import: avoid cycle
     except Exception:  # noqa: BLE001
         return None
     try:
-        return get_settings().agents_pipeline_provider
+        return Settings().agents_pipeline_provider
     except Exception:  # noqa: BLE001
         return None
 
@@ -81,14 +90,13 @@ def _provider_from_settings() -> str | None:
 def get_provider(name: str | None = None) -> ModelProvider:
     """Return the cached singleton for ``name``.
 
-    Resolution order: explicit ``name`` arg → ``SBS_API_MODEL_PROVIDER`` env
-    var (read directly so test overrides via ``monkeypatch.setenv`` work
-    without touching ``Settings``) → ``Settings.agents_pipeline_provider``
-    → hardcoded default ``on_prem``.
+    Resolution order: explicit ``name`` arg →
+    ``Settings.agents_pipeline_provider`` (env ``SBS_API_MODEL_PROVIDER``
+    or ``SBS_API_AGENTS_PIPELINE_PROVIDER``) → hardcoded default
+    ``on_prem``.
     """
     chosen = (
         name
-        or os.getenv("SBS_API_MODEL_PROVIDER")
         or _provider_from_settings()
         or "on_prem"
     ).lower()

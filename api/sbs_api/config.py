@@ -12,7 +12,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -332,12 +332,20 @@ class Settings(BaseSettings):
     )
     agents_pipeline_provider: str = Field(
         default="on_prem",
+        validation_alias=AliasChoices(
+            "SBS_API_MODEL_PROVIDER",
+            "SBS_API_AGENTS_PIPELINE_PROVIDER",
+        ),
         description=(
             "Provider used by the agent runtime: one of 'on_prem' | "
-            "'replay' | 'mock' | 'cloud'. Equivalent to setting "
-            "SBS_API_MODEL_PROVIDER. The on_prem provider falls back to "
-            "mock when no vLLM endpoint is reachable; cloud is gated "
-            "behind SBS_API_CLOUD_LEGAL_APPROVED=true and raises "
+            "'replay' | 'mock' | 'cloud'. Set via SBS_API_MODEL_PROVIDER "
+            "(the documented name, checked first) or "
+            "SBS_API_AGENTS_PIPELINE_PROVIDER. Both aliases resolve to "
+            "this one field, which is the only place the agent runtime "
+            "reads the provider from — sbs_api.agents.providers no "
+            "longer calls os.getenv itself. The on_prem provider falls "
+            "back to mock when no vLLM endpoint is reachable; cloud is "
+            "gated behind SBS_API_CLOUD_LEGAL_APPROVED=true and raises "
             "NotImplementedError today."
         ),
     )

@@ -104,6 +104,7 @@ class OnPremProvider:
         choices = body.get("choices") or []
         if not choices:
             return ModelResponse(
+                served_by=self.name,
                 text="",
                 model_id=self._model,
                 latency_ms=latency_ms,
@@ -128,6 +129,7 @@ class OnPremProvider:
             )
 
         return ModelResponse(
+            served_by=self.name,
             text=msg.get("content"),
             tool_calls=tool_calls,
             model_id=body.get("model") or self._model,

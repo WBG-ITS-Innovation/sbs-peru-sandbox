@@ -42,6 +42,11 @@ class ModelResponse:
     model_id: str = "unknown"
     latency_ms: int = 0
     finish_reason: str = "stop"
+    # Name of the provider that ACTUALLY produced this response. Differs
+    # from the configured provider whenever OnPremProvider falls back to
+    # MockProvider, which is the case that made "which model answered?"
+    # unanswerable from the database. Persisted to agent_runs.model_provider.
+    served_by: str | None = None
 
 
 @runtime_checkable

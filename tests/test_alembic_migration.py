@@ -130,4 +130,5 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
     # Part 12 added an additive migration that bumps the head past the
     # P11 demo-ui-polish overlay. The exact head string is recorded in
     # api/migrations/versions/ alongside the down-revision chain.
-    assert version_num == "20260529_0002"
+    # 20260810_0001 adds the nullable agent_runs.model_provider column.
+    assert version_num == "20260810_0001"

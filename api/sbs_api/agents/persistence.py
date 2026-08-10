@@ -74,8 +74,14 @@ async def finish_agent_run(
     tool_call_records: list[ToolCallRecord],
     final_output: dict[str, Any] | None,
     error: dict[str, Any] | None = None,
+    model_provider: str | None = None,
 ) -> AgentRun:
-    """Update an in-flight row to its terminal state + audit event."""
+    """Update an in-flight row to its terminal state + audit event.
+
+    ``model_provider`` is the provider that actually served the run's model
+    calls (``LoopResult.served_by``) — "mock" when OnPremProvider fell back,
+    not the configured "on_prem". Left None by agents that make no model
+    call, and by callers written before the column existed."""
     if status not in ("success", "partial", "failed", "timeout"):
         raise ValueError(f"unsupported agent_run status: {status!r}")
     run.ended_at = datetime.now(tz=timezone.utc)
@@ -83,6 +89,8 @@ async def finish_agent_run(
     run.tool_calls = [r.to_dict() for r in tool_call_records]
     run.final_output = final_output
     run.error = error
+    if model_provider is not None:
+        run.model_provider = model_provider
     await session.flush()
 
     await record_audit_event(
@@ -96,6 +104,7 @@ async def finish_agent_run(
             "agent_run_id": run.id,
             "status": status,
             "tool_call_count": len(tool_call_records),
+            "model_provider": model_provider,
         },
     )
     return run

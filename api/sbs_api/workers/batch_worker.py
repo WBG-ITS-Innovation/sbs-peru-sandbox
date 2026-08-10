@@ -33,6 +33,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError
 
+from sbs_api.agents.dispatch import dispatch_agent_pipeline
 from sbs_api.config import get_settings
 from sbs_api.db.models.batch import BatchRecord
 from sbs_api.db.models.batch_row_rejection import BatchRowRejection
@@ -202,6 +203,7 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
     try:
         accepted = 0
         rejected = 0
+        _accepted_complaint_ids: list[str] = []
         _pending_rejections: list[BatchRowRejection] = []
         raw_bytes = csv_path.read_bytes()
         reader = csv.DictReader(
@@ -244,6 +246,7 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
                                 session.add(record)
                                 await session.flush()
                             accepted += 1
+                            _accepted_complaint_ids.append(complaint.complaint_id)
                         except IntegrityError as exc:
                             # Narrowed per Prompt 8 cross-review: only
                             # DB constraint violations (typically
@@ -313,6 +316,17 @@ async def process_batch(ctx: dict[str, Any], batch_id: str) -> dict[str, Any]:
             row_count_rejected=rejected,
             job_try=job_try,
         )
+
+        # Part 12 — run the agent chain over the rows this batch accepted,
+        # after the batch transaction above has committed. Previously only
+        # the Tier-1 demo path produced agent_runs, which is why
+        # scripts/run_agent_pipeline_on_new.py existed as a host-side
+        # sweeper; batch rows now get the same treatment inline.
+        # dispatch_agent_pipeline is gated on
+        # SBS_API_AGENTS_PIPELINE_ENABLED and never raises, so a batch that
+        # ingested cleanly still reports complete if an agent misbehaves.
+        for accepted_id in _accepted_complaint_ids:
+            await dispatch_agent_pipeline(accepted_id, tier="tier2")
 
         # Workstream D enqueues the outbound webhook here.
         try:

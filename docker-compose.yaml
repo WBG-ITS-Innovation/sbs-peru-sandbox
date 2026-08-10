@@ -32,6 +32,12 @@ x-api-env: &api-env
   SBS_API_AUTH_STUB_ENABLED: "false"
   SBS_API_BATCH_STORAGE_PATH: /app/data/batches
   SBS_API_ALLOW_INSECURE_WEBHOOK_URLS: "true"
+  # Part 12 — the batch worker now runs the agent chain over each accepted
+  # row (previously only scripts/run_agent_pipeline_on_new.py did, host-side).
+  # Default stays false so the worker's behaviour is unchanged unless an
+  # operator opts in; export either var before `docker compose up` to enable.
+  SBS_API_AGENTS_PIPELINE_ENABLED: "${SBS_API_AGENTS_PIPELINE_ENABLED:-false}"
+  SBS_API_MODEL_PROVIDER: "${SBS_API_MODEL_PROVIDER:-on_prem}"
   # uv writes a `.lock` into UV_PROJECT_ENVIRONMENT during `sync`. The
   # source mount is read-only (so a container bug cannot corrupt the
   # repo); the venv lives in a dedicated writable named volume.

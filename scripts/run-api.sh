@@ -16,11 +16,27 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 cd "$REPO_ROOT"
 
+# .env supplies DEFAULTS ONLY — anything the caller exported wins.
+#
+# This used to be a plain `set -a; . ./.env; set +a`, which runs after the
+# caller's exports and therefore overwrote them. The documented invocation
+# `SBS_API_MTLS_MODE=direct bash scripts/run-api.sh` silently started in
+# whatever mode .env named, so the API came up on plain HTTP while
+# claiming mTLS and scripts/smoke-test-auth.sh could not pass.
+#
+# Now: snapshot the caller's environment first, source .env into the
+# environment, then restore every variable the caller had already set.
+# A fresh clone with no .env behaves exactly as before.
 if [[ -f .env ]]; then
+  _caller_env="$(export -p)"
   set -a
   # shellcheck disable=SC1091
   . ./.env
   set +a
+  # Re-applying the snapshot restores caller-set values and leaves
+  # variables that only .env defined untouched.
+  eval "$_caller_env"
+  unset _caller_env
 fi
 
 export SBS_API_AUTH_STUB_ENABLED="${SBS_API_AUTH_STUB_ENABLED:-true}"

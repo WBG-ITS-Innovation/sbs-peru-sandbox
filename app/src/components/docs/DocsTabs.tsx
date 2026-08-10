@@ -697,6 +697,17 @@ X-SBS-Signature: hmac-sha256-v1=<base64(HMAC_SHA256(secret, canonical))>`}
   );
 }
 
+// Anexo 1-A per Res. SBS N° 04036-2022: 27 fields = 23 base (campos 1–23,
+// COD_REC .. MNT_PEN_REC) + the bancaseguros block (campo 24 BAN_SEG as the
+// trigger, campos 25/26/27 PRD_SBS_SEG / MOT_SBS_SEG / SUB_SBS_SEG as its
+// conditionals). That numbering is what the data-quality rules assert —
+// see DQ-A1A-024..027 in api/sbs_api/data_quality/annex_1a_rules.py.
+//
+// EMPRESA (reporting entity) is deliberately NOT in this list even though
+// it is column 28 of the source spreadsheet: the API derives it from the
+// authenticated caller (OAuth token subject + mTLS certificate), so an
+// institution never supplies it in a payload. Listing it here is what made
+// this table render 28 rows under a "27 campos" heading.
 function AnnexTab({ es }: { es: boolean }) {
   const fields: Array<{ key: string; type: string; desc_es: string; desc_en: string; req: boolean }> = [
     { key: 'COD_REC', type: 'string', desc_es: 'Código del reclamo (institución)', desc_en: 'Complaint code (institution)', req: true },
@@ -726,7 +737,6 @@ function AnnexTab({ es }: { es: boolean }) {
     { key: 'MOT_SBS_SEG', type: 'enum', desc_es: 'Motivo SBS bancaseguros', desc_en: 'SBS bancassurance motive', req: false },
     { key: 'SUB_SBS_SEG', type: 'enum', desc_es: 'Submotivo SBS bancaseguros', desc_en: 'SBS bancassurance submotive', req: false },
     { key: 'MNT_PEN_REC', type: 'decimal', desc_es: 'Monto pendiente en PEN', desc_en: 'Pending amount in PEN', req: false },
-    { key: 'EMPRESA', type: 'string', desc_es: 'Entidad reportante', desc_en: 'Reporting entity', req: true },
   ];
   return (
     <Card>

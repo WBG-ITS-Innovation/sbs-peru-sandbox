@@ -96,6 +96,7 @@ class ReplayProvider:
                 for tc in turn["tool_calls"]
             ]
             return ModelResponse(
+                served_by=self.name,
                 text=None,
                 tool_calls=calls,
                 model_id=model_id,
@@ -103,6 +104,7 @@ class ReplayProvider:
             )
 
         return ModelResponse(
+            served_by=self.name,
             text=turn.get("text", ""),
             model_id=model_id,
             finish_reason="stop",

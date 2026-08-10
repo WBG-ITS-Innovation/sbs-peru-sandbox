@@ -69,6 +69,16 @@ class AgentRun(Base):
     # original Prompt 10 contract.
     status: Mapped[str] = mapped_column(String(16), nullable=False)
 
+    # Provider that ACTUALLY served this run's model calls — one of
+    # {on_prem, replay, mock, cloud}. Recorded because OnPremProvider
+    # silently falls back to MockProvider when no vLLM endpoint answers:
+    # before this column the fact that a mock, not a model, produced an
+    # output survived only in process stderr, which ADR 0001's "every
+    # reasoning step is reconstructable from the database" contract needs
+    # it not to. Nullable: rows written before the column existed, and
+    # agents that make no model call, legitimately have none.
+    model_provider: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     # Ordered array of tool-call records. Shape governed by the JSON Schema.
     tool_calls: Mapped[list] = mapped_column(JSONB, nullable=False)
 

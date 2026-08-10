@@ -37,6 +37,11 @@
       "pattern": "^[a-z][a-z0-9-]*[a-z0-9]-\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z-.]+)?$",
       "description": "Format: <agent_name>-<semver>. Example: triage-0.3.1."
     },
+    "model_provider": {
+      "type": ["string", "null"],
+      "enum": ["on_prem", "replay", "mock", "cloud", null],
+      "description": "Provider that ACTUALLY served this run's model calls, not the one configured: on_prem falls back to mock when no vLLM endpoint answers, and this records the substitution. Null for runs written before the field existed and for agents that make no model call. Optional so exports predating it still validate."
+    },
     "started_at": {
       "type": "string",
       "format": "date-time",

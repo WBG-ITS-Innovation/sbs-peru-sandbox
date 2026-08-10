@@ -87,9 +87,18 @@ async def validate_tier1_record(
     provider: ModelProvider | None = None,
     now: datetime | None = None,
     sender: Any = None,
+    record_only: bool = False,
 ) -> ValidationResult:
     """Tier-1 individual path. Returns a ValidationResult; the caller
-    proceeds to Triage only when ``proceeds_to_triage`` is True."""
+    proceeds to Triage only when ``proceeds_to_triage`` is True.
+
+    ``record_only=True`` writes the ``validation_audit`` row but skips the
+    FLAGGED_FOR_ENRICHMENT side effects — the EnrichmentRequest row and the
+    outbound webhook asking the institution to resubmit. The canonical
+    Tier-1 ingest path uses it because that surface cannot yet satisfy the
+    Pass-1 rules (see sbs_api.agents.ingest_entry), so firing enrichment
+    requests from there would mean one spurious webhook per complaint.
+    Defaults to False, leaving every existing caller unchanged."""
     provider = provider or get_provider()
     _ensure_on_prem(provider)
     now = now or datetime.now(tz=timezone.utc)
@@ -132,7 +141,7 @@ async def validate_tier1_record(
     )
 
     enrichment_id: str | None = None
-    if routing_action == "FLAGGED_FOR_ENRICHMENT":
+    if routing_action == "FLAGGED_FOR_ENRICHMENT" and not record_only:
         enrichment_id = await _flag_for_enrichment(
             session,
             complaint_id=complaint_id,

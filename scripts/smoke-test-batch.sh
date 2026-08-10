@@ -51,7 +51,7 @@ case "$STAGE" in
       tests/test_alembic_migration.py \
       || fail "stage-a pytest assertions did not pass"
     note "Spectral lint check on api/openapi/sbs-api-v1.yaml"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
     echo
@@ -80,7 +80,7 @@ case "$STAGE" in
       tests/test_batch_rejections_pagination.py \
       || fail "stage-c assertions did not pass"
     note "Spectral lint 0 errors"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
     echo
@@ -157,7 +157,7 @@ case "$STAGE" in
       || fail "stage-g-contract pytest assertions did not pass"
 
     note "Spectral lint 0 errors on api/openapi/sbs-api-v1.yaml"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
 

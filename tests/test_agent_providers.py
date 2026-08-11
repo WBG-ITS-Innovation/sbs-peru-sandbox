@@ -67,6 +67,49 @@ async def test_mock_provider_emits_default_triage_script():
 
 
 @pytest.mark.asyncio
+async def test_mock_provider_cursor_is_per_complaint():
+    """Each complaint replays its agent's script from the top.
+
+    Semantic change: the cursor used to be keyed on ``agent_name`` alone,
+    so a long-lived process (the API, the arq worker) ran off the end of
+    the script after its first complaint and every complaint after that
+    got zero tool calls. Keying on ``(agent_name, complaint_id)`` — the
+    same keying ReplayProvider already used — makes the provider
+    order-independent across complaints.
+    """
+    provider = MockProvider()
+    first_turn_tools = [
+        "query_dq_results",
+        "query_taxonomy_normalizations",
+        "classify_complaint",
+    ]
+
+    # Drain the script for one complaint, past its end.
+    for _ in range(4):
+        await provider.complete([], agent_name="triage", complaint_id="A-1")
+
+    # A different complaint still gets turn 0, not the exhausted tail.
+    r = await provider.complete([], agent_name="triage", complaint_id="B-2")
+    assert r.finish_reason == "tool_calls"
+    assert [tc.name for tc in r.tool_calls] == first_turn_tools
+
+    # ...and a third, and a tenth. Process age is irrelevant.
+    for n in range(10):
+        rn = await provider.complete(
+            [], agent_name="triage", complaint_id=f"C-{n}"
+        )
+        assert [tc.name for tc in rn.tool_calls] == first_turn_tools
+
+    # The drained complaint stays drained — cursors are independent, not
+    # globally reset by another complaint's arrival.
+    drained = await provider.complete(
+        [], agent_name="triage", complaint_id="A-1"
+    )
+    assert drained.finish_reason == "stop"
+    assert drained.text == ""
+
+
+@pytest.mark.asyncio
 async def test_replay_provider_loads_demo_fixture():
     provider = ReplayProvider()
     r1 = await provider.complete(

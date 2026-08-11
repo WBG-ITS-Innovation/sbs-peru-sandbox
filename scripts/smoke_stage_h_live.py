@@ -10,20 +10,32 @@ in-process shortcuts:
 
 1. Confirms the postgres / redis / worker compose services are running,
    and that the worker container has the agent pipeline switched on.
-2. **Tier 1** — signed ``POST /v1/complaints`` over mTLS against the
-   running API (real client cert + OAuth client-credentials token +
-   HMAC-SHA256 canonical request), then polls Postgres until the
-   background dispatch has written its rows.
-3. **Tier 2** — signed multipart ``POST /v1/batches`` over the same
-   chain. The batch is picked up by the **worker container**, so the
-   agent runs asserted here executed inside a container, reached over
-   the docker network via Redis and Postgres.
+2. **Tier 1** — **two** signed ``POST /v1/complaints`` back to back over
+   mTLS against the running API (real client cert + OAuth
+   client-credentials token + HMAC-SHA256 canonical request), then polls
+   Postgres until the background dispatch has written its rows.
+3. **Tier 2** — signed multipart ``POST /v1/batches`` with **two rows**
+   over the same chain. The batch is picked up by the **worker
+   container**, so the agent runs asserted here executed inside a
+   container, reached over the docker network via Redis and Postgres.
 4. Asserts, for both tiers: a ``validation_audit`` row exists and is
    timestamped ahead of the first ``agent_runs`` row (DIValeVale ran
    before Triage), and the ``triage`` run's ``model_provider`` is
    **non-null** — the provider identity that used to survive only in
    stderr. The validation *verdict* is logged, never asserted; see
    ``_assert_agent_trace``.
+5. Asserts every ``triage`` run did real work — ``tool_calls`` is
+   **non-empty** — and that when triage routes to investigation the
+   downstream stages actually ran.
+
+**Why two submissions per tier.** Model providers hold per-run script
+state. When that state was keyed per agent instead of per complaint, the
+first complaint a process served got a full agent run and every complaint
+after it got a hollow one: zero tool calls, ``other @ 0.55``,
+``route_to=info-only``, no downstream stages. One submission per tier
+cannot see that class of bug — this gate passed against it. Two
+submissions into the same process can, and the worker is the sharpest
+test of the pair because it is long-lived by construction.
 
 Nothing here is faked: no in-process HTTP client, no transport stub, no
 dependency override, no patching. Every request is a real TLS connection
@@ -35,7 +47,12 @@ Pre-conditions:
     SBS_API_AGENTS_PIPELINE_ENABLED=true docker compose up -d worker
     SBS_API_MTLS_MODE=direct SBS_API_AUTH_STUB_ENABLED=false \\
       SBS_API_PORT=8443 SBS_API_AGENTS_PIPELINE_ENABLED=true \\
-      bash scripts/run-api.sh
+      SBS_API_RELOAD=false bash scripts/run-api.sh
+
+``SBS_API_RELOAD=false`` is the default now, and it matters here: this
+gate asserts steady-state behaviour across two submissions, and a
+uvicorn reload between them restarts the API — resetting exactly the
+per-process provider state the two submissions exist to test.
 
 Exits 0 on success, non-zero on the first failed assertion.
 """
@@ -168,7 +185,8 @@ def _require_api() -> None:
             f"API not reachable over mTLS at {BASE} (got {out.strip()!r}). "
             "Start it with SBS_API_MTLS_MODE=direct "
             "SBS_API_AUTH_STUB_ENABLED=false SBS_API_PORT=8443 "
-            "SBS_API_AGENTS_PIPELINE_ENABLED=true bash scripts/run-api.sh"
+            "SBS_API_AGENTS_PIPELINE_ENABLED=true SBS_API_RELOAD=false "
+            "bash scripts/run-api.sh"
         )
     _log(f"API reachable over mTLS at {BASE}")
 
@@ -252,8 +270,11 @@ def _submit_tier1(suffix: str) -> str:
     return complaint_id
 
 
-def _submit_tier2(suffix: str) -> tuple[str, list[str]]:
-    ids = [f"{TIER2['prefix']}-2026-{suffix}"]
+def _submit_tier2(suffixes: list[str]) -> tuple[str, list[str]]:
+    # Two rows, not one: the worker container is a long-lived process, so
+    # two complaints in a single batch is the cheapest way for this gate to
+    # see per-process provider state go stale on the Tier-2 side.
+    ids = [f"{TIER2['prefix']}-2026-{s}" for s in suffixes]
     header = (
         "complaint_id,institution_id,received_date,complainant_doc_type,"
         "product_category,channel,motivo_code,severity,description_text,"
@@ -262,12 +283,13 @@ def _submit_tier2(suffix: str) -> tuple[str, list[str]]:
     )
     today = dt.date.today().isoformat()
     rows = [
-        f"{ids[0]},{TIER2['institution_id']},{today},DNI,TARJETA_CREDITO,WEB,"
+        f"{cid},{TIER2['institution_id']},{today},DNI,TARJETA_CREDITO,WEB,"
         "COBRO_INDEBIDO,HIGH,stage-h-full cobro de comision no autorizada por "
         "S/ 120.00 sin aviso previo,es,35_44,150101,WEB,,pendiente"
+        for cid in ids
     ]
     csv_bytes = (header + "\n" + "\n".join(rows) + "\n").encode("utf-8")
-    csv_path = REPO_ROOT / "data" / "batches" / f"stage-h-{suffix}.csv"
+    csv_path = REPO_ROOT / "data" / "batches" / f"stage-h-{suffixes[0]}.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     csv_path.write_bytes(csv_bytes)
 
@@ -291,7 +313,7 @@ def _submit_tier2(suffix: str) -> tuple[str, list[str]]:
         TIER2, "-o", "/dev/stdout", "-w", "\n%{http_code}",
         "-X", "POST",
         "-H", f"Authorization: Bearer {token}",
-        "-H", f"Idempotency-Key: stage-h-batch-{suffix}",
+        "-H", f"Idempotency-Key: stage-h-batch-{suffixes[0]}",
         "-H", f"X-SBS-Timestamp: {timestamp}",
         "-H", f"X-SBS-Signature: hmac-sha256-v1={sig}",
         "-H", f"X-SBS-Institution-Id: {TIER2['institution_id']}",
@@ -307,7 +329,7 @@ def _submit_tier2(suffix: str) -> tuple[str, list[str]]:
     return batch_id, ids
 
 
-async def _poll_batch_complete(batch_id: str) -> None:
+async def _poll_batch_complete(batch_id: str, *, expect_rows: int = 1) -> None:
     conn = await asyncpg.connect(LIVE_DSN)
     try:
         deadline = time.time() + POLL_TIMEOUT_S
@@ -317,8 +339,12 @@ async def _poll_batch_complete(batch_id: str) -> None:
                 batch_id,
             )
             if row and row["status"] == "complete":
-                if row["row_count_accepted"] < 1:
-                    _fail(f"batch {batch_id} accepted 0 rows")
+                if row["row_count_accepted"] < expect_rows:
+                    _fail(
+                        f"batch {batch_id} accepted "
+                        f"{row['row_count_accepted']} rows, expected "
+                        f"{expect_rows}"
+                    )
                 _log(f"batch complete: accepted={row['row_count_accepted']}")
                 return
             if row and row["status"] == "failed":
@@ -338,7 +364,9 @@ async def _assert_agent_trace(complaint_id: str, *, tier: str) -> None:
         runs: list = []
         while time.time() < deadline:
             runs = await conn.fetch(
-                "SELECT agent_name, status, model_provider, started_at "
+                "SELECT agent_name, status, model_provider, started_at, "
+                "       COALESCE(jsonb_array_length(tool_calls), 0) AS n_tools, "
+                "       final_output->>'route_to' AS route_to "
                 "FROM agent_runs WHERE complaint_id = $1 ORDER BY started_at",
                 complaint_id,
             )
@@ -388,11 +416,38 @@ async def _assert_agent_trace(complaint_id: str, *, tier: str) -> None:
                     f"{tier}: triage agent_run for {complaint_id} has NULL "
                     "model_provider — provider identity was not persisted"
                 )
+            # Non-empty tool_calls is the assertion that catches a provider
+            # whose script cursor has run off the end: the run still says
+            # status=success, but it did no work. A provider keyed per
+            # agent instead of per complaint produces exactly this for
+            # every complaint after the first one a process serves.
+            if r["n_tools"] < 1:
+                _fail(
+                    f"{tier}: triage agent_run for {complaint_id} recorded "
+                    f"{r['n_tools']} tool calls — the agent produced no work. "
+                    "The model provider's script cursor is most likely "
+                    "exhausted; it must be keyed per (agent, complaint)."
+                )
+
+        # Whatever triage routed to must actually have happened. This is
+        # the second half of the same check: a hollow triage run reports
+        # route_to=info-only, so a gate that only looked at triage would
+        # see a consistent-looking dead end.
+        names = {r["agent_name"] for r in runs}
+        routes = {r["route_to"] for r in triage if r["route_to"]}
+        if "investigation" in routes:
+            missing = {"investigation", "synthesis"} - names
+            if missing:
+                _fail(
+                    f"{tier}: triage routed {complaint_id} to investigation "
+                    f"but {sorted(missing)} never ran — saw {sorted(names)}"
+                )
+
         _log(
             f"{tier}: agent_runs "
             + ", ".join(
                 f"{r['agent_name']}(status={r['status']},"
-                f"provider={r['model_provider']})"
+                f"provider={r['model_provider']},tools={r['n_tools']})"
                 for r in runs
             )
         )
@@ -404,16 +459,22 @@ async def main() -> int:
     _require_services()
     _require_api()
 
-    suffix = f"{int(time.time()) % 1000000:06d}"
+    base = int(time.time()) % 1000000
+    # Four distinct ids: two Tier-1 submissions and two Tier-2 batch rows.
+    sfx = [f"{(base + i) % 1000000:06d}" for i in range(4)]
 
-    _log("--- Tier 1: signed POST /v1/complaints ---")
-    complaint_id = _submit_tier1(suffix)
-    await _assert_agent_trace(complaint_id, tier="tier1")
+    _log("--- Tier 1: two signed POST /v1/complaints, same process ---")
+    tier1_ids = [_submit_tier1(s) for s in sfx[:2]]
+    for n, cid in enumerate(tier1_ids, start=1):
+        # Submission 2 is the one that used to come back hollow.
+        _log(f"tier1: asserting submission {n}/{len(tier1_ids)} ({cid})")
+        await _assert_agent_trace(cid, tier="tier1")
 
-    _log("--- Tier 2: signed POST /v1/batches (worker container) ---")
-    batch_id, batch_ids = _submit_tier2(suffix)
-    await _poll_batch_complete(batch_id)
-    for cid in batch_ids:
+    _log("--- Tier 2: signed POST /v1/batches, 2 rows (worker container) ---")
+    batch_id, batch_ids = _submit_tier2(sfx[2:])
+    await _poll_batch_complete(batch_id, expect_rows=len(batch_ids))
+    for n, cid in enumerate(batch_ids, start=1):
+        _log(f"tier2: asserting row {n}/{len(batch_ids)} ({cid})")
         await _assert_agent_trace(cid, tier="tier2")
 
     _log("stage-h-full live assertion: PASS")

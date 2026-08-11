@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Run the agent pipeline on complaints that do not yet have agent_runs.
+"""Backfill utility: run the agent pipeline over complaints that have no
+``agent_runs`` rows.
 
-Batch ingestion is processed by the arq worker container, whose environment
-does not enable the agent pipeline (it defaults off so the Prompt-11
-regression suite stays green). This host-side pass closes that gap for the
-demo: after a batch lands, it finds every complaint with zero ``agent_runs``
-rows and runs triage -> investigation -> synthesis against them, using the
-model provider selected by ``SBS_API_MODEL_PROVIDER`` (the same env var
-scripts/demo.sh exports).
+**Not part of any ingestion path.** Both tiers now run the chain
+themselves — Tier 1 dispatches it as a background task after the 201, and
+the arq worker runs it over each accepted batch row — so nothing depends
+on this script being invoked. Earlier it was load-bearing for the demo,
+because the worker never ran agents at all; that gap is closed.
+
+What remains is the backfill case: complaints ingested while
+``SBS_API_AGENTS_PIPELINE_ENABLED`` was false (its default) have no
+agent_runs, and this walks them. Useful after flipping the flag on, or
+against a database seeded before the wiring existed.
 
 It is idempotent: a complaint that already has at least one agent_run is
 skipped, so re-running never double-processes.

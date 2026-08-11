@@ -179,3 +179,37 @@ For `BCO-2026-000001` the chain must produce, deterministically:
 These invariants are encoded in the ReplayProvider fixture under
 `api/sbs_api/agents/fixtures/replay/` and asserted by
 `tests/integration/test_agent_pipeline.py`.
+
+## Addendum (2026-08-11) — the roster as built
+
+The Layer-1 roster above is the roster as decided; it has since drifted from
+what ships. The decision itself — three layers, an in-house tool-calling loop,
+`allowed_tools` enforced by the runtime, supervisor approval before anything
+reaches an institution — stands unchanged. Only the membership differs, so this
+is recorded as an addendum rather than a rewrite. Current reality:
+
+- **Real agents, driving the tool-calling loop:** `triage`, `investigation`,
+  `synthesis`. These call tools, decide routing, and produce a structured
+  `final_output`.
+- **`live-ingestion-orchestrator`** — the pipeline wrapper that writes its own
+  `agent_runs` row (typically `status=partial`) around a chain execution.
+- **`cross-source-correlator`** — still scaffolded and `ReplayProvider`-driven,
+  as decided. It runs on every complaint that routes to investigation, and
+  falls back to a blank `_default.json` for any complaint other than
+  `BCO-2026-000001`. See [docs/HANDOVER-NOTES.md](../HANDOVER-NOTES.md).
+- **`divalevale`** — wired into both ingestion tiers ahead of Triage, writing one
+  `validation_audit` row per complaint, but **record-only**: its verdict gates
+  nothing and its enrichment side effects are suppressed. Two prerequisites
+  before it can enforce, both in the handover notes.
+- **`taxonomy-harmonizer` no longer exists.** It was removed along with its
+  replay fixtures; `tests/cleanup/test_no_scaffold_agents.py` keeps it gone.
+  Taxonomy normalization survives as a *tool*, not an agent.
+- **Registry-only scaffolds** — `reclamito`, `lupaman`, `insight-chatbot` appear
+  in `api/sbs_api/agents/registry.py` so the cockpit can display them, and have
+  no runtime behind them.
+
+`AGENT_REGISTRY` in `api/sbs_api/agents/registry.py` is the locked source of
+truth for what the cockpit shows: `divalevale`, `reclamito`, `lupaman`, `triage`,
+`investigation`, `insight-chatbot`. Note that it is a *display* roster and
+deliberately not the same set as the agents that write `agent_runs` rows —
+`synthesis` and `cross-source-correlator` run without appearing on a card.

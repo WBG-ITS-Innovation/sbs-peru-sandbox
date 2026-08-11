@@ -39,6 +39,48 @@ bash scripts/smoke-test.sh
 
 Run `make help` for the full set of convenience targets (tests, smoke suite, corpus regeneration, developer portal, standards pack).
 
+## Run the supervisor cockpit
+
+The cockpit is a separate Next.js app under `app/`. It needs **two API processes**, because the institution-facing channel and the internal channel have deliberately different auth postures:
+
+| Process | Port | Posture | Serves |
+|---|---|---|---|
+| Institution-facing API | `8443` | mTLS direct, real auth chain, `SBS_API_AUTH_STUB_ENABLED=false` | `POST /v1/complaints`, `POST /v1/batches` — everything an institution calls |
+| Internal API | `8000` | Plain HTTP, auth stub on, shared-secret bearer on `/v1/internal/*` | The cockpit's server-side fetches (Next.js → FastAPI, server-to-server) |
+
+Running only the `8443` process leaves the cockpit unable to reach a backend and `/app/cockpit` returns **HTTP 500** with `fetch failed`. That is the most common way to get a broken-looking cockpit.
+
+```bash
+# 1. Postgres + Redis + migrations + seeds (as above), plus Keycloak —
+#    the supervisor session is Keycloak-backed per ADR 0040. The realm
+#    'sbs-demo' is imported automatically from infra/keycloak/.
+bash scripts/dev-up.sh
+docker compose up -d keycloak
+
+# 2. Institution-facing API on :8443 (README step 2 above).
+
+# 3. Internal API on :8000, in a second terminal. This is the one the
+#    cockpit talks to; the auth-stub default is what you want here.
+SBS_API_PORT=8000 bash scripts/run-api.sh
+
+# 4. Cockpit env. The shared secret must MATCH on both sides:
+#    app/.env.local          SBS_INTERNAL_API_SECRET
+#    the FastAPI processes   SBS_API_INTERNAL_API_SECRET   (root .env)
+cp app/.env.example app/.env.local
+# then edit app/.env.local — see the comments in app/.env.example
+
+# 5. Run the cockpit.
+cd app && npm install && npm run dev
+```
+
+Then open the demo-mode session bootstrap, which acquires Keycloak tokens for the three demo personas and redirects to the cockpit:
+
+<http://localhost:3000/app/api/auth/demo-login>
+
+The cockpit itself is at **<http://localhost:3000/app/cockpit>** (`/supervisor` is not a route and 404s). `SBS_DEMO_MODE=true` is what exposes `demo-login`; with it off the route returns 404 and you log in through Keycloak normally at `/app/login`.
+
+See [app/README.md](app/README.md) for the route map and [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) for the operational caveats worth knowing before a demo.
+
 The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's auto-generated `/openapi.json`, `/docs`, and `/redoc` are disabled per ADR 0028 §6 — the curated YAML is the contract. The running API also serves the rendered developer portal at `/v1/portal/` (Stoplight Elements, vendored locally per ADR 0037, no CDN dependency).
 
 ## Architecture

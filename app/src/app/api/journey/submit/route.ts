@@ -21,12 +21,13 @@ import { SESSION_COOKIE } from '@/auth/cookies';
 import { checkCsrf } from '@/auth/csrf';
 import { activePersona, getSession } from '@/auth/session';
 
+import { pythonBin } from '@/lib/python';
+
 // Force Node runtime; child_process is unavailable on edge.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const VENV_PY = path.join(REPO_ROOT, '.venv', 'bin', 'python');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'journey_submit.py');
 const API_BASE = process.env.SBS_SANDBOX_API_BASE ?? 'http://localhost:8000/v1';
 
@@ -39,7 +40,7 @@ interface SubmitResult {
 
 function runJourneySubmit(payload: unknown): Promise<SubmitResult> {
   return new Promise((resolve) => {
-    const child = spawn(VENV_PY, [SCRIPT, '--api-base', API_BASE], {
+    const child = spawn(pythonBin(), [SCRIPT, '--api-base', API_BASE], {
       env: { ...process.env, PYTHONPATH: path.join(REPO_ROOT, 'api') },
       cwd: REPO_ROOT,
     });

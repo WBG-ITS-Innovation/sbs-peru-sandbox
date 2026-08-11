@@ -11,16 +11,17 @@ import { NextResponse } from 'next/server';
 import { SESSION_COOKIE } from '@/auth/cookies';
 import { activePersona, getSession } from '@/auth/session';
 
+import { pythonBin } from '@/lib/python';
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const VENV_PY = path.join(REPO_ROOT, '.venv', 'bin', 'python');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'cockpit_insights.py');
 
 function run(): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const child = spawn(VENV_PY, [SCRIPT], { cwd: REPO_ROOT });
+    const child = spawn(pythonBin(), [SCRIPT], { cwd: REPO_ROOT });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (c: Buffer) => {

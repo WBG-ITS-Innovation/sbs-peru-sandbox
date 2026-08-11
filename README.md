@@ -118,6 +118,7 @@ Integrator-surface ADRs: [0037 portal serving](docs/adr/0037-developer-portal-se
 
 ## Documentation
 
+- [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) — operational sharp edges, deliberate limitations, errata
 - [docs/adr/](docs/adr/) — architectural decision records
 - [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — synthetic-data provenance
 - [docs/demo/institution-api-workflow.md](docs/demo/institution-api-workflow.md) — institution API walkthrough

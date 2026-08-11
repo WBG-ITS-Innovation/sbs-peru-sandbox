@@ -124,6 +124,12 @@ The orchestrator from P11A (`run_demo_ingestion`) runs end-to-end:
 The supervisor cockpit at `/app/cockpit` shows the new card within
 the SSE delivery window (best-effort).
 
+The cross-source panel on that card will be **empty** for a freshly
+submitted complaint: the correlator is replay-driven and falls back to
+an intentionally blank default fixture. Demos that need a populated
+cross-source panel or the anomaly card use the seeded golden complaint
+`BCO-2026-000001`. See [docs/HANDOVER-NOTES.md](../HANDOVER-NOTES.md).
+
 ## Running the workflow
 
 ### 1. Start the API

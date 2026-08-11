@@ -121,7 +121,7 @@ The orchestrator from P11A (`run_demo_ingestion`) runs end-to-end:
 7. One `complaint.received` SSE delta published on the `cockpit`
    topic with the redacted card payload.
 
-The supervisor cockpit at `/supervisor` shows the new card within
+The supervisor cockpit at `/app/cockpit` shows the new card within
 the SSE delivery window (best-effort).
 
 ## Running the workflow
@@ -159,8 +159,13 @@ do **not** pass `--insecure-skip-mtls` to the CLI.
 ### 2. Start the supervisor cockpit (optional, to see the SSE delta)
 
 ```bash
-cd app && npm install && npm run dev    # cockpit at http://localhost:3000/supervisor
+cd app && npm install && npm run dev    # cockpit at http://localhost:3000/app/cockpit
 ```
+
+The cockpit fetches server-to-server from an API on `:8000` and needs
+Keycloak up for its session; `npm run dev` alone is not enough. Full
+bootstrap — both API processes, the shared secret, and the demo-login
+URL — is in the README's "Run the supervisor cockpit" section.
 
 ### 3. Send one complaint from the CLI
 
@@ -301,7 +306,7 @@ Left pane — institution terminal:
 Right pane — supervisor cockpit:
 
 ```
-http://localhost:3000/supervisor
+http://localhost:3000/app/cockpit
 ```
 
 Watch the cockpit pick up the new card on the `complaint.received`

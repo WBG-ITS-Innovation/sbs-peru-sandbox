@@ -33,28 +33,28 @@ Supervisor surface — `src/app/(supervisor)/`:
 |---|---|
 | `/app/cockpit` | Live — server-rendered via `internalGet` |
 | `/app/cockpit/aggregates` | Live — client fetches `/app/api/aggregates/*` |
-| `/app/queue` | Live — client fetch |
+| `/app/queue` | Static — stub: renders an `EmptyState` pointing at Findings, no data call |
 | `/app/findings`, `/app/findings/[id]` | Live — server-rendered |
 | `/app/approvals`, `/app/approvals/[id]` | Live — server-rendered |
 | `/app/audit` | Live — server-rendered |
-| `/app/analytics` | Live — client fetch |
+| `/app/analytics` | Static — pilot preview: every figure is a hard-coded constant, all controls disabled, no backend call |
 | `/app/processing`, `/app/processing/[id]` | Live — client fetch |
 | `/app/assistant` | Live — client fetch |
 | `/app/admin` | Live — client fetch via `/app/api/admin/audit` |
 | `/app/sandbox` | Live — client fetch, signed sends via `scripts/sandbox_send.py` |
 | `/app/demo-journey` | Mixed — live fetches plus `@/lib/golden-complaint.json` |
 | `/app/docs` | Static — Anexo 1-A / schema documentation |
-| `/app/ingestion` | Static — renders `@/lib/journey-emails.json` |
+| `/app/ingestion` | Live — ingestion theatre: POSTs `@/lib/journey-emails.json` rows through `/app/api/journey/submit`, polls `/app/api/journey/recent` |
 | `/app/rr1` | Static — renders `@/lib/rr1-2025.json` |
 
 Institution-facing surface — `src/app/fi/`:
 
 | Route | Notes |
 |---|---|
-| `/app/fi/banco-demo-001/inbox` | Mixed — live fetches plus the golden complaint fixture |
-| `/app/fi/banco-demo-001/send`, `/app/fi/coopac-demo-002/send` | Live — real signed sends |
-| `/app/fi/banco-demo-001/submit/[rowIndex]` | Live |
-| `/app/fi/banco-demo-001/triage/[rowIndex]` | Live |
+| `/app/fi/banco-demo-001/inbox` | Static — renders `@/lib/journey-emails.json` with the golden complaint badged; no data call |
+| `/app/fi/banco-demo-001/send`, `/app/fi/coopac-demo-002/send` | Live — real signed sends via `/app/api/sandbox/*` |
+| `/app/fi/banco-demo-001/submit/[rowIndex]` | Live — POSTs `/app/api/journey/submit` |
+| `/app/fi/banco-demo-001/triage/[rowIndex]` | Static — renders one `journey-emails.json` row; no data call |
 
 Other:
 
@@ -64,6 +64,13 @@ Other:
 | `/app/login` | Keycloak authorization-code entry point |
 | `/app/developers`, `/app/developers/credentials` | Static — integrator documentation |
 | `/app/_components` | Design-system index |
+
+"Live" above means the page, or a component it renders, actually issues a
+request — `internalGet` server-side, or `fetch`/SSE from a client
+component. "Static" means no data call is reached from the route at all;
+what it renders is a fixture or a constant in the source. Re-derive it by
+following the imports from `page.tsx`, not from the screen: several
+static screens look live because they render plausible sample figures.
 
 Tables badged "datos de muestra / sample data" in the UI (social,
 INDECOPI, SBS-DSC panels under `src/components/persona/`) are static

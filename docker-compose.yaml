@@ -168,12 +168,23 @@ services:
       - start-dev
       - --import-realm
     healthcheck:
-      # Keycloak 25's /health/ready is on port 9000 (management port) by
-      # default; in start-dev it's served on the same 8080. Use bash's
-      # /dev/tcp because the official Keycloak image doesn't ship curl.
+      # Probe the demo realm's discovery document, not /health/ready.
+      #
+      # Two reasons. First, the old probe was simply wrong: it asked 8080
+      # for /health/ready, but Keycloak 25 serves the health endpoints on
+      # the 9000 management port even under start-dev, so 8080 answers
+      # 404 and this container reported unhealthy forever while working
+      # fine. Second, /health/ready only says the server booted —
+      # everything that depends on Keycloak here needs the sbs-demo realm
+      # to be *imported and serving*, which is a later and strictly
+      # stronger condition. A 200 on the discovery document proves it.
+      #
+      # bash's /dev/tcp rather than curl, which the official image does
+      # not ship. printf rather than echo -e, which is not portable
+      # across shells.
       test:
         - "CMD-SHELL"
-        - "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"
+        - "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/sbs-demo/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'issuer' <&3"
       interval: 5s
       timeout: 5s
       retries: 60

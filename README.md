@@ -17,9 +17,11 @@ A fresh clone reaches a working signed-request stack in three commands:
 #    HMAC secrets, generate the dev CA + leaf certs, seed oauth_clients.
 bash scripts/dev-up.sh
 
-# 2. Run the API with mTLS direct mode + the real auth chain:
+# 2. Run the API with mTLS direct mode + the real auth chain, on :8443
+#    (the port step 3 and the dev certs' SANs both expect):
 SBS_API_MTLS_MODE=direct \
 SBS_API_AUTH_STUB_ENABLED=false \
+SBS_API_PORT=8443 \
   bash scripts/run-api.sh
 
 # 3. Smoke-test the full signed-request path end-to-end:

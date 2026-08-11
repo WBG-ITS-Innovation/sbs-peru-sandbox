@@ -15,11 +15,12 @@ import { SESSION_COOKIE } from '@/auth/cookies';
 import { checkCsrf } from '@/auth/csrf';
 import { activePersona, getSession } from '@/auth/session';
 
+import { pythonBin } from '@/lib/python';
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const VENV_PY = path.join(REPO_ROOT, '.venv', 'bin', 'python');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'assistant_query.py');
 
 interface AssistantResult {
@@ -35,7 +36,7 @@ function runAssistant(payload: unknown): Promise<AssistantResult> {
     // Pass the AZURE_OPENAI_* vars from the dev server's env. In prod
     // these come from Helm; in dev `bash scripts/run-api.sh` already
     // loads .env and the Next dev server inherits it.
-    const child = spawn(VENV_PY, [SCRIPT], { cwd: REPO_ROOT, env: process.env });
+    const child = spawn(pythonBin(), [SCRIPT], { cwd: REPO_ROOT, env: process.env });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (c: Buffer) => {

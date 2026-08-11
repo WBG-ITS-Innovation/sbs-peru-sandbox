@@ -4,12 +4,13 @@ import 'server-only';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
+import { pythonBin } from '@/lib/python';
+
 // Spawns scripts/sandbox_send.py (the REAL signed sender) and returns its
 // JSON output. Next dev/build runs with cwd = app/, so the repo root is the
 // parent. Secrets (HMAC, client_secret) live in the script/seed and never
 // reach the browser — the BFF only relays the real API response.
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const PYTHON = path.join(REPO_ROOT, '.venv', 'bin', 'python');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'sandbox_send.py');
 
 export interface RunOpts {
@@ -19,7 +20,7 @@ export interface RunOpts {
 
 export async function runSandbox<T = unknown>(args: string[], opts: RunOpts = {}): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const child = spawn(PYTHON, [SCRIPT, ...args], { cwd: REPO_ROOT });
+    const child = spawn(pythonBin(), [SCRIPT, ...args], { cwd: REPO_ROOT });
     let out = '';
     let err = '';
     const timer = setTimeout(() => {

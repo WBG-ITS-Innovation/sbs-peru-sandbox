@@ -18,10 +18,12 @@ in-process shortcuts:
    chain. The batch is picked up by the **worker container**, so the
    agent runs asserted here executed inside a container, reached over
    the docker network via Redis and Postgres.
-4. Asserts, for both tiers: a ``validation_audit`` row (DIValeVale ran
-   ahead of Triage) and a ``triage`` ``agent_runs`` row whose
-   ``model_provider`` is **non-null** — the provider identity that used
-   to survive only in stderr.
+4. Asserts, for both tiers: a ``validation_audit`` row exists and is
+   timestamped ahead of the first ``agent_runs`` row (DIValeVale ran
+   before Triage), and the ``triage`` run's ``model_provider`` is
+   **non-null** — the provider identity that used to survive only in
+   stderr. The validation *verdict* is logged, never asserted; see
+   ``_assert_agent_trace``.
 
 Nothing here is faked: no in-process HTTP client, no transport stub, no
 dependency override, no patching. Every request is a real TLS connection
@@ -328,15 +330,16 @@ async def _poll_batch_complete(batch_id: str) -> None:
 
 
 async def _assert_agent_trace(complaint_id: str, *, tier: str) -> None:
-    """Poll until DIValeVale + triage rows land, then assert provider identity."""
+    """Poll until DIValeVale + triage rows land; assert existence, ordering
+    and provider identity — never the validation verdict."""
     conn = await asyncpg.connect(LIVE_DSN)
     try:
         deadline = time.time() + POLL_TIMEOUT_S
         runs: list = []
         while time.time() < deadline:
             runs = await conn.fetch(
-                "SELECT agent_name, status, model_provider FROM agent_runs "
-                "WHERE complaint_id = $1 ORDER BY started_at",
+                "SELECT agent_name, status, model_provider, started_at "
+                "FROM agent_runs WHERE complaint_id = $1 ORDER BY started_at",
                 complaint_id,
             )
             if any(r["agent_name"] == "triage" for r in runs):
@@ -348,9 +351,16 @@ async def _assert_agent_trace(complaint_id: str, *, tier: str) -> None:
                 f"{POLL_TIMEOUT_S}s"
             )
 
+        # Existence and ordering only. The verdict is logged, never
+        # asserted: on the canonical Tier-1 surface it is currently
+        # INVALID/REJECTED because the institution-code contract is
+        # unreconciled and the 15-field subset carries no amount_claimed
+        # (see sbs_api.agents.ingest_entry). Closing either of those
+        # legitimately changes the verdict, and this gate exists to prove
+        # DIValeVale *ran first*, not to freeze what it concluded.
         validations = await conn.fetch(
-            "SELECT verdict, routing_action FROM validation_audit "
-            "WHERE complaint_id = $1",
+            "SELECT verdict, routing_action, received_at FROM validation_audit "
+            "WHERE complaint_id = $1 ORDER BY received_at",
             complaint_id,
         )
         if not validations:
@@ -362,6 +372,14 @@ async def _assert_agent_trace(complaint_id: str, *, tier: str) -> None:
             f"{tier}: validation_audit verdict="
             f"{validations[0]['verdict']} action={validations[0]['routing_action']}"
         )
+
+        first_run = min(r["started_at"] for r in runs) if runs else None
+        if first_run is not None and validations[0]["received_at"] > first_run:
+            _fail(
+                f"{tier}: validation_audit for {complaint_id} is timestamped "
+                f"{validations[0]['received_at']}, after the first agent_run "
+                f"at {first_run} — DIValeVale must run ahead of triage"
+            )
 
         triage = [r for r in runs if r["agent_name"] == "triage"]
         for r in triage:

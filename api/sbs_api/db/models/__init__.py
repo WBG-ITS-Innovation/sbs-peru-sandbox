@@ -29,7 +29,13 @@ from sbs_api.db.models.oauth_client import OAuthClient
 from sbs_api.db.models.outbound_webhook_secret import OutboundWebhookSecret
 from sbs_api.db.models.pattern_detection import PatternDetection
 from sbs_api.db.models.pending_approval import PendingApproval
+from sbs_api.db.models.persona_task import PersonaTask
 from sbs_api.db.models.raw_complaint import RawComplaint
+from sbs_api.db.models.sector_broadcast import (
+    SectorBroadcast,
+    SectorBroadcastAudit,
+    SectorBroadcastDelivery,
+)
 from sbs_api.db.models.social_signal import SocialSignal, SocialSignalFixture
 from sbs_api.db.models.supervisory_observation import SupervisoryObservation
 from sbs_api.db.models.validation_audit import (
@@ -63,7 +69,11 @@ __all__ = [
     "OutboundWebhookSecret",
     "PatternDetection",
     "PendingApproval",
+    "PersonaTask",
     "RawComplaint",
+    "SectorBroadcast",
+    "SectorBroadcastAudit",
+    "SectorBroadcastDelivery",
     "SocialSignal",
     "SocialSignalFixture",
     "SupervisoryObservation",

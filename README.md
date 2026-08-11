@@ -57,7 +57,13 @@ Running only the `8443` process leaves the cockpit unable to reach a backend and
 bash scripts/dev-up.sh
 docker compose up -d keycloak
 
-# 2. Institution-facing API on :8443 (README step 2 above).
+# 2. Institution-facing API on :8443 — step 2 above, plus the agent
+#    pipeline, so submitted complaints get an agent chain to show.
+SBS_API_MTLS_MODE=direct \
+SBS_API_AUTH_STUB_ENABLED=false \
+SBS_API_PORT=8443 \
+SBS_API_AGENTS_PIPELINE_ENABLED=true \
+  bash scripts/run-api.sh
 
 # 3. Internal API on :8000, in a second terminal. This is the one the
 #    cockpit talks to; the auth-stub default is what you want here.
@@ -72,6 +78,8 @@ cp app/.env.example app/.env.local
 # 5. Run the cockpit.
 cd app && npm install && npm run dev
 ```
+
+`SBS_API_AGENTS_PIPELINE_ENABLED` defaults to **off**, so a `:8443` process started without it ingests complaints normally but writes no `agent_runs` — the cockpit renders the complaint with an empty agent chain. The Tier-2 equivalent is a separate flag on the worker container; see [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) under "Operating the stack".
 
 Then open the demo-mode session bootstrap, which acquires Keycloak tokens for the three demo personas and redirects to the cockpit:
 

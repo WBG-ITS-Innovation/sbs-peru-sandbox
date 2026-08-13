@@ -107,5 +107,8 @@ ADRs that document the v0.1 institutional-integrator surface:
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — workflow + branch conventions
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
 
+## Contact
+ITSTIoffice@worldbankgroup.org
+
 ## License
 This project is licensed under the MIT License together with the [World Bank IGO Rider](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/blob/main/WB-IGO-RIDER.md). The Rider is purely procedural: it reserves all privileges and immunities enjoyed by the World Bank, without adding restrictions to the MIT permissions. Please review both files before using, distributing or contributing.

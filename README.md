@@ -1,10 +1,53 @@
 # SBS SupTech Sandbox — AI-Enabled Conduct Supervision
 
-A synthetic-data reference implementation of a supervisory-technology (SupTech) platform for consumer-complaint ingestion and analytics. Developed by the World Bank ITS Technology & Innovation Office (ITSTI) in support of an engagement with Peru's financial regulator, the Superintendencia de Banca, Seguros y AFP (SBS). Everything in this repository runs locally on synthetic data: it demonstrates a two-tier complaint-data channel (near-real-time API and authenticated batch), an auditable analytics pipeline, and a supervisor cockpit.
+An AI-enabled conduct-supervision sandbox for consumer-complaint analytics, built by the World Bank ITS Technology & Innovation Office (ITSTI) in support of an engagement with Peru's financial regulator, the Superintendencia de Banca, Seguros y AFP (SBS). It shows how a supervisory authority could receive complaint data from supervised institutions over an authenticated channel, run an auditable multi-agent analytics pipeline over it, and put the results in front of a human supervisor who stays accountable for every decision. It is open-sourced as a reference implementation for financial authorities and their vendors exploring SupTech, and runs entirely on synthetic data.
 
 This is a prototype for demonstration and reuse, not an official SBS system, and it contains no SBS data.
 
 ![Supervisor cockpit](docs/assets/cockpit.png)
+
+## What this demonstrates
+
+Each item below is implemented and exercised; where the shipped behaviour is
+narrower than the design, the limitation is named here and detailed in
+[docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md).
+
+- **Two-tier ingestion behind a real auth chain.** A near-real-time single-complaint API (`POST /v1/complaints`) and an authenticated batch channel (`POST /v1/batches`), both behind mutual TLS, OAuth2 client-credentials with cert-bound tokens, and HMAC body signing, plus per-institution rate limiting and idempotency. Both tiers land as the same canonical record.
+- **A supervised multi-agent pipeline** — validation (DIValeVale) → triage → conditional investigation → synthesis → cross-source correlation — running on both ingestion tiers, off the request path. Agents orchestrate, ten deterministic tools execute, and a human supervisor approves before anything reaches an institution.
+- **A per-run provider audit trail.** Every agent run persists an `agent_runs` row recording which provider *actually served* it, so a replayed fixture can never be mistaken for live inference. The chain has been demonstrated end-to-end against live cloud inference (Azure OpenAI) on synthetic data.
+- **Pluggable model providers** — `on_prem` (self-hosted vLLM; the default and the target state), `cloud` (Azure OpenAI, behind a legal opt-in), `replay` (deterministic demos), and a test-only `mock`. No provider ever silently substitutes for another: a misconfigured one fails at boot rather than fabricating analysis.
+- **A supervisor cockpit** — a Next.js application with a Keycloak-backed session, three demo personas, and a two-perimeter identity model that keeps the institution-facing and supervisor-facing channels separate by design.
+- **A ten-stage verification gate suite** (`stage-a` … `stage-h-full`), where the `-full` gates run against the live compose stack with no mocks, and the complete evidence trail is committed under [docs/audit/](docs/audit/).
+
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how each of these actually works, cited to the code.
+
+```mermaid
+flowchart TB
+    subgraph ING ["Ingestion — institution-facing: mTLS + OAuth2 + HMAC"]
+        direction LR
+        T1["Tier 1 · near-real-time<br/>POST /v1/complaints → 201"]
+        T2["Tier 2 · batch<br/>POST /v1/batches → 202"]
+        WK["Batch worker<br/>arq / Redis"]
+        T2 --> WK
+    end
+
+    T1 --> REC[("Canonical complaint record<br/>15-field Anexo 1-A subset")]
+    WK --> REC
+    REC --> V
+
+    subgraph CH ["Agent chain — dispatched off the request path"]
+        direction LR
+        V["DIValeVale<br/>record-only"] --> TR[Triage]
+        TR -->|routed| INV[Investigation]
+        INV --> SY[Synthesis]
+        INV --> CS["Cross-source correlator<br/>scaffold"]
+    end
+
+    CH --> AR[("agent_runs<br/>+ model_provider")]
+    REC --> BFF["Next.js BFF<br/>internal API :8000"]
+    AR --> BFF
+    BFF --> COCK["Supervisor cockpit<br/>Keycloak session"]
+```
 
 ## Getting started
 
@@ -79,6 +122,18 @@ cp app/.env.example app/.env.local
 cd app && npm install && npm run dev
 ```
 
+**Step 2 needs a model provider it can actually reach.** Enabling the agent
+pipeline arms a boot healthcheck: the API sends one canary tool-call request
+and refuses to start if the provider is unreachable or cannot emit a tool
+call. `SBS_API_MODEL_PROVIDER` defaults to `on_prem`, so on any machine
+without a vLLM endpoint at `localhost:8001` — which is most machines — step 2
+exits with `provider.healthcheck.failed` instead of listening on `:8443`.
+That is the intended posture, not a defect: the alternative was fabricating
+analysis. For a deterministic local walk, prefix the step-2 command with
+`SBS_API_MODEL_PROVIDER=replay`, which is fixture-backed, skips the canary,
+and logs a warning on every request naming itself a replay. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §3 for the provider semantics.
+
 `SBS_API_AGENTS_PIPELINE_ENABLED` defaults to **off**, so a `:8443` process started without it ingests complaints normally but writes no `agent_runs` — the cockpit renders the complaint with an empty agent chain. The Tier-2 equivalent is a separate flag on the worker container; see [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) under "Operating the stack".
 
 Then open the demo-mode session bootstrap, which acquires Keycloak tokens for the three demo personas and redirects to the cockpit:
@@ -93,9 +148,11 @@ The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's auto-gener
 
 ## Architecture
 
-Three layers per [ADR 0001](docs/adr/0001-three-layer-mcp-a2a-langgraph.md) (Accepted): **agents** orchestrate, **tools** execute, **supervisors** approve. Specialist agents (complaint triage, investigation, synthesis, plus scaffolded extensions) drive an in-house tool-calling loop over deterministic tools — classification, data-quality validation against the 27-field Annex 1-A schema, PII redaction, taxonomy normalization — behind a provider-pluggable model interface (`on_prem`, `replay`, `mock`; `cloud` gated off by default). Every run is recorded as an auditable `agent_run` (see [docs/schemas/](docs/schemas/)).
+Three layers per [ADR 0001](docs/adr/0001-three-layer-mcp-a2a-langgraph.md) (Accepted): **agents** orchestrate, **tools** execute, **supervisors** approve. Specialist agents (triage, investigation, synthesis, plus a scaffolded cross-source correlator) drive an in-house tool-calling loop over ten deterministic tools — classification, data-quality validation against the Annex 1-A rule set, feature ranking, anomaly scoring, taxonomy normalization — behind a provider-pluggable model interface. Every run is recorded as an auditable `agent_run` carrying the provider that served it (see [docs/schemas/](docs/schemas/)).
 
-See [docs/adr/](docs/adr/) for all architectural decision records (current head: ADR 0045).
+The institution-facing contract implements a curated 15-field subset of Res. SBS 04036-2022 Anexo 1-A ([ADR 0026](docs/adr/0026-anexo-1a-curated-subset.md)), validated by 32 deterministic data-quality rules.
+
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the full technical description** — request lifecycle, agent layer, provider abstraction, identity model, verification method, and boundaries. See [docs/adr/](docs/adr/) for all architectural decision records (current head: ADR 0045).
 
 ## Data
 
@@ -126,13 +183,20 @@ Integrator-surface ADRs: [0037 portal serving](docs/adr/0037-developer-portal-se
 
 ## Documentation
 
-- [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) — operational sharp edges, deliberate limitations, errata
+- [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) — **start here.** Operational sharp edges, deliberate limitations, errata against the audit trail
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the system works, cited to the code
 - [docs/adr/](docs/adr/) — architectural decision records
+- [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
 - [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — synthetic-data provenance
+- [docs/audit/](docs/audit/) — dated verification reports, kept as an evidence trail
 - [docs/demo/institution-api-workflow.md](docs/demo/institution-api-workflow.md) — institution API walkthrough
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deployment scaffold
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contributor guide
-- [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
+- [SECURITY.md](SECURITY.md) — security policy and private vulnerability reporting
+
+## Citing this work
+
+See [CITATION.cff](CITATION.cff).
 
 ## License
 
@@ -143,3 +207,5 @@ See [LICENSE](LICENSE) and [WB-IGO-RIDER.md](WB-IGO-RIDER.md).
 ## Contact
 
 World Bank ITS Technology & Innovation Office (ITSTI) — omakhlouk@worldbank.org
+
+General ITSTI enquiries: ITSTIoffice@worldbankgroup.org

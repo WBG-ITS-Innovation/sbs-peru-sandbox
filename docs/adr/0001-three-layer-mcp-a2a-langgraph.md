@@ -74,10 +74,12 @@ implementations exist:
 
 | Provider | Purpose | When used |
 |---|---|---|
-| `OnPremProvider` | OpenAI-compatible HTTP client against a self-hosted vLLM endpoint. Falls back to MockProvider when unreachable. | Default in dev/staging when `SBS_API_VLLM_BASE_URL` resolves. |
-| `ReplayProvider` | Reads pre-recorded turn sequences from `fixtures/replay/<agent>/<complaint>.json`. | Demo determinism, scaffolded agents, CI. |
-| `MockProvider` | Deterministic stub keyed by `agent_name`. | Unit tests, the on-prem fallback. |
-| `CloudProvider` | Permanently-gated scaffold. Even when `SBS_API_CLOUD_LEGAL_APPROVED=true`, `complete()` raises `NotImplementedError`. | Not used. Document of intent. |
+| `OnPremProvider` | OpenAI-compatible HTTP client against a self-hosted vLLM endpoint. Raises `ProviderUnavailableError` when unreachable. | Default, and the SBS-workstation target state. |
+| `ReplayProvider` | Reads pre-recorded turn sequences from `fixtures/replay/<agent>/<complaint>.json`. Logs a WARNING per request naming itself as a replay. | Demo determinism, scaffolded agents, CI. |
+| `MockProvider` | Deterministic stub keyed by `(agent_name, complaint_id)`. **Test-only** — refuses to construct outside a pytest process. | Unit tests. |
+| `CloudProvider` | Azure OpenAI with native tool calling, behind the `SBS_API_CLOUD_LEGAL_APPROVED` opt-in. | Development against synthetic data. See the amendment below and ADR 0015. |
+
+*(This table is as amended on 2026-08-13; see §Amendment.)*
 
 ## Precedent
 
@@ -115,13 +117,16 @@ declared up front, surface bounded, decisions recorded.
 
 Two deliberate departures from the comparators:
 
-1. **No live cloud LLM call.** The May 27 demo runs against
-   ReplayProvider (demo invariants) and OnPremProvider (with a mock
-   fallback). The CloudProvider scaffold exists but raises. SBS has
+1. **No live cloud LLM call in the demo path.** The May 27 demo runs
+   against ReplayProvider (demo invariants) and OnPremProvider. SBS has
    not signed off on cross-border data residency for prompt content
    that derives from supervisory-grade narratives — even though we
    redact PII before the agent sees it, the joined feature shape
-   carries supervisory judgment which is itself sensitive.
+   carries supervisory judgment which is itself sensitive. As of the
+   2026-08-13 amendment the CloudProvider is implemented rather than
+   raising, so this divergence is now held by an explicit operator
+   opt-in (`SBS_API_CLOUD_LEGAL_APPROVED`) instead of by an
+   unimplemented method. The demo default is unchanged.
 2. **Five agents, three real.** Comparators ([BIS Project Aurora](../research/market-comparators.md#6-comparator-table-summary)
    in particular) describe larger, multi-component analytics systems
    that span synthetic data, privacy-enhancing technologies, and
@@ -213,3 +218,58 @@ truth for what the cockpit shows: `divalevale`, `reclamito`, `lupaman`, `triage`
 `investigation`, `insight-chatbot`. Note that it is a *display* roster and
 deliberately not the same set as the agents that write `agent_runs` rows —
 `synthesis` and `cross-source-correlator` run without appearing on a card.
+
+## Amendment (2026-08-13) — the cloud gate is implemented, and no provider falls back silently
+
+Supersedes the "permanently-gated scaffold" wording in §Decision (the
+provider table) and softens §Divergence 1. PR: `part-12/cloud-provider-azure`.
+
+**What changed and why.** Two of the four providers were doing something the
+original decision described as safe but which turned out to be the opposite.
+
+1. **`CloudProvider` is implemented against Azure OpenAI**, with native tool
+   calling both directions and the same `ModelProvider` interface as
+   `OnPremProvider`. It reads the four existing `AZURE_OPENAI_*` variables
+   (ADR 0015) and refuses to construct unless
+   `SBS_API_CLOUD_LEGAL_APPROVED=true`.
+
+   The original entry called the env gate "intentional theatre" and had
+   `complete()` raise even when the flag was set, on the reasoning that a
+   second `NotImplementedError` prevents a deployment slip from exfiltrating
+   PII through a half-finished implementation. That reasoning holds for a
+   half-finished implementation and stops holding once the implementation
+   exists: a provider that always raises cannot be exercised, so nobody
+   learns whether the tool-calling contract, the credential shape, or the
+   TLS path actually work until the day they are needed. The flag is now a
+   *required opt-in with a stated meaning* — setting it asserts development
+   use against synthetic data only, pending legal sign-off on PII isolation
+   and data residency — rather than a switch with no effect. The legal
+   position is unchanged: it is an operator assertion, not a sign-off.
+
+2. **`OnPremProvider` no longer falls back to `MockProvider`.** It raises
+   `ProviderUnavailableError`. The fallback was listed above as the
+   "deliberate divergence" that kept the demo from deadlocking on
+   infrastructure the operator had not booted, and it did that. It also
+   meant that on any host without a vLLM — which is every host today — the
+   default provider wrote `agent_runs` rows full of canned tool calls that
+   were indistinguishable from analysis to every consumer except a reader
+   who thought to check `model_provider`. A supervisory tool must fail
+   loudly rather than fabricate. Determinism for demos now comes from
+   `ReplayProvider`, which says what it is in a WARNING on every request and
+   stamps `served_by="replay"` on every response.
+
+3. **`MockProvider` is test-only.** It refuses to construct outside a pytest
+   process, and `SBS_API_MODEL_PROVIDER=mock` is rejected outside one.
+   `scripts/demo.sh` moved from `mock` to `replay`.
+
+4. **A boot healthcheck replaces the assumption.** When the pipeline is
+   enabled, the API sends one canary tool-call request at startup and
+   refuses to boot if the provider is unreachable or answers without
+   `tool_calls`. The agent runtime is tool-calling only, so a deployment
+   that cannot emit a tool call cannot drive it, and that is now discovered
+   at boot rather than per complaint.
+
+**Runtime-selectable providers are now `on_prem` | `cloud` | `replay`**, with
+`on_prem` still the default. There is no silent fallback anywhere in the
+chain: an unknown name raises, a misconfigured provider raises from its own
+constructor, and no provider answers on another's behalf.

@@ -7,6 +7,17 @@ which reads either ``SBS_API_MODEL_PROVIDER`` (documented name) or
 only through ``Settings`` — one seam, per the config module contract.
 The factory caches a single instance per provider name so agents in the
 same process share the same client.
+
+Selectable at runtime: ``on_prem`` (default, the SBS workstation target),
+``cloud`` (Azure OpenAI, behind the legal opt-in), ``replay`` (fixtures
+from disk, which log a warning on every request). ``mock`` is accepted
+only inside a pytest process — it fabricates tool calls, and outside a
+test that is indistinguishable from analysis once written to
+``agent_runs``.
+
+Nothing here degrades quietly. An unknown name raises ``ValueError``, a
+misconfigured provider raises ``ProviderUnavailableError`` from its own
+constructor, and no provider substitutes another's output for its own.
 """
 
 from __future__ import annotations
@@ -18,11 +29,12 @@ from typing import Any
 from sbs_api.agents.providers.base import (
     ModelProvider,
     ModelResponse,
+    ProviderUnavailableError,
     ToolCallRequest,
     Usage,
 )
 from sbs_api.agents.providers.cloud import CloudProvider
-from sbs_api.agents.providers.mock import MockProvider
+from sbs_api.agents.providers.mock import MockProvider, in_test_process
 from sbs_api.agents.providers.on_prem import OnPremProvider
 from sbs_api.agents.providers.replay import ReplayFixtureMissing, ReplayProvider
 
@@ -31,6 +43,7 @@ log = logging.getLogger(__name__)
 __all__ = [
     "ModelProvider",
     "ModelResponse",
+    "ProviderUnavailableError",
     "ToolCallRequest",
     "Usage",
     "OnPremProvider",
@@ -42,7 +55,12 @@ __all__ = [
     "reset_provider_cache",
 ]
 
-VALID_NAMES = ("on_prem", "replay", "mock", "cloud")
+# Selectable via SBS_API_MODEL_PROVIDER in any process.
+VALID_NAMES = ("on_prem", "cloud", "replay")
+# Buildable only inside pytest, however it is named. Kept out of
+# VALID_NAMES so an operator reading the error message is pointed at the
+# three real options.
+TEST_ONLY_NAMES = ("mock",)
 
 _cache: dict[str, Any] = {}
 _lock = Lock()
@@ -93,14 +111,25 @@ def get_provider(name: str | None = None) -> ModelProvider:
     Resolution order: explicit ``name`` arg →
     ``Settings.agents_pipeline_provider`` (env ``SBS_API_MODEL_PROVIDER``
     or ``SBS_API_AGENTS_PIPELINE_PROVIDER``) → hardcoded default
-    ``on_prem``.
+    ``on_prem``. No step substitutes a working provider for a
+    misconfigured one.
+
+    Raises ``ValueError`` for an unknown name, and for ``mock`` outside a
+    pytest process.
     """
     chosen = (
         name
         or _provider_from_settings()
         or "on_prem"
     ).lower()
-    if chosen not in VALID_NAMES:
+    if chosen in TEST_ONLY_NAMES and not in_test_process():
+        raise ValueError(
+            f"Provider {chosen!r} is test-only and this is not a pytest "
+            "process: it fabricates tool calls that reach agent_runs looking "
+            "like analysis. Use 'replay' for deterministic runs (it logs a "
+            f"warning per request), or one of {VALID_NAMES}."
+        )
+    if chosen not in VALID_NAMES and chosen not in TEST_ONLY_NAMES:
         raise ValueError(
             f"Unknown SBS_API_MODEL_PROVIDER {chosen!r}; "
             f"expected one of {VALID_NAMES}"

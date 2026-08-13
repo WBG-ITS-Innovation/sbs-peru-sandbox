@@ -1,10 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
-"""MockProvider — deterministic stub for tests and CI.
+"""MockProvider — deterministic stub for tests and CI. **Test paths only.**
 
 Returns canned tool-call sequences keyed by ``agent_name`` so the
 runtime can be exercised end-to-end without any real model. Tests
 that need a specific tool sequence inject their own
 ``script`` via :func:`MockProvider.with_script`.
+
+The constructor refuses to build outside a test process (no
+``PYTEST_CURRENT_TEST`` in the environment) unless the caller passes
+``allow_outside_tests=True`` and thereby owns the consequence. Canned
+tool calls are indistinguishable from real inference downstream — they
+land in ``agent_runs`` looking like analysis — so the only thing keeping
+them out of a supervisory record is this gate. ``SBS_API_MODEL_PROVIDER``
+no longer accepts ``mock`` outside pytest either; see
+``providers/__init__.py``. For deterministic non-test runs use
+``replay``, which announces itself in every log line.
 
 **Script cursors are keyed by ``(agent_name, complaint_id)``**, the same
 way :class:`~sbs_api.agents.providers.replay.ReplayProvider` keys its
@@ -25,10 +35,27 @@ posture on any host without a vLLM, because ``on_prem`` falls back here.
 
 from __future__ import annotations
 
+import os
 import uuid
 from typing import Any
 
-from sbs_api.agents.providers.base import ModelProvider, ModelResponse, ToolCallRequest
+from sbs_api.agents.providers.base import (
+    ModelProvider,
+    ModelResponse,
+    ProviderUnavailableError,
+    ToolCallRequest,
+)
+
+
+def in_test_process() -> bool:
+    """True when pytest is executing a test in this process.
+
+    ``PYTEST_CURRENT_TEST`` is set by pytest for the duration of each
+    test (including setup and teardown), so this is false in the API
+    process, in the arq worker, and in every script.
+    """
+
+    return bool(os.environ.get("PYTEST_CURRENT_TEST"))
 
 # Per-agent default scripts. Each script is a list of "turns". Each
 # turn is either ``{"tool_calls": [{"name": ..., "arguments": {...}}, ...]}``
@@ -87,7 +114,22 @@ class MockProvider:
     # complaint-less unit test wants.
     _NO_COMPLAINT = "-"
 
-    def __init__(self, scripts: dict[str, list[dict[str, Any]]] | None = None):
+    def __init__(
+        self,
+        scripts: dict[str, list[dict[str, Any]]] | None = None,
+        *,
+        allow_outside_tests: bool = False,
+    ):
+        if not allow_outside_tests and not in_test_process():
+            raise ProviderUnavailableError(
+                self.name,
+                "MockProvider is test-only: it fabricates tool calls that are "
+                "indistinguishable from real inference once written to "
+                "agent_runs. No PYTEST_CURRENT_TEST in this environment. Use "
+                "SBS_API_MODEL_PROVIDER=replay for deterministic non-test "
+                "runs, or pass allow_outside_tests=True to accept the risk "
+                "deliberately.",
+            )
         self._scripts = scripts or DEFAULT_SCRIPTS
         self._cursors: dict[tuple[str, str], int] = {}
 
@@ -140,6 +182,9 @@ class MockProvider:
 
     @classmethod
     def with_script(
-        cls, scripts: dict[str, list[dict[str, Any]]]
+        cls,
+        scripts: dict[str, list[dict[str, Any]]],
+        *,
+        allow_outside_tests: bool = False,
     ) -> "MockProvider":
-        return cls(scripts=scripts)
+        return cls(scripts=scripts, allow_outside_tests=allow_outside_tests)

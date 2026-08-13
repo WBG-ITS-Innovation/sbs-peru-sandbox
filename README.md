@@ -96,6 +96,8 @@ ADRs that document the v0.1 institutional-integrator surface:
 [ADR 0038 SDK helpers](docs/adr/0038-sdk-helper-scope-and-distribution.md) /
 [ADR 0039 standards pack](docs/adr/0039-standards-pack-v0-1-distribution-and-manifest.md).
 
+## Contact information
+
 ## Documentation
 
 - [docs/PLAN.md](docs/PLAN.md) — build plan and progress
@@ -104,3 +106,6 @@ ADRs that document the v0.1 institutional-integrator surface:
 - [docs/DEMO.md](docs/DEMO.md) — demo script
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — workflow + branch conventions
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
+
+## License
+This project is licensed under the MIT License together with the [World Bank IGO Rider](https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/blob/main/WB-IGO-RIDER.md). The Rider is purely procedural: it reserves all privileges and immunities enjoyed by the World Bank, without adding restrictions to the MIT permissions. Please review both files before using, distributing or contributing.

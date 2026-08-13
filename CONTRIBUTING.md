@@ -16,15 +16,16 @@ bash scripts/setup_hooks.sh
 # Install pre-commit hooks (gitleaks, detect-secrets, whitespace, .env guard):
 uv run pre-commit install
 
-# Copy the environment template. The defaults run fully locally —
-# no cloud credentials are required (model providers default to
-# mock/replay; on-prem vLLM is optional).
+# Copy the environment template. No cloud credentials are required for
+# the test suite or for any path that leaves the agent pipeline off.
 cp .env.example .env
 ```
 
 ## Repository layout
 
-The Python side is a uv workspace ([ADR 0023](docs/adr/0023-workspace-layout-uv-members.md)) with members `api/` (FastAPI service), `agents/` (agent layer), `tools/` (tool servers), and `sdk/` (client surface). The web app lives in `app/` (Next.js); infrastructure under `infra/`.
+The Python side is a uv workspace ([ADR 0023](docs/adr/0023-workspace-layout-uv-members.md)) with members `api/`, `agents/`, `tools/`, and `sdk/`. In practice `api/` holds essentially all of the Python: the FastAPI service, and also the agent layer (`api/sbs_api/agents/`), the tool registry (`api/sbs_api/agents/tools/`), and the model providers (`api/sbs_api/agents/providers/`). The root `agents/`, `tools/`, and `sdk/` directories are reserved workspace slots that currently contain only a `pyproject.toml` — do not go looking for the agent code there. The web app lives in `app/` (Next.js); infrastructure under `infra/`; integrator-facing client helpers under `sdk-helpers/`.
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes how these fit together, cited to the code.
 
 ## Development loop
 

@@ -17,7 +17,9 @@ personas are invented archetypes, not real institutions or individuals.
 
 ## PII-bearing fields are deliberately not modeled
 
-The Anexo 1-A complaint schema includes PII-bearing fields such as the
+The Anexo 1-A complaint schema — 27 fields under Res. SBS N° 04036-2022,
+being 23 base fields plus 4 conditional bancaseguros fields — includes
+PII-bearing fields such as the
 complainant's national identity document number (DNI) and full name. These
 fields are **deliberately not modeled** in this project. In their place an
 age-range bucket is used (for example, `25-34`) so that supervisory analytics

@@ -141,7 +141,7 @@ The canonical OpenAPI YAML is served at `/v1/openapi.yaml`. FastAPI's auto-gener
 
 Three layers per [ADR 0001](docs/adr/0001-three-layer-mcp-a2a-langgraph.md) (Accepted): **agents** orchestrate, **tools** execute, **supervisors** approve. Specialist agents (triage, investigation, synthesis, plus a scaffolded cross-source correlator) drive an in-house tool-calling loop over ten deterministic tools — classification, data-quality validation against the Annex 1-A rule set, feature ranking, anomaly scoring, taxonomy normalization — behind a provider-pluggable model interface. Every run is recorded as an auditable `agent_run` carrying the provider that served it (see [docs/schemas/](docs/schemas/)).
 
-The institution-facing contract implements a curated 15-field subset of Res. SBS 04036-2022 Anexo 1-A ([ADR 0026](docs/adr/0026-anexo-1a-curated-subset.md)), validated by 32 deterministic data-quality rules.
+Res. SBS N° 04036-2022 Anexo 1-A defines a 27-field complaint record — 23 base fields plus 4 conditional bancaseguros fields (one trigger, three conditional on it). The institution-facing contract implements a curated 15-field subset of it ([ADR 0026](docs/adr/0026-anexo-1a-curated-subset.md)), validated by 32 deterministic data-quality rules.
 
 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the full technical description** — request lifecycle, agent layer, provider abstraction, identity model, verification method, and boundaries. See [docs/adr/](docs/adr/) for all architectural decision records (current head: ADR 0045).
 

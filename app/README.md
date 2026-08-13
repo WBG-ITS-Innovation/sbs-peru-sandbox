@@ -15,6 +15,10 @@ its session. Full bootstrap is in the root [README](../README.md) under
 "Run the supervisor cockpit". Operational caveats are in
 [docs/HANDOVER-NOTES.md](../docs/HANDOVER-NOTES.md).
 
+Why there are two API processes with different auth postures, and why the
+browser never holds a token, is [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+§4.
+
 ## Route groups
 
 `src/app/(supervisor)/` is a **route group**: the parentheses are a

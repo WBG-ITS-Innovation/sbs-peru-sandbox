@@ -1,6 +1,6 @@
 # Deployment
 
-This document is a scaffold. The full content lands in Part 9 (Production Readiness). Until then it captures the intended structure so that contributors know where to put deployment material as it lands.
+**This document is a scaffold, not a deployment guide.** No production deployment path exists yet: there is no Helm chart in this repository, and nothing below has been executed. It captures the intended structure so contributors know where deployment material belongs as it is written. Everything in the table of contents is a plan; treat it as such.
 
 ## Table of contents (intended)
 
@@ -45,21 +45,20 @@ This document is a scaffold. The full content lands in Part 9 (Production Readin
    - Restore drill: scripted, evidence captured in a runbook.
 
 9. **Runbooks**
-   - One file per operational scenario in [docs/runbooks/](runbooks/) (directory created in Part 9).
+   - One file per operational scenario, in a `docs/runbooks/` directory that does not exist yet.
    - Initial set: ingestion stalled, validator failing, vLLM out of memory, Postgres replication lag, cert rotation, credential leak, taxonomy version cutover.
 
 10. **Vendor handoff package**
     - One-page architecture diagram, data-flow diagram, threat model, ADR set, runbook bundle, demo recording, vendor extension guide.
 
-## Until Part 9 lands
+## What actually works today
 
-For local development only — production deploy is not yet supported:
+Local development only — production deploy is not supported. The verified
+bring-up is the three-command walk in the root
+[README](../README.md#getting-started), which brings up Docker Compose,
+applies migrations, seeds the dev CA and demo institutions, and runs the API
+with the real auth chain. Use that rather than the commands this section used
+to carry, which referenced a `api.main:app` entry point that does not exist.
 
-```bash
-docker compose up -d
-uv sync
-uv run alembic upgrade head
-uv run uvicorn api.main:app --reload
-```
-
-(Docker Compose, uv, and Alembic land in Parts 1–3. This block is forward-looking.)
+For the supervisor cockpit, which additionally needs Keycloak and a second API
+process, see "Run the supervisor cockpit" in the same README.

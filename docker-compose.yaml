@@ -38,6 +38,20 @@ x-api-env: &api-env
   # operator opts in; export either var before `docker compose up` to enable.
   SBS_API_AGENTS_PIPELINE_ENABLED: "${SBS_API_AGENTS_PIPELINE_ENABLED:-false}"
   SBS_API_MODEL_PROVIDER: "${SBS_API_MODEL_PROVIDER:-on_prem}"
+  # Credentials for SBS_API_MODEL_PROVIDER=cloud. Passed through with no
+  # defaults, so a worker started without them and with cloud selected
+  # fails naming the missing variable instead of running half-configured.
+  # They come from the host `.env` (docker compose reads it) or the
+  # invoking shell. `on_prem` and `replay` need none of them.
+  AZURE_OPENAI_API_KEY: "${AZURE_OPENAI_API_KEY:-}"
+  AZURE_OPENAI_ENDPOINT: "${AZURE_OPENAI_ENDPOINT:-}"
+  AZURE_OPENAI_DEPLOYMENT: "${AZURE_OPENAI_DEPLOYMENT:-}"
+  AZURE_OPENAI_API_VERSION: "${AZURE_OPENAI_API_VERSION:-}"
+  SBS_API_CLOUD_LEGAL_APPROVED: "${SBS_API_CLOUD_LEGAL_APPROVED:-false}"
+  # Container path. The repo is mounted read-only at /app, so a bundle
+  # committed nowhere and generated into the gitignored certs/ directory
+  # on the host is visible here at the same relative path.
+  SBS_API_CLOUD_CA_BUNDLE: "${SBS_API_CLOUD_CA_BUNDLE:-}"
   # uv writes a `.lock` into UV_PROJECT_ENVIRONMENT during `sync`. The
   # source mount is read-only (so a container bug cannot corrupt the
   # repo); the venv lives in a dedicated writable named volume.

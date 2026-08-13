@@ -2,8 +2,13 @@
 """Model-provider protocol.
 
 The agent runtime depends only on this protocol — never on a concrete
-provider. Concrete providers (on-prem vLLM, replay fixtures, mock,
-cloud-gated) implement ``complete()`` and are selected by env var.
+provider. Concrete providers (on-prem vLLM, Azure OpenAI cloud, replay
+fixtures, test-only mock) implement ``complete()`` and are selected by
+env var.
+
+A provider that cannot serve a request raises
+:class:`ProviderUnavailableError`. No provider substitutes canned output
+for a real completion.
 
 A ``ModelResponse`` is intentionally shaped like a typical chat
 completion: either ``text`` (final answer) or ``tool_calls`` (next
@@ -16,6 +21,29 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
+
+
+class ProviderUnavailableError(RuntimeError):
+    """The configured provider cannot serve the request.
+
+    Raised instead of silently degrading to canned output. Before this
+    existed, :class:`~sbs_api.agents.providers.on_prem.OnPremProvider`
+    answered from :class:`~sbs_api.agents.providers.mock.MockProvider`
+    whenever the vLLM endpoint was unset or unreachable, so an
+    unconfigured host produced agent_runs indistinguishable — from the
+    caller's side — from real inference. A supervisory tool must fail
+    loudly rather than fabricate an analysis, so the fallback is gone
+    and this is what a missing backend looks like now.
+
+    Carries the provider name and a human-readable reason; the boot
+    healthcheck turns it into an operator-facing message. Never carries
+    a credential.
+    """
+
+    def __init__(self, provider: str, reason: str) -> None:
+        self.provider = provider
+        self.reason = reason
+        super().__init__(f"provider {provider!r} unavailable: {reason}")
 
 
 @dataclass(frozen=True)
@@ -42,10 +70,11 @@ class ModelResponse:
     model_id: str = "unknown"
     latency_ms: int = 0
     finish_reason: str = "stop"
-    # Name of the provider that ACTUALLY produced this response. Differs
-    # from the configured provider whenever OnPremProvider falls back to
-    # MockProvider, which is the case that made "which model answered?"
-    # unanswerable from the database. Persisted to agent_runs.model_provider.
+    # Name of the provider that ACTUALLY produced this response, so
+    # "which model answered?" is answerable from the database alone.
+    # Every provider stamps it; ``replay`` stamping it is what lets a
+    # reader tell a replayed fixture from live inference. Persisted to
+    # agent_runs.model_provider.
     served_by: str | None = None
 
 

@@ -330,6 +330,18 @@ class Settings(BaseSettings):
             "run_synthesis directly."
         ),
     )
+    provider_healthcheck_on_boot: bool = Field(
+        default=True,
+        description=(
+            "When True (and the agent pipeline is enabled) the FastAPI "
+            "lifespan sends one canary tool-call request to the configured "
+            "provider and refuses to boot if it fails or returns no "
+            "tool_calls. Costs one completion per process start. Set False "
+            "on a host that boots offline and configures the provider "
+            "later. Always skipped inside pytest — a test process must not "
+            "make live inference calls at import time."
+        ),
+    )
     agents_pipeline_provider: str = Field(
         default="on_prem",
         validation_alias=AliasChoices(
@@ -338,15 +350,105 @@ class Settings(BaseSettings):
         ),
         description=(
             "Provider used by the agent runtime: one of 'on_prem' | "
-            "'replay' | 'mock' | 'cloud'. Set via SBS_API_MODEL_PROVIDER "
-            "(the documented name, checked first) or "
+            "'cloud' | 'replay'. Set via SBS_API_MODEL_PROVIDER (the "
+            "documented name, checked first) or "
             "SBS_API_AGENTS_PIPELINE_PROVIDER. Both aliases resolve to "
             "this one field, which is the only place the agent runtime "
             "reads the provider from — sbs_api.agents.providers no "
-            "longer calls os.getenv itself. The on_prem provider falls "
-            "back to mock when no vLLM endpoint is reachable; cloud is "
-            "gated behind SBS_API_CLOUD_LEGAL_APPROVED=true and raises "
-            "NotImplementedError today."
+            "longer calls os.getenv itself. There is no silent "
+            "fallback: on_prem raises ProviderUnavailableError when no "
+            "vLLM endpoint is reachable, and cloud requires the four "
+            "AZURE_OPENAI_* variables plus "
+            "SBS_API_CLOUD_LEGAL_APPROVED=true. 'mock' is test-only and "
+            "is rejected here (see agents/providers/__init__.py)."
+        ),
+    )
+
+    # --- cloud provider (Azure OpenAI, ADR 0015) -------------------------
+    # These four read the BARE, un-prefixed names already present in .env
+    # and in CI secrets — an explicit validation_alias bypasses the
+    # SBS_API_ env_prefix, so the credential block stays the one WBG ITS
+    # hands out rather than a renamed copy. Settings remains the single
+    # env seam the agent runtime reads through.
+    cloud_legal_approved: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SBS_API_CLOUD_LEGAL_APPROVED"),
+        description=(
+            "Required opt-in for the cloud provider: CloudProvider "
+            "refuses to construct unless this is true. Setting it "
+            "asserts development use with synthetic data only, pending "
+            "legal sign-off on PII isolation and data residency "
+            "(ADR 0001 §Divergence). It is not a legal sign-off itself."
+        ),
+    )
+    azure_openai_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("AZURE_OPENAI_API_KEY"),
+        description=(
+            "Azure OpenAI API key. Never logged, never echoed in an "
+            "error message — CloudProvider reports only whether it is "
+            "present. Rotate via the Azure portal / WBG ITS."
+        ),
+    )
+    azure_openai_endpoint: str = Field(
+        default="",
+        validation_alias=AliasChoices("AZURE_OPENAI_ENDPOINT"),
+        description=(
+            "Azure OpenAI resource endpoint, e.g. "
+            "https://<resource>.openai.azure.com/ — must be a "
+            "WBG-tenanted resource per the data-governance policy in "
+            ".env.example."
+        ),
+    )
+    azure_openai_deployment: str = Field(
+        default="",
+        validation_alias=AliasChoices("AZURE_OPENAI_DEPLOYMENT"),
+        description=(
+            "Deployment name of the chat model inside the Azure "
+            "resource. This is the deployment name, not the base model "
+            "name, and it is what Azure routes on."
+        ),
+    )
+    azure_openai_api_version: str = Field(
+        default="",
+        validation_alias=AliasChoices("AZURE_OPENAI_API_VERSION"),
+        description=(
+            "Azure OpenAI REST API version, e.g. 2024-06-01. Must be a "
+            "version whose chat-completions surface supports the tools "
+            "parameter; the agent runtime is tool-calling only."
+        ),
+    )
+    cloud_timeout_seconds: float = Field(
+        default=60.0,
+        gt=0,
+        description=(
+            "Per-request timeout for the cloud provider. Higher than "
+            "the on-prem default because a shared Azure deployment "
+            "queues under load."
+        ),
+    )
+    cloud_max_retries: int = Field(
+        default=2,
+        ge=0,
+        le=10,
+        description=(
+            "Retries the Azure SDK performs on connection errors and "
+            "429/5xx responses before CloudProvider raises "
+            "ProviderUnavailableError."
+        ),
+    )
+    cloud_ca_bundle: str = Field(
+        default="",
+        description=(
+            "Path to a PEM bundle used to verify the Azure TLS chain. "
+            "Needed on networks that terminate TLS with a corporate "
+            "root the httpx default (certifi) does not carry — the WBG "
+            "network does exactly that, presenting "
+            "'pa-wbg-decrypt.worldbank.org' issued by 'WBG Cloud Root "
+            "CA', so an unset bundle fails with CERTIFICATE_VERIFY_"
+            "FAILED. Leave empty off such a network. Export one with: "
+            "security find-certificate -a -p "
+            "/Library/Keychains/System.keychain > certs/wbg-trust.pem"
         ),
     )
 

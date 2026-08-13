@@ -12,18 +12,28 @@ needs. This file is about what to expect once it is running.
 
 ## Agents and model providers
 
-**The provider posture is `mock` or `replay`, and `on_prem` has never been
-observed against a real vLLM.** `SBS_API_MODEL_PROVIDER` defaults to `on_prem`,
-which falls back to `MockProvider` whenever no vLLM answers — the situation on
-every machine used in this engagement. So the agent layer works and is
-deterministic, but nothing here has been exercised against a live model server.
-The first person with a vLLM endpoint should expect to find integration
-problems that no test on this branch could have caught.
+**The demo posture is `replay`, and `on_prem` has still never been observed
+against a real vLLM.** `SBS_API_MODEL_PROVIDER` defaults to `on_prem`, which as
+of `part-12/cloud-provider-azure` raises `ProviderUnavailableError` when no vLLM
+answers — the situation on every machine used in this engagement. It used to
+fall back to `MockProvider` instead, which is why earlier notes and audit
+reports describe a `mock` posture: the fallback is gone, because canned tool
+calls reaching `agent_runs` are indistinguishable from analysis. `scripts/demo.sh`
+now pins `replay`, which logs a WARNING on every request saying the response is
+a replayed fixture. The first person with a vLLM endpoint should still expect
+integration problems that no test on this branch could have caught.
+
+**`cloud` (Azure OpenAI) has been exercised live** — one canary tool-call and
+the full pipeline — but only against synthetic data, and only behind
+`SBS_API_CLOUD_LEGAL_APPROVED=true`. On the WBG network it also needs
+`SBS_API_CLOUD_CA_BUNDLE`; see `.env.example` and ADR 0015.
 
 `agent_runs.model_provider` records which provider *actually served* each run,
-not which one was configured, so the fallback shows up honestly as `mock`. It
-discriminates in practice: a single complaint routinely has `mock` rows from the
-loop-driven agents and a `replay` row from the correlator.
+not which one was configured. It discriminates in practice: with `replay`
+configured, a single complaint gets `replay` rows from the loop-driven agents
+and from the correlator; with `cloud` configured, the loop-driven agents record
+`cloud`. Rows written before this branch may record `mock` from the old
+fallback.
 
 **`agent_runs` rows predating migration `20260810_0001` have
 `model_provider = NULL`.** That column was added nullable with no backfill,

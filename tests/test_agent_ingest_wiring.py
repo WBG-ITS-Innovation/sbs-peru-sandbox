@@ -105,9 +105,28 @@ async def test_dispatch_swallows_failures(monkeypatch):
 # --- DIValeVale runs ahead of Triage --------------------------------------
 
 
+@pytest.fixture
+def mock_model_provider(monkeypatch):
+    """Pin the test-only provider for tests that run the real chain.
+
+    These two tests used to run with no provider configured at all: the
+    default ``on_prem`` answered from ``MockProvider`` when no vLLM replied,
+    which is true of every CI host. That fallback is gone — ``on_prem`` now
+    raises ``ProviderUnavailableError`` — so a test that wants canned turns
+    has to say so. ``mock`` is accepted here because pytest is running;
+    outside a test process the factory rejects it.
+    """
+    from sbs_api.agents.providers import reset_provider_cache
+
+    monkeypatch.setenv("SBS_API_MODEL_PROVIDER", "mock")
+    reset_provider_cache()
+    yield "mock"
+    reset_provider_cache()
+
+
 @pytest.mark.asyncio
 async def test_divalevale_runs_before_triage_and_records_one_audit_row(
-    test_database_url, db_schema
+    test_database_url, db_schema, mock_model_provider
 ):
     engine = create_async_engine(test_database_url)
     SM = async_sessionmaker(engine, expire_on_commit=False)
@@ -150,7 +169,9 @@ async def test_divalevale_runs_before_triage_and_records_one_audit_row(
 
 
 @pytest.mark.asyncio
-async def test_provider_identity_is_persisted(test_database_url, db_schema):
+async def test_provider_identity_is_persisted(
+    test_database_url, db_schema, mock_model_provider
+):
     """agent_runs.model_provider records who actually served the call."""
     engine = create_async_engine(test_database_url)
     SM = async_sessionmaker(engine, expire_on_commit=False)
@@ -177,7 +198,11 @@ async def test_provider_identity_is_persisted(test_database_url, db_schema):
         assert run.model_provider is not None, (
             "model_provider must record the provider that served the run"
         )
-        assert run.model_provider in {"on_prem", "replay", "mock", "cloud"}
+        # Exact match, not membership: the configured provider served the
+        # run, which is the whole claim now that nothing substitutes for
+        # anything else. A mismatch here means something answered on
+        # another provider's behalf.
+        assert run.model_provider == mock_model_provider
 
 
 # --- the adapter invents nothing ------------------------------------------

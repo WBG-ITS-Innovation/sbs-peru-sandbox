@@ -1,15 +1,21 @@
 # SPDX-License-Identifier: Apache-2.0
 """OnPremProvider — talks to a self-hosted vLLM endpoint.
 
-The endpoint is OpenAI-compatible (``/v1/chat/completions``). When
-the endpoint URL is unset or unreachable, the provider falls back to
-:class:`MockProvider` so the demo never deadlocks on infrastructure
-the operator hasn't booted yet. Every fallback emits a warning log.
+The endpoint is OpenAI-compatible (``/v1/chat/completions``). When the
+endpoint URL is unset or unreachable the provider raises
+:class:`~sbs_api.agents.providers.base.ProviderUnavailableError`.
 
-This provider exists today as a forward contract: the demo path is
-fixture-driven (replay), but the on-prem path must be reachable for
-the regulator-grade story. The fallback policy is the deliberate
-divergence — see ADR 0001.
+It used to answer from :class:`MockProvider` instead, so that the demo
+never deadlocked on infrastructure the operator hadn't booted. That
+traded a visible outage for an invisible one: an unconfigured host wrote
+agent_runs full of canned tool calls, and only ``model_provider`` in the
+database distinguished them from real inference. A supervisory tool must
+not fabricate an analysis, so the fallback is gone. Deterministic output
+for demos comes from ``SBS_API_MODEL_PROVIDER=replay``, which says so in
+every log line it emits.
+
+This provider is the target state for the SBS workstation and stays the
+default for ``SBS_API_MODEL_PROVIDER``. See ADR 0001.
 """
 
 from __future__ import annotations
@@ -23,8 +29,11 @@ from typing import Any
 
 import httpx
 
-from sbs_api.agents.providers.base import ModelResponse, ToolCallRequest
-from sbs_api.agents.providers.mock import MockProvider
+from sbs_api.agents.providers.base import (
+    ModelResponse,
+    ProviderUnavailableError,
+    ToolCallRequest,
+)
 
 log = logging.getLogger(__name__)
 
@@ -44,11 +53,20 @@ class OnPremProvider:
         model: str | None = None,
         timeout_seconds: float | None = None,
     ):
-        self._base_url = (base_url or os.getenv("SBS_API_VLLM_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+        # An explicitly-empty value — `OnPremProvider(base_url="")` or
+        # `SBS_API_VLLM_BASE_URL=` in the environment — means "there is no
+        # endpoint here", and complete() says so by name. Only a genuinely
+        # absent variable falls through to the localhost default; pointing an
+        # operator who blanked the variable at localhost:8001 would report a
+        # connection error against an address they never chose.
+        raw_base_url = (
+            base_url
+            if base_url is not None
+            else os.getenv("SBS_API_VLLM_BASE_URL", DEFAULT_BASE_URL)
+        )
+        self._base_url = raw_base_url.strip().rstrip("/")
         self._model = model or os.getenv("SBS_API_VLLM_MODEL") or DEFAULT_MODEL
         self._timeout = float(timeout_seconds or os.getenv("SBS_API_VLLM_TIMEOUT_SECONDS") or DEFAULT_TIMEOUT_SECONDS)
-        self._fallback = MockProvider()
-        self._fallback_warned = False
 
     async def complete(
         self,
@@ -61,14 +79,11 @@ class OnPremProvider:
         complaint_id: str | None = None,
     ) -> ModelResponse:
         if not self._base_url:
-            return await self._fallback_with_warning(
-                messages,
-                tools=tools,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                agent_name=agent_name,
-                complaint_id=complaint_id,
-                reason="SBS_API_VLLM_BASE_URL unset",
+            raise ProviderUnavailableError(
+                self.name,
+                "SBS_API_VLLM_BASE_URL is unset. Point it at the vLLM "
+                f"endpoint (default {DEFAULT_BASE_URL}), or select a "
+                "different SBS_API_MODEL_PROVIDER.",
             )
 
         payload: dict[str, Any] = {
@@ -90,15 +105,11 @@ class OnPremProvider:
                 resp.raise_for_status()
                 body = resp.json()
         except (httpx.HTTPError, json.JSONDecodeError) as exc:
-            return await self._fallback_with_warning(
-                messages,
-                tools=tools,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                agent_name=agent_name,
-                complaint_id=complaint_id,
-                reason=f"vLLM unreachable: {exc!r}",
-            )
+            raise ProviderUnavailableError(
+                self.name,
+                f"vLLM unreachable at {self._base_url} "
+                f"(model={self._model}, timeout={self._timeout}s): {exc!r}",
+            ) from exc
 
         latency_ms = int((time.monotonic() - started) * 1000)
         choices = body.get("choices") or []
@@ -136,17 +147,3 @@ class OnPremProvider:
             latency_ms=latency_ms,
             finish_reason=finish,
         )
-
-    async def _fallback_with_warning(
-        self, messages, *, reason: str, **kwargs
-    ) -> ModelResponse:
-        if not self._fallback_warned:
-            log.warning(
-                "on_prem provider falling back to mock: %s "
-                "(base_url=%s, model=%s) — demo-safe but not regulator-grade",
-                reason,
-                self._base_url,
-                self._model,
-            )
-            self._fallback_warned = True
-        return await self._fallback.complete(messages, **kwargs)

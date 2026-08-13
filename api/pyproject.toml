@@ -29,6 +29,14 @@ dependencies = [
     "arq>=0.26.3",
     "aiofiles>=24.1.0",
     "httpx>=0.28.0",
+    # Azure OpenAI client for the `cloud` model provider
+    # (sbs_api/agents/providers/cloud.py). Declared here, not only in the
+    # root pyproject: the worker container installs with
+    # `uv sync --package sbs-api`, so a root-only declaration left the
+    # worker without it and every Tier 2 agent dispatch failed on import.
+    # The provider still imports it softly, so an out-of-date environment
+    # degrades to "cloud unavailable" rather than "agents unavailable".
+    "openai>=2.37.0,<3.0",
 ]
 
 [tool.uv]

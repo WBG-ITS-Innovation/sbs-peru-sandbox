@@ -55,12 +55,16 @@ export PYTHONUNBUFFERED
 
 # Part 12 — agent pipeline. The demo path force-enables the pipeline so a
 # previous shell-level export cannot silently route the demo away from the
-# agent chain. The model provider defaults to the deterministic `mock`
-# layer (which exercises the real agents end-to-end) but an operator may
-# pin a different provider by pre-exporting SBS_API_MODEL_PROVIDER, e.g.
-# `SBS_API_MODEL_PROVIDER=replay bash scripts/demo.sh`.
+# agent chain. The model provider defaults to `replay`, which reads
+# pre-recorded fixtures from disk and logs a WARNING on every request
+# saying so; every agent_run it produces carries model_provider='replay'.
+# It used to default to `mock`, which is now test-only — canned tool calls
+# reach agent_runs looking like analysis, and a demo audience cannot see
+# the difference. An operator may pin a real backend by pre-exporting
+# SBS_API_MODEL_PROVIDER, e.g.
+# `SBS_API_MODEL_PROVIDER=on_prem bash scripts/demo.sh`.
 export SBS_API_AGENTS_PIPELINE_ENABLED=true
-export SBS_API_MODEL_PROVIDER="${SBS_API_MODEL_PROVIDER:-mock}"
+export SBS_API_MODEL_PROVIDER="${SBS_API_MODEL_PROVIDER:-replay}"
 echo "demo.sh: SBS_API_AGENTS_PIPELINE_ENABLED=${SBS_API_AGENTS_PIPELINE_ENABLED}" \
      "SBS_API_MODEL_PROVIDER=${SBS_API_MODEL_PROVIDER}"
 

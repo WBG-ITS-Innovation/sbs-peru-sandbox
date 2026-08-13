@@ -106,6 +106,7 @@ SBS_API_MTLS_MODE=direct \
 SBS_API_AUTH_STUB_ENABLED=false \
 SBS_API_PORT=8443 \
 SBS_API_AGENTS_PIPELINE_ENABLED=true \
+SBS_API_MODEL_PROVIDER=replay \
   bash scripts/run-api.sh
 
 # 3. Internal API on :8000, in a second terminal. This is the one the
@@ -122,17 +123,7 @@ cp app/.env.example app/.env.local
 cd app && npm install && npm run dev
 ```
 
-**Step 2 needs a model provider it can actually reach.** Enabling the agent
-pipeline arms a boot healthcheck: the API sends one canary tool-call request
-and refuses to start if the provider is unreachable or cannot emit a tool
-call. `SBS_API_MODEL_PROVIDER` defaults to `on_prem`, so on any machine
-without a vLLM endpoint at `localhost:8001` — which is most machines — step 2
-exits with `provider.healthcheck.failed` instead of listening on `:8443`.
-That is the intended posture, not a defect: the alternative was fabricating
-analysis. For a deterministic local walk, prefix the step-2 command with
-`SBS_API_MODEL_PROVIDER=replay`, which is fixture-backed, skips the canary,
-and logs a warning on every request naming itself a replay. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §3 for the provider semantics.
+**Why step 2 sets `SBS_API_MODEL_PROVIDER=replay`.** Enabling the agent pipeline arms a boot healthcheck that refuses to start the API unless the model provider can serve a canary tool-call; the `on_prem` default expects a vLLM endpoint at `localhost:8001`, so without one the process exits with `provider.healthcheck.failed` instead of listening on `:8443`. `replay` is fixture-backed and deterministic, skips the canary, and logs a warning on every request naming itself a replay — the demo posture, chosen over fabricating analysis. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §3 for the provider semantics.
 
 `SBS_API_AGENTS_PIPELINE_ENABLED` defaults to **off**, so a `:8443` process started without it ingests complaints normally but writes no `agent_runs` — the cockpit renders the complaint with an empty agent chain. The Tier-2 equivalent is a separate flag on the worker container; see [docs/HANDOVER-NOTES.md](docs/HANDOVER-NOTES.md) under "Operating the stack".
 

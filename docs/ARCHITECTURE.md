@@ -81,7 +81,11 @@ two paths stay distinguishable in a trace.
 
 ### What the canonical record contains
 
-Resolución SBS N° 04036-2022, Anexo N° 1-A enumerates **23 fields**. The
+Resolución SBS N° 04036-2022, Anexo N° 1-A enumerates **27 fields** — 23 base
+fields plus a 4-field bancaseguros block: the `BCA_SEG` trigger (campo 24) and
+the three fields conditional on it, `producto_bancaseguros` (campo 25),
+`motivo_bancaseguros` (campo 26) and `submotivo_bancaseguros` (campo 27), which
+apply to institutions distributing insurance through banking channels. The
 institution-facing contract implements a curated **15-field subset**, with the
 full taxonomy deferred; the subset, the field-by-field mapping to Anexo 1-A,
 and the deliberate exclusions (including the four PII-bearing fields) are
@@ -98,11 +102,16 @@ and 21 stable `DQ-A1A-007` … `DQ-A1A-027` rules in
 ([ADR 0045](adr/0045-data-quality-tool-contract.md)). None of them calls a
 model.
 
-> **Correction to earlier documents.** Several older files describe a
-> "27-field Annex 1-A schema". No such field count exists anywhere in the
-> code; the number is the highest data-quality *rule* id (`DQ-A1A-027`) read
-> as a field count. The grounded numbers are the ones above: 23 in the
-> Resolución, 15 in the contract, 29 columns persisted, 32 rules.
+> **On the field count.** An earlier draft of this file put the Anexo 1-A
+> count at 23, treating the bancaseguros block as outside the schema. It is
+> not: Res. SBS N° 04036-2022 Anexo 1-A carries it as campos 24–27, and the
+> rule messages in
+> [data_quality/annex_1a_rules.py](../api/sbs_api/data_quality/annex_1a_rules.py)
+> cite those campo numbers directly. The count is **27 = 23 base + 4
+> conditional**. Note that rule ids are not field numbers — they run to
+> `DQ-A1A-027` by coincidence, and `DQ-A1A-027` itself checks the institution
+> registry, not a field. The other grounded numbers are as above: 15 in the
+> contract, 29 columns persisted, 32 rules.
 
 ---
 

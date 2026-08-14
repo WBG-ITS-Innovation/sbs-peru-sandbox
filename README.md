@@ -147,7 +147,7 @@ Res. SBS N° 04036-2022 Anexo 1-A defines a 27-field complaint record — 23 bas
 
 ## Data
 
-All complaint records in this repository are synthetic. The committed golden sample (`data/synthetic-corpus-golden/`, 200 rows per demo institution, checksummed manifests) is produced by a seeded, deterministic generator; regenerate with `make corpus-golden`. Demo personas use reserved `@sandbox.example.com` addresses. See [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) and ADR 0036 (synthetic-corpus fidelity tiers).
+All complaint records in this repository are synthetic, and every one is produced by a seeded generator script that reads no external data — so you can reproduce each committed artifact and check that claim instead of taking it. The golden sample (`data/synthetic-corpus-golden/`, 200 rows per demo institution, checksummed manifests) comes from `make corpus-golden`; the two app fixtures come from `scripts/build_rr1_fixture.py` and `scripts/build_journey_fixtures.py`. Institutions are invented, person-like names are assembled from name-part pools, and demo personas use reserved `@sandbox.example.com` addresses. `tests/cleanup/test_no_real_entities.py` fails if a real financial institution is ever named in a committed fixture. See [DATA_PROVENANCE.md](DATA_PROVENANCE.md) for the full account and ADR 0036 for the fidelity tiers.
 
 ## For institutional integrators
 
@@ -178,7 +178,7 @@ Integrator-surface ADRs: [0037 portal serving](docs/adr/0037-developer-portal-se
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the system works, cited to the code
 - [docs/adr/](docs/adr/) — architectural decision records
 - [api/openapi/error-catalog.md](api/openapi/error-catalog.md) — stable error codes
-- [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — synthetic-data provenance
+- [DATA_PROVENANCE.md](DATA_PROVENANCE.md) — what generates every committed data artifact, and how to reproduce it
 - [docs/audit/](docs/audit/) — dated verification reports, kept as an evidence trail
 - [docs/demo/institution-api-workflow.md](docs/demo/institution-api-workflow.md) — institution API walkthrough
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deployment scaffold

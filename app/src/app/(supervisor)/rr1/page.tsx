@@ -10,9 +10,10 @@ import { currentLocale } from '@/i18n/server';
 import rr1 from '@/lib/rr1-2025.json';
 
 // /app/rr1 — SUCAVE-style replicate of the RR1 reglamento de reclamos
-// reporting. Three tabs (Empresa / Producto / Motivo) backed by the
-// real 2025 RR1 workbook + a "build your own chart" panel with line,
-// bar, heatmap, and stacked-area types.
+// reporting. Three tabs (Empresa / Producto / Motivo) over a synthetic
+// 2025 fixture — fictional institutions, generated volumes, built by
+// scripts/build_rr1_fixture.py — plus a "build your own chart" panel
+// with line, bar, heatmap, and stacked-area types.
 
 export const dynamic = 'force-dynamic';
 

@@ -1,5 +1,0 @@
-# Completeness-backstop delta for docs/adr/README.md after a0ca47c
-# Lines below appear in source a0ca47c:docs/adr/README.md but NOT in working tree (after scrub-token normalization)
-# This is INFORMATIONAL: many of these are legitimate scrub differences.
-
-< | 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with _N_ |

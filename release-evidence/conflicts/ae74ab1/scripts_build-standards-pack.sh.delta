@@ -1,8 +1,0 @@
-# Completeness-backstop delta for scripts/build-standards-pack.sh after ae74ab1
-# Lines below appear in source ae74ab1:scripts/build-standards-pack.sh but NOT in working tree (after scrub-token normalization)
-# This is INFORMATIONAL: many of these are legitimate scrub differences.
-
-< PACK_VERSION="0.2.0"
-< # The OpenAPI filename carries the spec's major.minor (v0.2) — distinct
-<    "$STANDARDS_PACK_DIR/openapi/sbs-complaints-v0.2.yaml"
-<     "rationale": "v0.2 sandbox release. SLSA + cosign attestation land with OCI artifact distribution per ADR 0039."

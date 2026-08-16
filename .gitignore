@@ -118,6 +118,12 @@ data/sbs_sample/
 # reglamento, not internal SBS material). See release-evidence/track-b-salvage-TODO.md.
 annexo.pdf
 
+# release-evidence/ — internal build-and-salvage notes. Three of them carry
+# credential-handling detail and maintainer machine paths; none of it is
+# reference material for anyone integrating with the sandbox. Untracked here
+# and pinned so it cannot come back.
+release-evidence/
+
 # .scratch — local UI artifacts and one-off mockups. Already excluded via
 # .git/info/exclude on the maintainer's clone; pinned here so it applies to
 # every clone.

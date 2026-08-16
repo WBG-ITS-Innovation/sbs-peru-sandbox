@@ -1,9 +1,0 @@
-# Completeness-backstop delta for tests/test_internal_audit.py after 8f28b5a
-# Lines below appear in source 8f28b5a:tests/test_internal_audit.py but NOT in working tree (after scrub-token normalization)
-# This is INFORMATIONAL: many of these are legitimate scrub differences.
-
-<                 "actor_id": "_N_@_DOMAIN_",
-<                 "actor_id": "_N_@_DOMAIN_",
-<                 "actor_id": "_N_@_DOMAIN_",
-<                 "actor_id": "_N_@_DOMAIN_",
-<                 "actor_id": "_N_@_DOMAIN_",

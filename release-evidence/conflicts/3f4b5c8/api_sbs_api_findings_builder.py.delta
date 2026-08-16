@@ -1,5 +1,0 @@
-# Completeness-backstop delta for api/sbs_api/findings/builder.py after 3f4b5c8
-# Lines below appear in source 3f4b5c8:api/sbs_api/findings/builder.py but NOT in working tree (after scrub-token normalization)
-# This is INFORMATIONAL: many of these are legitimate scrub differences.
-
-<         # Lucía: high-confidence findings last 24 hours.

@@ -23,7 +23,11 @@ repos:
         # Vendored upstream assets (Stoplight Elements bundles) are byte-
         # identical to their published-version SHA-384 hashes; mutating
         # whitespace would break provenance verification per ADR 0037.
-        exclude: '^vendor/'
+        # WB-IGO-RIDER.md's trailing spaces are markdown line breaks in a
+        # legal document, deliberately restored in 8616572 — stripping them
+        # reflows the rider. The hook and that commit were in direct
+        # conflict and the hook won on every --all-files run.
+        exclude: '^(vendor/|WB-IGO-RIDER\.md$)'
       - id: end-of-file-fixer
         exclude: '^vendor/'
       - id: mixed-line-ending

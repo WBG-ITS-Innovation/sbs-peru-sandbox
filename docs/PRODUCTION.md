@@ -401,9 +401,41 @@ suite, and they are the same ones CI runs.
    downgrades are not maintained as a supported path — plan rollback around the
    backup, not around `alembic downgrade`.
 
-Optionally run `scripts/perf-smoke.sh` for an indicative latency figure. It is
-**sandbox-scale only and not a load test** — see the note in that script and the
-[OPERATOR-CHECKLIST.md](OPERATOR-CHECKLIST.md) line that requires a real one.
+### Optional: the perf smoke
+
+`scripts/perf-smoke.sh` drives sustained signed Tier-1 submissions at a fixed
+rate and reports latency percentiles and error rate:
+
+```bash
+bash scripts/perf-smoke.sh                              # 20 rps for 60s
+PERF_RPS=10 PERF_DURATION=30 bash scripts/perf-smoke.sh
+PERF_JSON=perf.json bash scripts/perf-smoke.sh          # machine-readable
+```
+
+It exits non-zero if the error rate exceeds `PERF_MAX_ERROR_RATE` (default 1%),
+so it works as an optional gate in an upgrade pipeline — a regression that
+doubles ingest latency or starts returning 5xx will show up.
+
+**Sandbox-scale indicative only — this is not a load test.** It is useful for
+exactly one thing: noticing that a change made the ingest path dramatically
+slower. It establishes nothing about production capacity, because the client,
+the API, Postgres and Redis all share one machine; the database holds sandbox
+volumes, so every index is small; there is one API process rather than a
+replica set; one client certificate means per-institution rate limiting is
+never stressed; and sixty seconds is too short for GC or connection churn to
+appear.
+
+For reference, a run on a developer laptop against the compose stack —
+**not a capacity claim, and not a target for your infrastructure**:
+
+```
+20 rps for 60s — 1200 requests, 1200x 201, 0 errors
+p50 53.2 ms   p95 164.4 ms   p99 194.8 ms   max 234.8 ms
+```
+
+A real load test, at your projected peak on production-shaped infrastructure
+with your data volumes, is a go-live gate — see
+[OPERATOR-CHECKLIST.md](OPERATOR-CHECKLIST.md).
 
 ---
 

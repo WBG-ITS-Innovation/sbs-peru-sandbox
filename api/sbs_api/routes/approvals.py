@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Approvals list + detail + four decision endpoints.
 
 The four decisions write to different downstream tables:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Deterministic data-quality rules for the P11A demo ingestion path.
 
 Rules are pure functions over the **redacted** narrative plus the

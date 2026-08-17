@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Deterministic regex-and-allowlist redaction engine.
 
 Five entity kinds are detected:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Python exception classes that map to RFC 9457 ProblemDetail responses.
 
 Each subclass carries the stable `code` (matching `api/openapi/error-catalog.md`),
@@ -330,6 +331,16 @@ class TokenExpired(SBSAPIException):
     status = 401
     title = "OAuth access token expired"
     type_suffix = "TOKEN_EXPIRED"
+
+
+# --- FI circuit breaker (P-RESHAPE-9) --------------------------------------
+
+
+class CircuitBreakerPaused(SBSAPIException):
+    code = "SBS-503-004"
+    status = 503
+    title = "Ingestion paused by SBS circuit breaker"
+    type_suffix = "FI_CIRCUIT_BREAKER_PAUSED"
 
 
 class TokenCertThumbprintMismatch(SBSAPIException):

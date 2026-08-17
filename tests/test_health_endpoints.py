@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Health probe semantics — live, ready, startup.
 
 ADR 0030 — three probes with explicit semantics. ``/live`` always 200,

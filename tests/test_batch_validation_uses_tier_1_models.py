@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """ADR 0034 §proportional-treatment invariant — code-identity test.
 
 The proportional-treatment claim ("Tier 1 and Tier 2 land in the same

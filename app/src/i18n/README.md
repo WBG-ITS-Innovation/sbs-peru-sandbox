@@ -14,7 +14,7 @@ app/src/i18n/
 └── server.ts       (currentLocale() — reads the sbs-locale cookie)
 ```
 
-Native-speaker review of `es.json` is non-negotiable. the SBS technical counterpart
+Native-speaker review of `es.json` is non-negotiable. A native Spanish speaker
 reviews the dictionary before May 25. No machine-translated string ships
 without human review.
 
@@ -35,7 +35,7 @@ this README in the same PR.
 | `approvals` | WS5 — queue and detail, the four decision actions, rationale field. |
 | `queue` | WS6 — risk queue table and filters. |
 | `audit` | WS6 — audit log table, diff modal, search. |
-| `personas` | WS2 — demo-mode persona switcher labels (Supervisor / Analyst / Unit Head). Only renders when `SBS_DEMO_MODE=true`; the namespace must stay populated so production builds with the flag off still parity-check. |
+| `personas` | WS2 — demo-mode persona switcher labels (Supervisor / Analyst / Head). Only renders when `SBS_DEMO_MODE=true`; the namespace must stay populated so production builds with the flag off still parity-check. |
 | `errors` | RFC 9457 problem-type renderings and inline error messages. |
 
 ### Where action verbs go

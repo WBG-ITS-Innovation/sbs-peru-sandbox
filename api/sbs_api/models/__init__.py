@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Pydantic v2 models for the SBS SupTech API.
 
 The 15-field complaint subset is defined in :mod:`sbs_api.models.anexo_1a`.

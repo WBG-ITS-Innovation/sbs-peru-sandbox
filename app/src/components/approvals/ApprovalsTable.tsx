@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Approvals queue table — severity-sorted, oldest-first within band.
 
 import Link from 'next/link';

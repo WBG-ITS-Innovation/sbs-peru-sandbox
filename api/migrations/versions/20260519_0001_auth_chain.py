@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """auth chain — institution_certificates, institution_secrets, oauth_clients, institutions.permitted_scopes
 
 Revision ID: 20260519_0001

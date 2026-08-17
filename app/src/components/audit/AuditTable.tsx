@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Audit table — server-rendered but each row's <details> can expand
 // to show the full diff + meta JSON (text-only per the drop ladder,
 // no syntax highlighting).

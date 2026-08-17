@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Reject oversize request bodies before route dispatch.
 
 Uvicorn's default body size is generous; this middleware caps it at

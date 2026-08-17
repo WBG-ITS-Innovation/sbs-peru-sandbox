@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """POST /v1/oauth/token — OAuth 2.0 client_credentials grant per ADR 0032.
 
 Request shape (RFC 6749 §2.3.1 + §4.4):

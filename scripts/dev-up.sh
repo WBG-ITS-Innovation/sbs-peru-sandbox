@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Bring up the local-dev stack — Postgres + Redis + dev CA + OAuth
 # clients — so a fresh clone reaches a working signed-request demo in
 # one command.

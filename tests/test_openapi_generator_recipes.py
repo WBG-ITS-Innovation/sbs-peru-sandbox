@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Smoke checks for the OpenAPI Generator recipes (E.2).
 
 The recipes at ``standards-pack/recipes/openapi-generator-*.md`` are

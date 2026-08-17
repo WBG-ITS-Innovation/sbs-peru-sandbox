@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """RFC 9457 problem+json exception classes and FastAPI handlers.
 
 Application code raises subclasses of :class:`SBSAPIException` rather than

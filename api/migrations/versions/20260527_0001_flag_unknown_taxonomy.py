@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """P11 demo-ui-polish overlay — flag_unknown_taxonomy on complaints.
 
 Revision ID: 20260527_0001

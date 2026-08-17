@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OAuth scope-enforcing dependency factory — ADR 0032.
 
 Use as:
@@ -25,6 +26,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from fastapi import Depends, Request
+
+from sbs_api.config import get_settings
+from sbs_api.dependencies.auth_stub import resolve_stub
 
 from sbs_api.auth.oauth import (
     TokenClaims,
@@ -116,6 +120,24 @@ def verified_oauth_token_with_scope(*required_scopes: str):
         request: Request,
         mtls_subject: MtlsSubject = Depends(verified_mtls_subject),
     ) -> VerifiedToken:
+        # Dev-only persona stub (P-RESHAPE-8.6): honoured only when
+        # auth_stub_enabled AND environment == "dev"; see auth_stub.py.
+        principal = resolve_stub(request, get_settings())
+        if principal is not None:
+            missing_stub = required - principal.scopes
+            if missing_stub:
+                raise TokenScopeInsufficient(
+                    detail=(
+                        f"Persona '{principal.username}' is missing required "
+                        f"scope(s): {sorted(missing_stub)}."
+                    )
+                )
+            return VerifiedToken(
+                institution_id=f"stub-{principal.username}",
+                granted_scopes=principal.scopes,
+                cert_thumbprint="0" * 64,
+            )
+
         token_str = _extract_bearer(request)
         try:
             claims: TokenClaims = verify_token(token_str, key=get_signing_key())

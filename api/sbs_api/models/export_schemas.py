@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Export Pydantic models to standalone JSON Schema files.
 
 Runs as ``python -m sbs_api.models.export_schemas`` or via

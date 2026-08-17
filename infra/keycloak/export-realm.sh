@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Re-export the sbs-demo realm from a running Keycloak container.
 #
 # Used when a developer has tweaked the realm via the admin UI

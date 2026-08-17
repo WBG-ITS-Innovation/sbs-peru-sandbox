@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """GET /v1/internal/sse/{topic} — server-sent events for the supervisor UI.
 
 The Next.js server is the only client; it proxies the byte-stream
@@ -60,7 +61,7 @@ _TOPIC_ROLES: dict[str, frozenset[str]] = {
     "findings": frozenset(
         {"sbs:conduct:supervisor", "sbs:conduct:analyst", "sbs:conduct:head"}
     ),
-    # Approvals topic restricted to head + analyst — supervisor (the Conduct Supervisor)
+    # Approvals topic restricted to head + analyst — supervisor
     # does not subscribe per ADR 0040 §D7's demo-scope outline.
     "approvals": frozenset({"sbs:conduct:analyst", "sbs:conduct:head"}),
 }

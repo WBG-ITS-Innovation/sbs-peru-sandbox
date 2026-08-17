@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Concurrent-POST idempotency policy — ADR 0029 amendment, workstream F.1.
 
 The placeholder-INSERT-under-unique-constraint pattern lands in F.1.

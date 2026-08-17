@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Narrative panel — renders the complaint text with redaction spans
 // visibly marked. Server-renderable since it's pure transform.
 

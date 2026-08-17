@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """raw_complaints — restricted PII-bearing storage for P11A demo ingestion
 
 Revision ID: 20260524_0001

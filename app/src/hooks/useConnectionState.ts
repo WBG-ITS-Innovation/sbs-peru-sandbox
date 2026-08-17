@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Lightweight connection-state probe — opens an EventSource purely to
 // track whether the SSE stream is reachable, ignoring the payload.
 // Used by the AppShell's ConnectionStateDot in the top bar so the dot

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Demo / sandbox-only live ingestion orchestrator (P11A).
 
 Wires deterministic PII redaction (``sbs_api.redaction``) and the

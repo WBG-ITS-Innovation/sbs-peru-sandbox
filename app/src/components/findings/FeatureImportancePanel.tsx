@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Feature importance panel — XGBoost SHAP-style horizontal bars.
 // Positive contributions in cyan (brand accent), negative in gold (the
 // attention marker token). Top 8 features by absolute contribution.

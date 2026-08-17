@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: Apache-2.0
 """Demo webhook listener — Workstream G live-stack verification.
 
 Runs as the `webhook-listener` docker-compose service. Stays alive

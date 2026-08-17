@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Helper for testing SSE endpoints without blocking on the infinite body.
 
 ``httpx.ASGITransport`` runs the ASGI app to completion before returning a

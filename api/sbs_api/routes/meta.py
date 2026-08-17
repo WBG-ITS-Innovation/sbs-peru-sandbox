@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Meta endpoints — version and the three health probes.
 
 ADR 0030 locks the semantics:

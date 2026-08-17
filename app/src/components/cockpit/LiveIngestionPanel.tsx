@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // LiveIngestionPanel — wired to the P11A demo ingestion endpoint.
 //
 // Clicking Submit calls /app/api/ingest, which proxies to

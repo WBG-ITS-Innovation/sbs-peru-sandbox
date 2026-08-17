@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Audit-event ORM model — the cross-screen audit chain.
 
 Every state-changing action in the supervisor UI lands a row here:
@@ -46,7 +47,7 @@ class AuditEvent(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    # 'user' (Supervisor, Analyst, Unit Head) or 'agent' (a classifier / drafter run).
+    # 'user' (Supervisor, Analyst, Head) or 'agent' (a classifier / drafter run).
     actor_type: Mapped[str] = mapped_column(String(8), nullable=False)
 
     # User email (e.g., 'supervisor@sandbox.example.com') or agent_run id (UUID string).

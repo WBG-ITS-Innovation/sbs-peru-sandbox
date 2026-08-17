@@ -24,7 +24,7 @@ name: sbs-suptech-prototype
 #   docker compose down                — tear down (pass `-v` to wipe volumes)
 
 x-api-env: &api-env
-  SBS_API_DATABASE_URL: postgresql+asyncpg://sbs:sbs@postgres:5432/sbs_dev  # pragma: allowlist secret
+  SBS_API_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sbs}:${POSTGRES_PASSWORD:-sbs}@postgres:5432/${POSTGRES_DB:-sbs_dev}  # pragma: allowlist secret
   SBS_API_REDIS_URL: redis://redis:6379/0
   SBS_API_ENVIRONMENT: dev
   SBS_API_LOG_FORMAT: json
@@ -32,6 +32,26 @@ x-api-env: &api-env
   SBS_API_AUTH_STUB_ENABLED: "false"
   SBS_API_BATCH_STORAGE_PATH: /app/data/batches
   SBS_API_ALLOW_INSECURE_WEBHOOK_URLS: "true"
+  # Part 12 — the batch worker now runs the agent chain over each accepted
+  # row (previously only scripts/run_agent_pipeline_on_new.py did, host-side).
+  # Default stays false so the worker's behaviour is unchanged unless an
+  # operator opts in; export either var before `docker compose up` to enable.
+  SBS_API_AGENTS_PIPELINE_ENABLED: "${SBS_API_AGENTS_PIPELINE_ENABLED:-false}"
+  SBS_API_MODEL_PROVIDER: "${SBS_API_MODEL_PROVIDER:-on_prem}"
+  # Credentials for SBS_API_MODEL_PROVIDER=cloud. Passed through with no
+  # defaults, so a worker started without them and with cloud selected
+  # fails naming the missing variable instead of running half-configured.
+  # They come from the host `.env` (docker compose reads it) or the
+  # invoking shell. `on_prem` and `replay` need none of them.
+  AZURE_OPENAI_API_KEY: "${AZURE_OPENAI_API_KEY:-}"
+  AZURE_OPENAI_ENDPOINT: "${AZURE_OPENAI_ENDPOINT:-}"
+  AZURE_OPENAI_DEPLOYMENT: "${AZURE_OPENAI_DEPLOYMENT:-}"
+  AZURE_OPENAI_API_VERSION: "${AZURE_OPENAI_API_VERSION:-}"
+  SBS_API_CLOUD_LEGAL_APPROVED: "${SBS_API_CLOUD_LEGAL_APPROVED:-false}"
+  # Container path. The repo is mounted read-only at /app, so a bundle
+  # committed nowhere and generated into the gitignored certs/ directory
+  # on the host is visible here at the same relative path.
+  SBS_API_CLOUD_CA_BUNDLE: "${SBS_API_CLOUD_CA_BUNDLE:-}"
   # uv writes a `.lock` into UV_PROJECT_ENVIRONMENT during `sync`. The
   # source mount is read-only (so a container bug cannot corrupt the
   # repo); the venv lives in a dedicated writable named volume.
@@ -43,16 +63,17 @@ services:
     container_name: sbs-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: sbs
-      POSTGRES_PASSWORD: sbs # pragma: allowlist secret
-      POSTGRES_DB: sbs_dev
+      # Sandbox-only defaults; override via .env (see .env.example).
+      POSTGRES_USER: ${POSTGRES_USER:-sbs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sbs} # pragma: allowlist secret
+      POSTGRES_DB: ${POSTGRES_DB:-sbs_dev}
     ports:
       - "5432:5432"
     volumes:
       - sbs_postgres_data:/var/lib/postgresql/data
       - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sbs -d sbs_dev"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -135,8 +156,9 @@ services:
     restart: unless-stopped
     environment:
       # Sandbox admin only. Production secrets come from Helm values.
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin  # pragma: allowlist secret
+      # Override via .env (see .env.example).
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}  # pragma: allowlist secret
       # dev-file = in-memory H2 + on-disk persistence under /opt/keycloak/data;
       # sufficient for the demo. Production overlay uses Postgres.
       KC_DB: dev-file
@@ -160,12 +182,23 @@ services:
       - start-dev
       - --import-realm
     healthcheck:
-      # Keycloak 25's /health/ready is on port 9000 (management port) by
-      # default; in start-dev it's served on the same 8080. Use bash's
-      # /dev/tcp because the official Keycloak image doesn't ship curl.
+      # Probe the demo realm's discovery document, not /health/ready.
+      #
+      # Two reasons. First, the old probe was simply wrong: it asked 8080
+      # for /health/ready, but Keycloak 25 serves the health endpoints on
+      # the 9000 management port even under start-dev, so 8080 answers
+      # 404 and this container reported unhealthy forever while working
+      # fine. Second, /health/ready only says the server booted —
+      # everything that depends on Keycloak here needs the sbs-demo realm
+      # to be *imported and serving*, which is a later and strictly
+      # stronger condition. A 200 on the discovery document proves it.
+      #
+      # bash's /dev/tcp rather than curl, which the official image does
+      # not ship. printf rather than echo -e, which is not portable
+      # across shells.
       test:
         - "CMD-SHELL"
-        - "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"
+        - "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/sbs-demo/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'issuer' <&3"
       interval: 5s
       timeout: 5s
       retries: 60

@@ -1,0 +1,2964 @@
+{
+  "source": "synthetic — generated, not extracted",
+  "synthetic": true,
+  "generator": "scripts/build_rr1_fixture.py",
+  "seed": 2026,
+  "generated_at": "2026-08-14T00:00:00+00:00",
+  "sheets": {
+    "Empresa": {
+      "label_col": "Tipo Entidad y Entidad",
+      "months": [
+        "Ene-25",
+        "Feb-25",
+        "Mar-25",
+        "Abr-25",
+        "May-25",
+        "Jun-25",
+        "Jul-25",
+        "Ago-25",
+        "Set-25",
+        "Oct-25",
+        "Nov-25",
+        "Dic-25"
+      ],
+      "rows": [
+        {
+          "label": "Banco",
+          "values": [
+            200851,
+            181598,
+            193560,
+            181588,
+            199447,
+            196938,
+            211636,
+            206730,
+            214776,
+            212503,
+            185919,
+            199456
+          ],
+          "total": 2385002
+        },
+        {
+          "label": "Banco Nuevo Horizonte del Perú",
+          "values": [
+            24892,
+            26568,
+            29877,
+            24211,
+            29623,
+            28857,
+            29800,
+            28251,
+            33330,
+            32321,
+            28195,
+            29423
+          ],
+          "total": 345348
+        },
+        {
+          "label": "Banco Altiplano Sur",
+          "values": [
+            21751,
+            19981,
+            19523,
+            19177,
+            21156,
+            19584,
+            22662,
+            21354,
+            21439,
+            24202,
+            19802,
+            19905
+          ],
+          "total": 250536
+        },
+        {
+          "label": "Banco Aurora Andina",
+          "values": [
+            57401,
+            50307,
+            52919,
+            57110,
+            52591,
+            55300,
+            63996,
+            58323,
+            59429,
+            53917,
+            51612,
+            52379
+          ],
+          "total": 665284
+        },
+        {
+          "label": "Banco Cielo Abierto",
+          "values": [
+            20,
+            16,
+            19,
+            18,
+            18,
+            21,
+            19,
+            20,
+            19,
+            19,
+            19,
+            22
+          ],
+          "total": 230
+        },
+        {
+          "label": "Banco Cumbre Blanca",
+          "values": [
+            7459,
+            6389,
+            7467,
+            7189,
+            6845,
+            7956,
+            6729,
+            7860,
+            8110,
+            7833,
+            7009,
+            8199
+          ],
+          "total": 89045
+        },
+        {
+          "label": "Banco del Valle Sereno",
+          "values": [
+            67438,
+            58858,
+            61700,
+            52535,
+            66989,
+            62291,
+            65075,
+            65324,
+            68979,
+            69476,
+            57314,
+            65776
+          ],
+          "total": 761755
+        },
+        {
+          "label": "Banco Faro del Pacífico",
+          "values": [
+            1173,
+            1129,
+            1179,
+            1188,
+            1108,
+            1149,
+            1298,
+            1226,
+            1142,
+            1119,
+            1042,
+            1308
+          ],
+          "total": 14061
+        },
+        {
+          "label": "Banco Flor de Retama",
+          "values": [
+            2204,
+            2165,
+            1906,
+            2220,
+            2095,
+            2317,
+            2459,
+            2597,
+            2459,
+            2509,
+            2024,
+            2194
+          ],
+          "total": 27149
+        },
+        {
+          "label": "Banco Herradura Real",
+          "values": [
+            608,
+            596,
+            644,
+            696,
+            623,
+            712,
+            701,
+            703,
+            714,
+            697,
+            771,
+            737
+          ],
+          "total": 8202
+        },
+        {
+          "label": "Banco Inti Wasi",
+          "values": [
+            216,
+            209,
+            207,
+            217,
+            204,
+            234,
+            250,
+            211,
+            235,
+            256,
+            219,
+            252
+          ],
+          "total": 2710
+        },
+        {
+          "label": "Banco Laguna Azul",
+          "values": [
+            28,
+            26,
+            26,
+            26,
+            27,
+            30,
+            27,
+            29,
+            34,
+            29,
+            30,
+            32
+          ],
+          "total": 344
+        },
+        {
+          "label": "Banco Manantial Norte",
+          "values": [
+            3981,
+            3515,
+            3488,
+            3073,
+            3484,
+            3726,
+            3467,
+            4105,
+            3829,
+            3974,
+            3227,
+            3345
+          ],
+          "total": 43214
+        },
+        {
+          "label": "Banco Pampa Verde",
+          "values": [
+            481,
+            373,
+            441,
+            423,
+            444,
+            478,
+            501,
+            435,
+            478,
+            467,
+            504,
+            424
+          ],
+          "total": 5449
+        },
+        {
+          "label": "Banco Puente Nuevo",
+          "values": [
+            11082,
+            9451,
+            11920,
+            11511,
+            11974,
+            12284,
+            12548,
+            13985,
+            12083,
+            13138,
+            12007,
+            13434
+          ],
+          "total": 145417
+        },
+        {
+          "label": "Banco Quinua Dorada",
+          "values": [
+            73,
+            64,
+            72,
+            64,
+            81,
+            82,
+            85,
+            86,
+            75,
+            91,
+            82,
+            81
+          ],
+          "total": 936
+        },
+        {
+          "label": "Banco Sol de Enero",
+          "values": [
+            100,
+            107,
+            103,
+            102,
+            110,
+            102,
+            111,
+            113,
+            112,
+            122,
+            118,
+            113
+          ],
+          "total": 1313
+        },
+        {
+          "label": "Banco Tierra Firme",
+          "values": [
+            1894,
+            1794,
+            2015,
+            1777,
+            2016,
+            1764,
+            1858,
+            2052,
+            2252,
+            2275,
+            1897,
+            1775
+          ],
+          "total": 23369
+        },
+        {
+          "label": "Banco Viento Norte",
+          "values": [
+            50,
+            50,
+            54,
+            51,
+            59,
+            51,
+            50,
+            56,
+            57,
+            58,
+            47,
+            57
+          ],
+          "total": 640
+        },
+        {
+          "label": "Financiera",
+          "values": [
+            13105,
+            11810,
+            12937,
+            11571,
+            12866,
+            13749,
+            14197,
+            13779,
+            14318,
+            13733,
+            12959,
+            13977
+          ],
+          "total": 159001
+        },
+        {
+          "label": "Financiera Surandina del Perú",
+          "values": [
+            350,
+            345,
+            319,
+            322,
+            321,
+            349,
+            356,
+            395,
+            388,
+            410,
+            323,
+            322
+          ],
+          "total": 4200
+        },
+        {
+          "label": "Financiera Cielo Claro",
+          "values": [
+            8611,
+            8133,
+            8961,
+            7419,
+            8766,
+            9296,
+            9541,
+            9253,
+            9912,
+            8886,
+            8614,
+            9244
+          ],
+          "total": 106636
+        },
+        {
+          "label": "Financiera Espiga Norte",
+          "values": [
+            36,
+            34,
+            35,
+            42,
+            45,
+            45,
+            41,
+            44,
+            46,
+            40,
+            44,
+            44
+          ],
+          "total": 496
+        },
+        {
+          "label": "Financiera Kantu Andina",
+          "values": [
+            137,
+            119,
+            129,
+            137,
+            144,
+            127,
+            123,
+            142,
+            140,
+            162,
+            121,
+            143
+          ],
+          "total": 1624
+        },
+        {
+          "label": "Financiera Molle Verde",
+          "values": [
+            809,
+            756,
+            850,
+            721,
+            972,
+            821,
+            814,
+            1030,
+            854,
+            869,
+            771,
+            908
+          ],
+          "total": 10175
+        },
+        {
+          "label": "Financiera Puna Alta",
+          "values": [
+            3153,
+            2415,
+            2634,
+            2920,
+            2608,
+            3100,
+            3310,
+            2903,
+            2967,
+            3354,
+            3076,
+            3306
+          ],
+          "total": 35746
+        },
+        {
+          "label": "Financiera Rumi Wasi",
+          "values": [
+            9,
+            8,
+            9,
+            10,
+            10,
+            11,
+            12,
+            12,
+            11,
+            12,
+            10,
+            10
+          ],
+          "total": 124
+        },
+        {
+          "label": "Caja municipal",
+          "values": [
+            3152,
+            2934,
+            3228,
+            3056,
+            3263,
+            3488,
+            3181,
+            3476,
+            3528,
+            3635,
+            3237,
+            3597
+          ],
+          "total": 39775
+        },
+        {
+          "label": "Caja Municipal Aurora",
+          "values": [
+            null,
+            null,
+            1,
+            4,
+            null,
+            2,
+            3,
+            7,
+            2,
+            null,
+            null,
+            6
+          ],
+          "total": 25
+        },
+        {
+          "label": "Caja Municipal Buen Retiro",
+          "values": [
+            922,
+            900,
+            1058,
+            896,
+            1116,
+            1193,
+            971,
+            1033,
+            1212,
+            1173,
+            1063,
+            1206
+          ],
+          "total": 12743
+        },
+        {
+          "label": "Caja Municipal Cumbre Alta",
+          "values": [
+            809,
+            839,
+            819,
+            826,
+            788,
+            869,
+            804,
+            952,
+            873,
+            882,
+            756,
+            904
+          ],
+          "total": 10121
+        },
+        {
+          "label": "Caja Municipal Ladera Verde",
+          "values": [
+            19,
+            18,
+            21,
+            20,
+            20,
+            23,
+            24,
+            22,
+            24,
+            27,
+            24,
+            25
+          ],
+          "total": 267
+        },
+        {
+          "label": "Caja Municipal Manantial",
+          "values": [
+            386,
+            357,
+            392,
+            385,
+            341,
+            375,
+            356,
+            392,
+            361,
+            441,
+            368,
+            416
+          ],
+          "total": 4570
+        },
+        {
+          "label": "Caja Municipal Pampa Nueva",
+          "values": [
+            38,
+            30,
+            34,
+            38,
+            36,
+            41,
+            39,
+            36,
+            41,
+            38,
+            41,
+            39
+          ],
+          "total": 451
+        },
+        {
+          "label": "Caja Municipal Puerto Claro",
+          "values": [
+            438,
+            342,
+            382,
+            397,
+            408,
+            475,
+            407,
+            470,
+            395,
+            472,
+            417,
+            427
+          ],
+          "total": 5030
+        },
+        {
+          "label": "Caja Municipal Quinta Sur",
+          "values": [
+            97,
+            75,
+            89,
+            84,
+            100,
+            89,
+            94,
+            99,
+            96,
+            113,
+            98,
+            105
+          ],
+          "total": 1139
+        },
+        {
+          "label": "Caja Municipal Río Sereno",
+          "values": [
+            139,
+            134,
+            145,
+            133,
+            162,
+            136,
+            154,
+            168,
+            164,
+            159,
+            149,
+            137
+          ],
+          "total": 1780
+        },
+        {
+          "label": "Caja Municipal Valle Alto",
+          "values": [
+            54,
+            46,
+            58,
+            49,
+            60,
+            55,
+            63,
+            59,
+            65,
+            60,
+            52,
+            62
+          ],
+          "total": 683
+        },
+        {
+          "label": "Caja Municipal Vista Alegre",
+          "values": [
+            250,
+            193,
+            229,
+            224,
+            232,
+            230,
+            266,
+            238,
+            295,
+            270,
+            269,
+            270
+          ],
+          "total": 2966
+        },
+        {
+          "label": "Caja rural",
+          "values": [
+            4046,
+            4342,
+            4111,
+            3798,
+            4298,
+            4566,
+            4520,
+            4960,
+            4407,
+            5222,
+            4586,
+            4178
+          ],
+          "total": 53034
+        },
+        {
+          "label": "Caja Rural Alto Molino",
+          "values": [
+            3,
+            null,
+            2,
+            null,
+            4,
+            null,
+            null,
+            3,
+            null,
+            null,
+            2,
+            null
+          ],
+          "total": 14
+        },
+        {
+          "label": "Caja Rural Cañaveral",
+          "values": [
+            3801,
+            4113,
+            3868,
+            3545,
+            4010,
+            4309,
+            4243,
+            4667,
+            4107,
+            4915,
+            4307,
+            3919
+          ],
+          "total": 49804
+        },
+        {
+          "label": "Caja Rural Chacra Verde",
+          "values": [
+            3,
+            null,
+            null,
+            1,
+            4,
+            null,
+            4,
+            null,
+            null,
+            null,
+            4,
+            4
+          ],
+          "total": 20
+        },
+        {
+          "label": "Caja Rural Sembrador",
+          "values": [
+            221,
+            213,
+            224,
+            233,
+            259,
+            235,
+            251,
+            269,
+            281,
+            287,
+            254,
+            236
+          ],
+          "total": 2963
+        },
+        {
+          "label": "Caja Rural Tierra Nueva",
+          "values": [
+            18,
+            16,
+            17,
+            19,
+            21,
+            22,
+            22,
+            21,
+            19,
+            20,
+            19,
+            19
+          ],
+          "total": 233
+        },
+        {
+          "label": "Empresa de Crédito",
+          "values": [
+            1060,
+            941,
+            1063,
+            963,
+            960,
+            1097,
+            1190,
+            1187,
+            1261,
+            1293,
+            1068,
+            1202
+          ],
+          "total": 13285
+        },
+        {
+          "label": "Empresa de Crédito Buen Camino",
+          "values": [
+            null,
+            1,
+            7,
+            5,
+            null,
+            1,
+            null,
+            null,
+            6,
+            1,
+            null,
+            6
+          ],
+          "total": 27
+        },
+        {
+          "label": "Empresa de Crédito Crece Norte",
+          "values": [
+            1032,
+            913,
+            1026,
+            935,
+            934,
+            1066,
+            1159,
+            1160,
+            1225,
+            1259,
+            1036,
+            1166
+          ],
+          "total": 12911
+        },
+        {
+          "label": "Empresa de Crédito Kuska",
+          "values": [
+            28,
+            27,
+            30,
+            23,
+            26,
+            28,
+            31,
+            27,
+            27,
+            33,
+            29,
+            30
+          ],
+          "total": 339
+        },
+        {
+          "label": "Empresa de Crédito Progreso Sur",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            2,
+            null,
+            null,
+            3,
+            null,
+            3,
+            null
+          ],
+          "total": 8
+        }
+      ]
+    },
+    "Producto": {
+      "label_col": "Producto",
+      "months": [
+        "Ene-25",
+        "Feb-25",
+        "Mar-25",
+        "Abr-25",
+        "May-25",
+        "Jun-25",
+        "Jul-25",
+        "Ago-25",
+        "Set-25",
+        "Oct-25",
+        "Nov-25",
+        "Dic-25"
+      ],
+      "rows": [
+        {
+          "label": "Cuenta de ahorro con tarjeta de débito",
+          "values": [
+            45639,
+            44818,
+            46995,
+            41411,
+            43794,
+            51399,
+            52718,
+            49826,
+            46242,
+            47738,
+            50396,
+            52512
+          ],
+          "total": 573488
+        },
+        {
+          "label": "Tarjeta de crédito",
+          "values": [
+            43410,
+            39272,
+            45654,
+            41115,
+            48078,
+            43764,
+            42894,
+            46589,
+            44341,
+            43087,
+            46287,
+            43301
+          ],
+          "total": 527792
+        },
+        {
+          "label": "Transferencias de fondos (interbancarias o intrabancario)",
+          "values": [
+            25857,
+            23179,
+            22462,
+            23191,
+            26789,
+            24370,
+            28656,
+            25864,
+            26874,
+            29249,
+            25193,
+            29578
+          ],
+          "total": 311262
+        },
+        {
+          "label": "Crédito de consumo",
+          "values": [
+            24678,
+            21059,
+            21268,
+            23459,
+            21368,
+            23415,
+            23187,
+            24799,
+            26275,
+            26274,
+            22361,
+            24327
+          ],
+          "total": 282470
+        },
+        {
+          "label": "Banca - Seguros (seguros vendidos en canales del sistema financiero)",
+          "values": [
+            19620,
+            17903,
+            16297,
+            17793,
+            17401,
+            18268,
+            19863,
+            20189,
+            18681,
+            19394,
+            17516,
+            20867
+          ],
+          "total": 223792
+        },
+        {
+          "label": "Atención al público",
+          "values": [
+            15974,
+            15067,
+            15577,
+            16793,
+            19345,
+            16794,
+            18489,
+            19495,
+            18418,
+            21615,
+            18158,
+            17061
+          ],
+          "total": 212786
+        },
+        {
+          "label": "Cuenta de ahorro sin tarjeta de débito",
+          "values": [
+            8382,
+            9386,
+            8576,
+            8003,
+            8905,
+            9431,
+            10135,
+            10448,
+            9311,
+            10754,
+            9860,
+            11008
+          ],
+          "total": 114199
+        },
+        {
+          "label": "Otras operaciones, servicios y/o productos (detallar en Reporte de Reclamo N° RR",
+          "values": [
+            7510,
+            6096,
+            7366,
+            6952,
+            6587,
+            7329,
+            8182,
+            7495,
+            7015,
+            8267,
+            6373,
+            7286
+          ],
+          "total": 86458
+        },
+        {
+          "label": "Cuenta corriente",
+          "values": [
+            6888,
+            5346,
+            5957,
+            5819,
+            6880,
+            7302,
+            7075,
+            7102,
+            6983,
+            8151,
+            6706,
+            7029
+          ],
+          "total": 81238
+        },
+        {
+          "label": "Servicios varios (cambios, cobranzas, pagos judiciales, pago de planillas, entre",
+          "values": [
+            3849,
+            4208,
+            4658,
+            3800,
+            4419,
+            4641,
+            4164,
+            4892,
+            4776,
+            4599,
+            4412,
+            4096
+          ],
+          "total": 52514
+        },
+        {
+          "label": "Créditos a pequeñas empresas y microempresas",
+          "values": [
+            4430,
+            3671,
+            3863,
+            3375,
+            3778,
+            4373,
+            4339,
+            4256,
+            4775,
+            3992,
+            3765,
+            4114
+          ],
+          "total": 48731
+        },
+        {
+          "label": "Seguro de protección de tarjeta (crédito o débito)",
+          "values": [
+            2276,
+            2192,
+            1931,
+            2320,
+            2095,
+            2374,
+            2537,
+            2396,
+            2499,
+            2496,
+            2390,
+            2204
+          ],
+          "total": 27710
+        },
+        {
+          "label": "Crédito hipotecario para vivienda",
+          "values": [
+            2022,
+            2036,
+            2034,
+            1986,
+            2231,
+            2488,
+            2419,
+            2249,
+            2492,
+            2351,
+            2065,
+            2554
+          ],
+          "total": 26927
+        },
+        {
+          "label": "Vida individual",
+          "values": [
+            1315,
+            1285,
+            1467,
+            1267,
+            1519,
+            1569,
+            1653,
+            1642,
+            1638,
+            1549,
+            1303,
+            1423
+          ],
+          "total": 17630
+        },
+        {
+          "label": "Pago de servicios",
+          "values": [
+            1047,
+            946,
+            994,
+            1070,
+            1066,
+            1101,
+            1256,
+            1132,
+            1131,
+            1184,
+            1021,
+            1085
+          ],
+          "total": 13033
+        },
+        {
+          "label": "Transferencias de fondos al extranjero",
+          "values": [
+            1044,
+            967,
+            890,
+            1077,
+            1039,
+            1051,
+            1138,
+            1027,
+            1187,
+            1277,
+            920,
+            975
+          ],
+          "total": 12592
+        },
+        {
+          "label": "Cuenta a plazo",
+          "values": [
+            910,
+            709,
+            830,
+            843,
+            826,
+            916,
+            965,
+            848,
+            871,
+            893,
+            848,
+            857
+          ],
+          "total": 10316
+        },
+        {
+          "label": "Misceláneos",
+          "values": [
+            596,
+            612,
+            649,
+            616,
+            562,
+            580,
+            655,
+            688,
+            603,
+            666,
+            641,
+            711
+          ],
+          "total": 7579
+        },
+        {
+          "label": "Vehículos",
+          "values": [
+            417,
+            353,
+            375,
+            400,
+            362,
+            366,
+            423,
+            388,
+            399,
+            456,
+            360,
+            422
+          ],
+          "total": 4721
+        },
+        {
+          "label": "Cuenta CTS",
+          "values": [
+            230,
+            237,
+            243,
+            274,
+            232,
+            264,
+            295,
+            289,
+            299,
+            305,
+            256,
+            302
+          ],
+          "total": 3226
+        },
+        {
+          "label": "Remesas",
+          "values": [
+            265,
+            242,
+            238,
+            232,
+            273,
+            255,
+            256,
+            291,
+            297,
+            270,
+            249,
+            271
+          ],
+          "total": 3139
+        },
+        {
+          "label": "Giros",
+          "values": [
+            159,
+            151,
+            161,
+            161,
+            168,
+            176,
+            151,
+            168,
+            179,
+            166,
+            155,
+            175
+          ],
+          "total": 1970
+        },
+        {
+          "label": "Desgravamen",
+          "values": [
+            112,
+            118,
+            116,
+            103,
+            125,
+            123,
+            140,
+            141,
+            119,
+            136,
+            133,
+            135
+          ],
+          "total": 1501
+        },
+        {
+          "label": "Multiseguros",
+          "values": [
+            97,
+            79,
+            91,
+            82,
+            91,
+            94,
+            83,
+            95,
+            98,
+            92,
+            79,
+            82
+          ],
+          "total": 1063
+        },
+        {
+          "label": "Servicio de recaudación",
+          "values": [
+            71,
+            68,
+            72,
+            76,
+            84,
+            76,
+            87,
+            72,
+            85,
+            78,
+            70,
+            74
+          ],
+          "total": 913
+        },
+        {
+          "label": "Títulos valores (cheques, pagarés, entre otros)",
+          "values": [
+            51,
+            47,
+            53,
+            48,
+            50,
+            51,
+            46,
+            56,
+            55,
+            57,
+            45,
+            54
+          ],
+          "total": 613
+        },
+        {
+          "label": "Domiciliario",
+          "values": [
+            43,
+            47,
+            43,
+            44,
+            55,
+            55,
+            50,
+            50,
+            53,
+            51,
+            50,
+            52
+          ],
+          "total": 593
+        },
+        {
+          "label": "Dinero electrónico",
+          "values": [
+            29,
+            27,
+            28,
+            29,
+            34,
+            32,
+            32,
+            31,
+            37,
+            37,
+            31,
+            36
+          ],
+          "total": 383
+        },
+        {
+          "label": "Otras garantías (reales y personales)",
+          "values": [
+            25,
+            23,
+            31,
+            29,
+            26,
+            29,
+            29,
+            29,
+            31,
+            33,
+            31,
+            29
+          ],
+          "total": 345
+        },
+        {
+          "label": "Inversiones (fondos mutuos, entre otros)",
+          "values": [
+            18,
+            14,
+            18,
+            16,
+            19,
+            17,
+            17,
+            17,
+            21,
+            19,
+            17,
+            20
+          ],
+          "total": 213
+        },
+        {
+          "label": "Renta particular",
+          "values": [
+            19,
+            14,
+            16,
+            17,
+            17,
+            17,
+            18,
+            19,
+            18,
+            18,
+            18,
+            16
+          ],
+          "total": 207
+        },
+        {
+          "label": "Crédito corporativo, a grandes empresas y a medianas empresas",
+          "values": [
+            11,
+            10,
+            12,
+            13,
+            14,
+            14,
+            12,
+            13,
+            12,
+            14,
+            14,
+            14
+          ],
+          "total": 153
+        },
+        {
+          "label": "Microseguros",
+          "values": [
+            9,
+            9,
+            10,
+            9,
+            10,
+            11,
+            10,
+            10,
+            10,
+            11,
+            11,
+            11
+          ],
+          "total": 121
+        },
+        {
+          "label": "Carta fianza / fianzas",
+          "values": [
+            7,
+            7,
+            8,
+            7,
+            7,
+            8,
+            8,
+            7,
+            7,
+            8,
+            8,
+            9
+          ],
+          "total": 91
+        },
+        {
+          "label": "Asistencia médica",
+          "values": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            4
+          ],
+          "total": 46
+        },
+        {
+          "label": "Seguro de Bancos (BBB)",
+          "values": [
+            4,
+            3,
+            3,
+            4,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            3,
+            4
+          ],
+          "total": 44
+        },
+        {
+          "label": "Arrendamiento financiero (leasing)",
+          "values": [
+            7,
+            null,
+            null,
+            2,
+            4,
+            null,
+            1,
+            null,
+            4,
+            6,
+            5,
+            5
+          ],
+          "total": 34
+        },
+        {
+          "label": "Robo y asalto",
+          "values": [
+            null,
+            1,
+            null,
+            5,
+            2,
+            4,
+            5,
+            5,
+            null,
+            2,
+            null,
+            null
+          ],
+          "total": 24
+        },
+        {
+          "label": "Arbitraje (compraventa de valores financieros)",
+          "values": [
+            4,
+            null,
+            3,
+            3,
+            4,
+            4,
+            null,
+            null,
+            3,
+            null,
+            2,
+            null
+          ],
+          "total": 23
+        },
+        {
+          "label": "Accidentes personales",
+          "values": [
+            null,
+            null,
+            2,
+            null,
+            1,
+            null,
+            4,
+            null,
+            null,
+            5,
+            null,
+            2
+          ],
+          "total": 14
+        },
+        {
+          "label": "Factoring y/o descuento",
+          "values": [
+            null,
+            2,
+            null,
+            2,
+            null,
+            null,
+            4,
+            null,
+            null,
+            null,
+            null,
+            4
+          ],
+          "total": 12
+        },
+        {
+          "label": "Fideicomiso",
+          "values": [
+            null,
+            null,
+            2,
+            4,
+            null,
+            null,
+            3,
+            null,
+            1,
+            null,
+            null,
+            null
+          ],
+          "total": 10
+        },
+        {
+          "label": "SOAT",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null,
+            3,
+            null,
+            2
+          ],
+          "total": 6
+        },
+        {
+          "label": "Custodia de valores",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            3,
+            null,
+            1,
+            null
+          ],
+          "total": 4
+        },
+        {
+          "label": "Cajas de seguridad",
+          "values": [
+            3,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null
+          ],
+          "total": 4
+        },
+        {
+          "label": "Vida grupo particular",
+          "values": [
+            null,
+            null,
+            null,
+            2,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null
+          ],
+          "total": 3
+        },
+        {
+          "label": "CREDIS",
+          "values": [
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 2
+        },
+        {
+          "label": "Incendio",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1
+          ],
+          "total": 2
+        },
+        {
+          "label": "Terremoto",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "Sepelio",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1
+          ],
+          "total": 1
+        },
+        {
+          "label": "Todo riesgo equipo electrónico",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null,
+            null,
+            null
+          ],
+          "total": 1
+        }
+      ]
+    },
+    "Motivo": {
+      "label_col": "Motivo",
+      "months": [
+        "Ene-25",
+        "Feb-25",
+        "Mar-25",
+        "Abr-25",
+        "May-25",
+        "Jun-25",
+        "Jul-25",
+        "Ago-25",
+        "Set-25",
+        "Oct-25",
+        "Nov-25",
+        "Dic-25"
+      ],
+      "rows": [
+        {
+          "label": "Operaciones no reconocidas sin abono temporal",
+          "values": [
+            46984,
+            40083,
+            46968,
+            45828,
+            41241,
+            49765,
+            48117,
+            49305,
+            50174,
+            51101,
+            45688,
+            47508
+          ],
+          "total": 562762
+        },
+        {
+          "label": "Transacciones no procesadas / mal realizadas",
+          "values": [
+            30888,
+            32644,
+            28501,
+            34174,
+            35995,
+            34143,
+            33139,
+            31831,
+            38892,
+            32726,
+            36881,
+            31692
+          ],
+          "total": 401506
+        },
+        {
+          "label": "Cobros indebidos de intereses, comisiones, gastos y tributos (tales como seguros",
+          "values": [
+            23784,
+            19503,
+            23400,
+            22423,
+            25020,
+            24292,
+            25915,
+            26775,
+            27040,
+            26766,
+            21292,
+            21907
+          ],
+          "total": 288117
+        },
+        {
+          "label": "Problemas relacionados con cajeros automáticos",
+          "values": [
+            24182,
+            22060,
+            19772,
+            20060,
+            25147,
+            22831,
+            21760,
+            23491,
+            27366,
+            28078,
+            24442,
+            23451
+          ],
+          "total": 282640
+        },
+        {
+          "label": "Operaciones no reconocidas con abono temporal",
+          "values": [
+            23904,
+            22216,
+            21266,
+            18630,
+            21539,
+            24720,
+            21621,
+            21521,
+            25057,
+            24866,
+            25099,
+            23664
+          ],
+          "total": 274103
+        },
+        {
+          "label": "Fallas del sistema informático que dificultan operaciones y servicios",
+          "values": [
+            17606,
+            13857,
+            14479,
+            16102,
+            15490,
+            16468,
+            17151,
+            16774,
+            18750,
+            15751,
+            17599,
+            15139
+          ],
+          "total": 195166
+        },
+        {
+          "label": "Inadecuada o insuficiente información sobre operaciones, productos y servicios",
+          "values": [
+            9007,
+            8558,
+            9551,
+            9297,
+            10486,
+            10877,
+            10909,
+            11013,
+            10518,
+            10984,
+            10259,
+            9470
+          ],
+          "total": 120929
+        },
+        {
+          "label": "Incumplimiento de claúsulas de los contratos, pólizas, condiciones, acuerdos",
+          "values": [
+            9403,
+            8518,
+            9666,
+            10075,
+            9016,
+            10324,
+            10132,
+            11270,
+            11350,
+            10585,
+            8810,
+            9532
+          ],
+          "total": 118681
+        },
+        {
+          "label": "Inadecuada atención al usuario - Problemas en la calidad del servicio",
+          "values": [
+            7045,
+            6315,
+            6880,
+            6017,
+            6750,
+            7155,
+            6801,
+            7610,
+            7279,
+            6818,
+            7089,
+            6087
+          ],
+          "total": 81846
+        },
+        {
+          "label": "Demoras o incumplimientos de envío de correspondencia",
+          "values": [
+            5609,
+            4704,
+            4648,
+            5052,
+            6042,
+            5149,
+            5389,
+            5953,
+            5617,
+            5979,
+            5605,
+            5382
+          ],
+          "total": 65129
+        },
+        {
+          "label": "Problemas referidos a programas de lealtad",
+          "values": [
+            4815,
+            3604,
+            4182,
+            3997,
+            4709,
+            4103,
+            4623,
+            4210,
+            4779,
+            4593,
+            4068,
+            4713
+          ],
+          "total": 52396
+        },
+        {
+          "label": "Retenciones indebidas (incluye retenciones judiciales o de cobranza coactiva)",
+          "values": [
+            4043,
+            2935,
+            3742,
+            3476,
+            3889,
+            3796,
+            3636,
+            3474,
+            4358,
+            4193,
+            3818,
+            3678
+          ],
+          "total": 45038
+        },
+        {
+          "label": "Modificación indebida de las tasas de interés, comisiones u otras condiciones pa",
+          "values": [
+            2510,
+            2587,
+            2356,
+            2880,
+            2785,
+            2913,
+            2966,
+            3016,
+            3045,
+            3309,
+            2861,
+            3199
+          ],
+          "total": 34427
+        },
+        {
+          "label": "Problemas presentados con la tarjeta de crédito o débito",
+          "values": [
+            2324,
+            2464,
+            2433,
+            2388,
+            2365,
+            2846,
+            2445,
+            2540,
+            2638,
+            2571,
+            2416,
+            3036
+          ],
+          "total": 30466
+        },
+        {
+          "label": "Errores en la compra-venta de moneda extranjera y aplicación de tipo de cambio",
+          "values": [
+            2202,
+            1698,
+            1928,
+            1861,
+            2188,
+            2024,
+            2424,
+            2009,
+            2394,
+            2154,
+            2290,
+            2214
+          ],
+          "total": 25386
+        },
+        {
+          "label": "Disconformidad por notificaciones dirigidas a terceras personas",
+          "values": [
+            1041,
+            878,
+            936,
+            999,
+            985,
+            959,
+            989,
+            1016,
+            1097,
+            1281,
+            1108,
+            1154
+          ],
+          "total": 12443
+        },
+        {
+          "label": "Contratación o cargo indebido de seguros",
+          "values": [
+            853,
+            778,
+            838,
+            881,
+            1077,
+            1024,
+            916,
+            1009,
+            963,
+            1168,
+            1053,
+            1001
+          ],
+          "total": 11561
+        },
+        {
+          "label": "Reporte indebido en la central de riesgos",
+          "values": [
+            823,
+            873,
+            834,
+            885,
+            889,
+            798,
+            866,
+            875,
+            992,
+            936,
+            820,
+            866
+          ],
+          "total": 10457
+        },
+        {
+          "label": "No está conforme con las condiciones de la póliza (entre otros: monto de prima, ",
+          "values": [
+            587,
+            571,
+            613,
+            544,
+            671,
+            597,
+            673,
+            611,
+            668,
+            777,
+            710,
+            583
+          ],
+          "total": 7605
+        },
+        {
+          "label": "Problemas relacionados con el pago anticipado del crédito",
+          "values": [
+            592,
+            507,
+            556,
+            568,
+            593,
+            644,
+            569,
+            609,
+            702,
+            624,
+            555,
+            596
+          ],
+          "total": 7115
+        },
+        {
+          "label": "Disconformidad con la renovación de la póliza de seguros",
+          "values": [
+            317,
+            314,
+            347,
+            335,
+            318,
+            375,
+            344,
+            366,
+            384,
+            412,
+            334,
+            392
+          ],
+          "total": 4238
+        },
+        {
+          "label": "Resolución de contrato",
+          "values": [
+            306,
+            268,
+            322,
+            316,
+            309,
+            299,
+            321,
+            313,
+            316,
+            326,
+            265,
+            317
+          ],
+          "total": 3678
+        },
+        {
+          "label": "Publicidad engañosa o información que induce al error",
+          "values": [
+            264,
+            244,
+            269,
+            215,
+            257,
+            240,
+            248,
+            246,
+            276,
+            282,
+            229,
+            245
+          ],
+          "total": 3015
+        },
+        {
+          "label": "Problemas relacionados con la página web de la empresa",
+          "values": [
+            211,
+            198,
+            224,
+            231,
+            262,
+            240,
+            250,
+            275,
+            228,
+            247,
+            228,
+            239
+          ],
+          "total": 2833
+        },
+        {
+          "label": "Error en los datos del usuario registrado en la empresa",
+          "values": [
+            144,
+            128,
+            145,
+            160,
+            147,
+            138,
+            171,
+            165,
+            177,
+            152,
+            153,
+            152
+          ],
+          "total": 1832
+        },
+        {
+          "label": "Indebida contratación",
+          "values": [
+            112,
+            85,
+            108,
+            99,
+            114,
+            116,
+            104,
+            112,
+            121,
+            111,
+            109,
+            100
+          ],
+          "total": 1291
+        },
+        {
+          "label": "Modificaciones contractuales del crédito - Insatisfacción sobre nuevas condicion",
+          "values": [
+            93,
+            85,
+            97,
+            91,
+            100,
+            97,
+            106,
+            109,
+            107,
+            98,
+            99,
+            90
+          ],
+          "total": 1172
+        },
+        {
+          "label": "Otros motivos (detallar en Reporte de Reclamo N° RR2)",
+          "values": [
+            72,
+            70,
+            75,
+            74,
+            76,
+            72,
+            66,
+            69,
+            73,
+            75,
+            70,
+            72
+          ],
+          "total": 864
+        },
+        {
+          "label": "Inadecuada o insuficiente información sobre el seguro contratado",
+          "values": [
+            48,
+            44,
+            53,
+            56,
+            60,
+            56,
+            56,
+            54,
+            60,
+            62,
+            49,
+            56
+          ],
+          "total": 654
+        },
+        {
+          "label": "Disconformidad con liquidación de deudas vendidas a empresas vinculadas o empres",
+          "values": [
+            53,
+            48,
+            42,
+            49,
+            45,
+            50,
+            52,
+            57,
+            55,
+            49,
+            48,
+            47
+          ],
+          "total": 595
+        },
+        {
+          "label": "Errores en la cobranza de primas",
+          "values": [
+            35,
+            32,
+            37,
+            31,
+            35,
+            37,
+            36,
+            36,
+            37,
+            35,
+            37,
+            39
+          ],
+          "total": 427
+        },
+        {
+          "label": "Entrega de billetes falsos",
+          "values": [
+            34,
+            28,
+            32,
+            31,
+            32,
+            32,
+            34,
+            39,
+            36,
+            37,
+            32,
+            39
+          ],
+          "total": 406
+        },
+        {
+          "label": "Difusión de información sin autorización del usuario",
+          "values": [
+            24,
+            20,
+            22,
+            23,
+            22,
+            25,
+            26,
+            24,
+            23,
+            26,
+            20,
+            23
+          ],
+          "total": 278
+        },
+        {
+          "label": "Problemas relacionados a cajeros corresponsales",
+          "values": [
+            15,
+            16,
+            16,
+            15,
+            16,
+            15,
+            18,
+            17,
+            19,
+            19,
+            15,
+            18
+          ],
+          "total": 199
+        },
+        {
+          "label": "Modificaciones contractuales del crédito - Otros motivos",
+          "values": [
+            11,
+            12,
+            11,
+            12,
+            12,
+            13,
+            12,
+            15,
+            14,
+            12,
+            13,
+            12
+          ],
+          "total": 149
+        },
+        {
+          "label": "Demora en la rectificación de la información reportada en la central de riesgos",
+          "values": [
+            10,
+            8,
+            9,
+            9,
+            10,
+            10,
+            11,
+            9,
+            9,
+            11,
+            9,
+            9
+          ],
+          "total": 114
+        },
+        {
+          "label": "Problemas relacionados a garantías",
+          "values": [
+            7,
+            7,
+            8,
+            7,
+            9,
+            8,
+            8,
+            10,
+            10,
+            10,
+            9,
+            8
+          ],
+          "total": 101
+        },
+        {
+          "label": "Incumplimiento en la resolución de la póliza de seguros",
+          "values": [
+            6,
+            7,
+            7,
+            7,
+            8,
+            7,
+            8,
+            8,
+            7,
+            8,
+            8,
+            7
+          ],
+          "total": 88
+        },
+        {
+          "label": "Liquidaciones erradas de intereses en cuentas de ahorro o depósitos a plazo fijo",
+          "values": [
+            5,
+            5,
+            6,
+            5,
+            6,
+            6,
+            5,
+            6,
+            5,
+            6,
+            5,
+            5
+          ],
+          "total": 65
+        },
+        {
+          "label": "Problemas con cheques",
+          "values": [
+            3,
+            4,
+            3,
+            4,
+            4,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "total": 45
+        },
+        {
+          "label": "Rechazo en la atención del siniestro",
+          "values": [
+            5,
+            1,
+            6,
+            null,
+            null,
+            4,
+            4,
+            5,
+            6,
+            4,
+            null,
+            2
+          ],
+          "total": 37
+        },
+        {
+          "label": "Cancelación indebida de la póliza de seguros",
+          "values": [
+            7,
+            6,
+            3,
+            null,
+            7,
+            null,
+            null,
+            3,
+            6,
+            0,
+            null,
+            3
+          ],
+          "total": 35
+        },
+        {
+          "label": "Modificaciones contractuales del crédito - Insatisfacción por falta de entrega o",
+          "values": [
+            null,
+            null,
+            6,
+            4,
+            1,
+            null,
+            1,
+            6,
+            4,
+            null,
+            null,
+            null
+          ],
+          "total": 22
+        },
+        {
+          "label": "Incumplimiento en el plazo de atención de los siniestros y/o coberturas",
+          "values": [
+            2,
+            1,
+            null,
+            8,
+            6,
+            null,
+            0,
+            4,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 21
+        },
+        {
+          "label": "Inadecuada asesoría para la gestión de la indemnización del siniestro",
+          "values": [
+            1,
+            2,
+            4,
+            null,
+            null,
+            null,
+            5,
+            null,
+            null,
+            null,
+            3,
+            null
+          ],
+          "total": 15
+        },
+        {
+          "label": "Inadecuada asesoría al potencial contratante de seguros y durante la vigencia de",
+          "values": [
+            1,
+            5,
+            null,
+            null,
+            null,
+            null,
+            null,
+            4,
+            null,
+            1,
+            null,
+            2
+          ],
+          "total": 13
+        },
+        {
+          "label": "Modif. contractuales del crédito - Insatisfac. por inadecuada información sobre ",
+          "values": [
+            null,
+            null,
+            null,
+            5,
+            null,
+            null,
+            0,
+            null,
+            1,
+            null,
+            4,
+            null
+          ],
+          "total": 10
+        },
+        {
+          "label": "Modificaciones contractuales del crédito - Insatisfacción por  problemas para ef",
+          "values": [
+            2,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            3,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 6
+        },
+        {
+          "label": "No recibió la póliza, certificado de seguro, endoso o cobertura provisional",
+          "values": [
+            null,
+            2,
+            null,
+            null,
+            null,
+            null,
+            null,
+            3,
+            1,
+            null,
+            null,
+            null
+          ],
+          "total": 6
+        },
+        {
+          "label": "Problemas relacionados a programas estatales de crédito para fomento",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            3,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1
+          ],
+          "total": 4
+        },
+        {
+          "label": "Incumplimiento del secreto bancario",
+          "values": [
+            null,
+            null,
+            2,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            2,
+            null,
+            null
+          ],
+          "total": 4
+        },
+        {
+          "label": "Inadecuada ejecución de garantías otorgadas por la entidad",
+          "values": [
+            null,
+            null,
+            null,
+            1,
+            null,
+            2,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 3
+        },
+        {
+          "label": "Demora o incumplimiento en la devolución de documentos valorados / títulos valor",
+          "values": [
+            2,
+            null,
+            null,
+            null,
+            null,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 2
+        },
+        {
+          "label": "No está conforme con el monto de la indemnización, valoración del daño, reparaci",
+          "values": [
+            null,
+            2,
+            null,
+            null,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 2
+        },
+        {
+          "label": "Indebida capitalización de intereses moratorios",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "Exceso de tasas de interés sobre las tasas máximas establecidas por el BCRP",
+          "values": [
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "Cierre indebido de cuentas corrientes por girar cheques sin fondos",
+          "values": [
+            null,
+            null,
+            null,
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "Deficiencias en el transporte y/o custodia de numerario",
+          "values": [
+            null,
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "Problemas y/o demoras en el otorgamiento y pago de pensión por la aseguradora",
+          "values": [
+            null,
+            null,
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "total": 1
+        },
+        {
+          "label": "No está conforme con el diagnóstico médico (auditor interno de la empresa de seg",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            1
+          ],
+          "total": 1
+        }
+      ]
+    }
+  }
+}

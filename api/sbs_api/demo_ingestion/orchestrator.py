@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """End-to-end orchestrator for the P11A demo ingestion pipeline.
 
 Pipeline order:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Left navigation rail. Top group is the real supervisor workflow
 // (Cockpit, Findings, Approvals, Audit). A thin divider separates the
 // pilot-phase preview screens (Analytics / Reports, Assistant) which
@@ -12,9 +13,17 @@ import { usePathname } from 'next/navigation';
 import {
   Activity,
   BarChart3,
+  BookOpen,
   ClipboardList,
+  Cpu,
   FileText,
   History,
+  Layers,
+  LayoutGrid,
+  Radio,
+  Route,
+  Send,
+  ServerCog,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,6 +35,7 @@ interface NavItem {
   icon: LucideIcon;
   label: string;
   pilot?: boolean;
+  alert?: boolean;
 }
 
 interface NavRailProps {
@@ -34,11 +44,19 @@ interface NavRailProps {
     findings: string;
     approvals: string;
     audit: string;
+    demo_journey: string;
+    ingestion: string;
+    processing: string;
+    rr1: string;
+    docs: string;
     analytics: string;
     assistant: string;
     pilot_phase: string;
     primary_label: string;
     role_indicator: string;
+    aggregates?: string;
+    sandbox?: string;
+    admin?: string;
   };
   roleLabel: string;
 }
@@ -48,16 +66,37 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
 
   const primaryItems: NavItem[] = [
     { href: '/cockpit', icon: Activity, label: labels.cockpit },
+    { href: '/ingestion', icon: Radio, label: labels.ingestion },
+    { href: '/processing', icon: Cpu, label: labels.processing },
     { href: '/findings', icon: FileText, label: labels.findings },
     { href: '/approvals', icon: ClipboardList, label: labels.approvals },
     { href: '/audit', icon: History, label: labels.audit },
+    { href: '/demo-journey', icon: Route, label: labels.demo_journey },
+    { href: '/rr1', icon: LayoutGrid, label: labels.rr1 },
+    { href: '/docs', icon: BookOpen, label: labels.docs },
+    {
+      href: '/cockpit/aggregates',
+      icon: Layers,
+      label: labels.aggregates ?? 'Agregados y Agentes',
+      alert: true,
+    },
+    {
+      href: '/sandbox',
+      icon: Send,
+      label: labels.sandbox ?? 'Simulador (Tier 1/2)',
+    },
+    {
+      href: '/admin',
+      icon: ServerCog,
+      label: labels.admin ?? 'Administración (IT)',
+    },
   ];
   const pilotItems: NavItem[] = [
     { href: '/analytics', icon: BarChart3, label: labels.analytics, pilot: true },
     { href: '/assistant', icon: Sparkles, label: labels.assistant, pilot: true },
   ];
 
-  const renderItem = ({ href, icon: Icon, label, pilot }: NavItem) => {
+  const renderItem = ({ href, icon: Icon, label, pilot, alert }: NavItem) => {
     const active = pathname === href || pathname.startsWith(`${href}/`);
     return (
       <Link
@@ -82,6 +121,12 @@ export function NavRail({ labels, roleLabel }: NavRailProps) {
           <span
             aria-hidden="true"
             className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full border border-brand-navy bg-brand-gold"
+          />
+        ) : null}
+        {alert ? (
+          <span
+            aria-hidden="true"
+            className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-brand-navy bg-red-600"
           />
         ) : null}
         <span

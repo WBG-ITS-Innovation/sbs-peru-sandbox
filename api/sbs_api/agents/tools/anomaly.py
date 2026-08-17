@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """compute_anomaly_score — locked composite score.
 
 Weights are locked: indecopi 0.30 / sentiment 0.20 / narrative 0.25 /

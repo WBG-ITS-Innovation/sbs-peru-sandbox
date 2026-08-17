@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Four decision buttons — Approve, Approve with edits, Reject,
 // Send back to analyst. Approve fires directly (with a server-side
 // audit); the other three open their respective modals.

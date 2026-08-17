@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Agent pipeline integration test — exercises the full chain end-to-end.
 
 Seeds a complaint, runs the Triage → Investigation → Synthesis chain,

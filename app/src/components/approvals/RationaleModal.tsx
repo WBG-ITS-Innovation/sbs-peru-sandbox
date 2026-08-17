@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Rationale modal — used by Reject and Send-back. 20-character
 // minimum, live character counter, submit disabled below threshold.
 // Helper text reads "Mínimo 20 caracteres / Minimum 20 characters"

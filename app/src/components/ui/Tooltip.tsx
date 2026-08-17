@@ -1,4 +1,5 @@
 'use client';
+// SPDX-License-Identifier: Apache-2.0
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { forwardRef } from 'react';

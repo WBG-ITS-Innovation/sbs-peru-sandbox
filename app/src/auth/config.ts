@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // OAuth + Keycloak configuration. Sourced from environment variables;
 // no hardcoded secrets. See ../../../.env.example for the full set.
 

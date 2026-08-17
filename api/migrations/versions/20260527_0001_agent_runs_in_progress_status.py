@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """agent_runs.status: additive extension — add 'in_progress'.
 
 Revision ID: 20260527_0001_agents_status

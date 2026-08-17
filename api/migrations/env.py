@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Alembic environment.
 
 Wires async SQLAlchemy and Pydantic Settings into Alembic's offline / online

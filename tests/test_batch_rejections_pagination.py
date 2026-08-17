@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 2 batch rejections — Workstream C signed-cursor pagination.
 
 Posts a batch with multiple invalid rows, runs the worker, then walks

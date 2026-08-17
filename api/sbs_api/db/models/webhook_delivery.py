@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook delivery record (ADR 0035).
 
 One row per delivery target. The webhook signing/delivery worker reads

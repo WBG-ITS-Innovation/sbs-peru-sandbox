@@ -1,6 +1,6 @@
 {
   "model_id": "replay-synthesis-v1",
-  "notes": "Demo invariant: executive_summary must be non-empty plain Spanish for the Superintendent.",
+  "notes": "Demo invariant: executive_summary must be non-empty plain Spanish for Superintendent.",
   "turns": [
     {
       "tool_calls": [
@@ -8,6 +8,6 @@
         {"name": "summarize_for_executive", "arguments": {"audience": "superintendent"}}
       ]
     },
-    {"text": "Resumen ejecutivo listo para el Superintendente."}
+    {"text": "Resumen ejecutivo listo para Superintendent."}
   ]
 }

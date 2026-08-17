@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook HMAC signing (ADR 0035 + ADR 0027 amendment §outbound).
 
 Five-line canonical request:

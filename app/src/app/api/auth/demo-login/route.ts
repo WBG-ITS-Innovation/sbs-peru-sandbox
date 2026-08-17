@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 // GET /app/api/auth/demo-login — demo-mode bootstrap. Acquires tokens
 // for all three demo personas via ROPC, builds a server-side session,
-// writes one audit row, redirects to the Conduct Supervisor's landing route (cockpit).
+// writes one audit row, redirects to Supervisor's landing route (cockpit).
 //
 // Feature-flagged behind SBS_DEMO_MODE. Returns 404 when off so a
 // production deployment never exposes a clickable demo-login surface.
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
   });
 
   // Audit the demo-mode entry. The actor is the operator name (e.g.,
-  // "demo-operator"); meta carries the loaded personas so an auditor reading
+  // "the operator"); meta carries the loaded personas so an auditor reading
   // the row knows what set of identities the session can switch
   // between.
   const initialRoles = personas.supervisor.roles;

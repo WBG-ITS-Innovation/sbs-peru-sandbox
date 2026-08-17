@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: Apache-2.0
 """Generate the Tier-2-fidelity synthetic complaint corpus (ADR 0036).
 
 Per-institution CSV + matching manifest JSON. Deterministic given the
@@ -181,6 +182,7 @@ def _make_row(
     templates: Sequence[str],
     display_name: str,
     today: date,
+    run_token: str | None = None,
 ) -> dict[str, str]:
     product = _weighted_choice(rng, PRODUCT_WEIGHTS)
     channel = _weighted_choice(rng, CHANNEL_WEIGHTS)
@@ -242,7 +244,21 @@ def _make_row(
         entity=display_name,
     )
 
-    complaint_id = f"{prefix}-{received.year:04d}-{sequence:07d}"
+    if run_token is None:
+        # Default path: fully deterministic id. Keeps the golden corpus
+        # and the determinism tests byte-identical.
+        complaint_id = f"{prefix}-{received.year:04d}-{sequence:07d}"
+    else:
+        # Live-ingestion path: fold a per-run token into the numeric tail
+        # so re-running ingestion against a live database does not collide
+        # on the complaint_id primary key. The tail stays inside the route
+        # contract ^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$ — a 4-digit run salt plus
+        # a 6-digit sequence (10 digits total).
+        salt = (
+            int(hashlib.sha256(run_token.encode("utf-8")).hexdigest(), 16)
+            % 10000
+        )
+        complaint_id = f"{prefix}-{received.year:04d}-{salt:04d}{sequence:06d}"
 
     return {
         "complaint_id": complaint_id,
@@ -318,6 +334,7 @@ def generate(
     seed: int,
     distribution_profile: str = "uniform",
     today: date | None = None,
+    run_token: str | None = None,
 ) -> dict[str, Any]:
     """Produce per-institution CSV + manifest in ``out_dir``."""
 
@@ -353,6 +370,7 @@ def generate(
                     templates=templates,
                     display_name=display,
                     today=today,
+                    run_token=run_token,
                 )
             )
         csv_path = out_dir / institution_id / f"{institution_id}.csv"
@@ -412,6 +430,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     p.add_argument(
+        "--run-token",
+        type=str,
+        default=None,
+        help=(
+            "Optional per-run token folded into the complaint_id tail so "
+            "re-running ingestion against a live database does not collide "
+            "on the primary key. Omit it (the default) for byte-stable "
+            "deterministic ids. Ignored under --golden."
+        ),
+    )
+    p.add_argument(
         "--today",
         type=str,
         default=None,
@@ -439,12 +468,16 @@ def main(argv: list[str] | None = None) -> int:
             else None
         )
 
+    # --golden must stay byte-identical, so the run token never applies there.
+    run_token = None if args.golden else args.run_token
+
     summary = generate(
         out_dir=out,
         rows_per_institution=rows,
         seed=args.seed,
         distribution_profile=args.distribution_profile,
         today=today,
+        run_token=run_token,
     )
     print(json.dumps(summary, indent=2))
     return 0

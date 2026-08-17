@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """WS6 + WS7 integration tests.
 
 Covers:
@@ -207,15 +208,15 @@ async def test_audit_login_row_carries_landed_route(db_schema, test_database_url
 async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_database_url):
     await _seed_audit_row(
         test_database_url,
-        actor_id="test-operator",
+        actor_id="operator",
         action="switch-persona",
         object_type="session",
         object_id="s-1",
         meta={
             "from_persona": "supervisor",
             "from_email": "supervisor@sandbox.example.com",
-            "to_persona": "unit-head",
-            "to_email": "unit-head@sandbox.example.com",
+            "to_persona": "head",
+            "to_email": "head@sandbox.example.com",
         },
     )
     from sqlalchemy import select
@@ -236,8 +237,8 @@ async def test_audit_switch_persona_row_carries_from_and_to(db_schema, test_data
     meta = rows[0].meta or {}
     # Non-droppable: from/to both filled.
     assert meta["from_persona"] == "supervisor"
-    assert meta["to_persona"] == "unit-head"
-    assert rows[0].actor_id == "test-operator"
+    assert meta["to_persona"] == "head"
+    assert rows[0].actor_id == "operator"
 
 
 @pytest.mark.asyncio

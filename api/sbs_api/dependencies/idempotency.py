@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Idempotency-Key handling.
 
 ADR 0029 — POST and PATCH unsafe operations accept ``Idempotency-Key``.

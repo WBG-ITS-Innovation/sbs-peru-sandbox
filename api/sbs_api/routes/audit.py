@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """GET /v1/internal/audit — paginated audit-log read endpoint.
 
 Reads from ``audit_events`` (the cross-screen audit chain). Returns

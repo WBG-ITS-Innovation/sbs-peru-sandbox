@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Agent-run ORM model.
 
 The ``agent_runs`` table is the durable execution trace produced by every
@@ -43,7 +44,7 @@ class AgentRun(Base):
     # kebab-case stable identifier. The schema permits any
     # kebab-case string; the prose contract enumerates the current
     # set. Part 12 agents: {triage, investigation, synthesis,
-    # taxonomy-harmonizer, cross-source-correlator}. Legacy
+    # cross-source-correlator}. Legacy
     # Prompt-10 agents still present in seeded data: {classifier,
     # narrative-drafter, query-author, live-ingestion-orchestrator}.
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -67,6 +68,16 @@ class AgentRun(Base):
     # by the Part 12 agent runtime; the four terminal states are the
     # original Prompt 10 contract.
     status: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    # Provider that ACTUALLY served this run's model calls — one of
+    # {on_prem, replay, mock, cloud}. Recorded because OnPremProvider
+    # silently falls back to MockProvider when no vLLM endpoint answers:
+    # before this column the fact that a mock, not a model, produced an
+    # output survived only in process stderr, which ADR 0001's "every
+    # reasoning step is reconstructable from the database" contract needs
+    # it not to. Nullable: rows written before the column existed, and
+    # agents that make no model call, legitimately have none.
+    model_provider: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     # Ordered array of tool-call records. Shape governed by the JSON Schema.
     tool_calls: Mapped[list] = mapped_column(JSONB, nullable=False)

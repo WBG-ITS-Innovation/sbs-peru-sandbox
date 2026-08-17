@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // PKCE helpers — RFC 7636. Used by the OAuth login flow to prove
 // possession of the code_verifier without ever putting it in the
 // authorization request.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // CockpitClient — the client-side wrapper that merges the server-
 // rendered snapshot with SSE deltas. The pieces that mutate live
 // (tier panels, anomalies) re-render from this component's state;

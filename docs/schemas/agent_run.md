@@ -57,6 +57,7 @@ The JSON Schema is named `agent_run` (singular — it describes the shape of one
 | `complaint_id` | `text` | no | Foreign key to `complaints.complaint_id`. Matches the repo-wide complaint-id pattern `^[A-Z0-9]{1,4}-\d{4}-\d{6,10}$` (e.g., `BCP-2026-001234`). One complaint may have many runs (triage, classification, narrative drafting). |
 | `agent_name` | `text` | no | Stable identifier, kebab-case. Examples: `triage`, `classifier`, `narrative-drafter`, `cross-source-correlator`, `query-author`. |
 | `agent_version` | `text` | no | Format: `<agent_name>-<semver>`. Example: `triage-0.3.1`. The prefix repeats `agent_name` deliberately so that an `agent_version` string is self-describing in audit exports. |
+| `model_provider` | `text` | yes | Provider that ACTUALLY served this run's model calls: one of `on_prem`, `replay`, `mock`, `cloud`. Recorded because `OnPremProvider` falls back to `MockProvider` whenever no vLLM endpoint answers — without this column a mock-served run is indistinguishable from a model-served one, which the reconstructability contract in ADR 0001 depends on. Null for rows written before the column existed and for agents that make no model call. |
 | `started_at` | `timestamptz` | no | ISO 8601 with explicit timezone. Stored as UTC; rendered in the UI in `America/Lima`. |
 | `ended_at` | `timestamptz` | yes | Null only while the run is in flight. A run that ends in `timeout` still sets `ended_at` (to the time the timeout fired). |
 | `status` | `text` | no | One of `success`, `partial`, `failed`, `timeout`. See [state machine](#status-state-machine). |
@@ -98,7 +99,7 @@ These shapes are part of this contract. Adding a field is non-breaking; removing
 
 ### `bert_classifier`
 
-Spanish complaint-narrative classifier. BETO / RoBERTa-BNE via ONNX (see [Locked architectural decisions](../PLAN.md#locked-architectural-decisions)).
+Spanish complaint-narrative classifier. BETO / RoBERTa-BNE via ONNX (see [ADR 0001](../adr/0001-three-layer-mcp-a2a-langgraph.md)).
 
 - **`input`**: `{text: string, locale: "es-PE", max_tokens: integer}`. `text` is the anonymized narrative (post-`anonymizer`).
 - **`output`**: `{label: string, confidence: number (0..1, two-decimal precision in the UI), top_k: [{label: string, confidence: number}], model_version: string}`. `label` is an Annex 1-A category code. `top_k` carries the top three classes for the UI's "top 3 probabilities" panel.

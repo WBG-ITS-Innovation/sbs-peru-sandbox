@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook URL validation (ADR 0035 §webhook-url-validation).
 
 Three checks, all mandatory unless ``settings.allow_insecure_webhook_urls``

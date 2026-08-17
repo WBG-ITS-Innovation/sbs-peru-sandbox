@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Re-export every shipped primitive. Importers consume from
 // '@/components/ui' rather than reaching into individual files; this
 // makes refactors (renaming files, splitting a component) one diff.

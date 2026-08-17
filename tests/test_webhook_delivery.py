@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Webhook delivery — Workstream D end-to-end against the live testcontainer.
 
 Uses httpx.MockTransport to intercept the outbound POST so the tests

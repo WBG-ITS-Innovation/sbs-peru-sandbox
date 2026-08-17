@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import { ClassificationPanel } from '@/components/findings/ClassificationPanel';
 import { DraftNarrativeEditor } from '@/components/findings/DraftNarrativeEditor';
 import { ExecutiveBriefPanel } from '@/components/findings/ExecutiveBriefPanel';
 import { FeatureImportancePanel } from '@/components/findings/FeatureImportancePanel';
+import { FindingNavigator } from '@/components/findings/FindingNavigator';
 import { NarrativePanel } from '@/components/findings/NarrativePanel';
 import { TaxonomyPanel } from '@/components/findings/TaxonomyPanel';
 import { Badge, Card, CardBody, CardHeader, CardTitle } from '@/components/ui';
@@ -61,6 +63,13 @@ export default async function FindingDetailPage({
       detail.complaint.descripcion_resolucion,
   );
 
+  // Heuristic: surface "Open audit" with a warning if any agent_run
+  // partial-completed or any DQ error fired (the navigator highlights
+  // the audit link).
+  const hasIssues =
+    detail.agent_runs.some(r => r.status === 'partial' || r.status === 'failed') ||
+    detail.agent_runs.some(r => Boolean(r.error));
+
   return (
     <main className="mx-auto max-w-6xl space-y-4 p-6">
       <header className="space-y-2">
@@ -72,6 +81,12 @@ export default async function FindingDetailPage({
           <h1 className="font-mono text-lg text-fg">{detail.complaint.complaint_id}</h1>
         </div>
       </header>
+
+      <FindingNavigator
+        locale={locale}
+        complaintId={detail.complaint.complaint_id}
+        hasIssues={hasIssues}
+      />
 
       <Card>
         <CardHeader>

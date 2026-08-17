@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """InvestigationAgent — build the evidence bundle for analyst review.
 
 Runs after Triage routes to ``investigation``. Calls
@@ -126,6 +127,7 @@ async def run_investigation(
         status=status,
         tool_call_records=result.tool_call_records,
         final_output=final_output,
+        model_provider=result.served_by,
         error=None
         if status == "success"
         else {

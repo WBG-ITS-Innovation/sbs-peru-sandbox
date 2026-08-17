@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """End-to-end test for the P11A demo ingestion endpoint.
 
 Drives ``POST /v1/internal/demo/simulate-submission`` with the golden

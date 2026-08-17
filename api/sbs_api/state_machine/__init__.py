@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Explicit state machines used by the API.
 
 Today the only state machine is :mod:`resolution_status`. Future state

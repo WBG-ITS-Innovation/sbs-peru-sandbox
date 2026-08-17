@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // GET /app/api/auth/callback — Keycloak redirects here after the user
 // signs in. Exchange the code for tokens, build the server-side session,
 // write one audit row, redirect to the role-based landing route.

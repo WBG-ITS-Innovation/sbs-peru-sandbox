@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Demo seed for the supervisor UI narrative — Prompt 10 / WS0b.
 
 This script writes ``agent_runs`` rows that the supervisor UI's Findings
@@ -472,7 +473,7 @@ def _narrative_drafter_success(complaint_id: str, anchor: datetime) -> dict:
 
     The drafted text deliberately omits the "comisión por mantenimiento"
     mention from paragraph two of the narrative — that is the scripted
-    edit gap the Conduct Analyst fills during the demo. After her edit, the saved
+    edit gap Analyst fills during the demo. After her edit, the saved
     draft includes the maintenance-fee reference; the audit row carries
     before/after excerpts.
     """
@@ -506,7 +507,7 @@ def build_demo_runs(
 
     Six rows total, distributed so the headline complaint (cid0) is
     the demo's "clean classifier success" example with the full agent
-    chain — what the Conduct Analyst drills into on the Findings page. The two
+    chain — what Analyst drills into on the Findings page. The two
     partial-failure traces (BERT timeout, XGBoost unavailable) and the
     anonymizer-failure live on the other two complaints so the
     headline's agent-reasoning timeline reads as "everything worked":

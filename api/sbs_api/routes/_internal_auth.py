@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Shared internal-API authentication + role-scoping dependencies.
 
 The shared-secret model gates server-to-server access (ADR 0040 §D8's

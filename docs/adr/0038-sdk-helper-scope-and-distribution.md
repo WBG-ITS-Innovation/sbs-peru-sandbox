@@ -110,8 +110,8 @@ The convergent Stripe pattern is "start narrow, expand based on
 demand signal" — Stripe began with Python, Ruby, Node.js and added
 PHP, Go, Java, .NET as its institutional customer base grew. The
 expansion was data-driven, not aspirational. SBS's first cohort
-(a Tier-1 bank compliance officer (illustrative)'s compliance officers + a mid-size financiera operations manager (illustrative)'s operations managers +
-a COOPAC risk officer (illustrative)'s COOPAC risk officers) is Python-and-TypeScript-heavy;
+(Diego's compliance officers + Patricia's operations managers +
+Roberto's COOPAC risk officers) is Python-and-TypeScript-heavy;
 the narrow starting point matches the documented audience without
 prejudging language expansion.
 

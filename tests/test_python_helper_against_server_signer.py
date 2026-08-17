@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Cross-verify the published Python helper against the server signer.
 
 The helper at ``sdk-helpers/python/sbs_webhooks.py`` is what

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import Link from 'next/link';
 
 import { authConfig } from '@/auth/config';
@@ -52,22 +53,22 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
 
       <section
         aria-labelledby="login-title"
-        className="w-full max-w-sm rounded-sbs border border-border bg-surface px-6 py-8 shadow-lg"
+        className="w-full max-w-2xl rounded-sbs border border-border bg-surface p-12 shadow-lg"
       >
-        <div className="mb-5 flex flex-col items-center">
-          <div
-            aria-hidden="true"
-            className="flex h-12 w-12 rotate-45 items-center justify-center rounded-sbs border border-brand-gold bg-brand-navy text-brand-gold"
-          >
-            <span className="-rotate-45 font-serif text-xl font-semibold">S</span>
-          </div>
+        <div className="mb-8 flex flex-col items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/app/sbs-logo.png"
+            alt="SBS"
+            className="h-16 w-auto"
+          />
           <h1
             id="login-title"
-            className="mt-3 text-center text-lg font-semibold tracking-tight text-fg"
+            className="mt-5 text-center text-xl font-semibold tracking-tight text-fg"
           >
             {title}
           </h1>
-          <p className="mt-1 text-center text-xs text-fg-muted">{subtitle}</p>
+          <p className="mt-2 text-center text-sm text-fg-muted">{subtitle}</p>
         </div>
 
         {errorCode ? (
@@ -81,7 +82,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
 
         <Link
           href="/api/auth/login"
-          className="flex h-10 w-full items-center justify-center rounded-sbs bg-brand-navy px-3 text-sm font-medium text-fg-inverted transition-colors hover:bg-brand-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+          className="flex h-12 w-full items-center justify-center rounded-sbs bg-brand-navy px-4 text-base font-semibold text-fg-inverted transition-colors hover:bg-brand-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
         >
           {ssoButton}
         </Link>

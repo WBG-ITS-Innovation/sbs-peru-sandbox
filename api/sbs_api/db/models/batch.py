@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Batch ORM model (Tier 2 ingestion).
 
 The ``batches`` table holds one row per batch upload. The 4-state machine

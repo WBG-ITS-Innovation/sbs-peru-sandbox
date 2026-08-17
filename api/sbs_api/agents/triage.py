@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """TriageAgent — classify, surface DQ + taxonomy issues, route.
 
 The first agent in the chain. Reads the pre-computed DQ report,
@@ -172,6 +173,7 @@ async def run_triage(
         status=status,
         tool_call_records=result.tool_call_records,
         final_output=final_output,
+        model_provider=result.served_by,
         error=None
         if status == "success"
         else {

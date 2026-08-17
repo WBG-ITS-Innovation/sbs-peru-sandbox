@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the cross-screen audit chain.
 
 Covers the helper-level contract (rejects bad actor_type, builds the row

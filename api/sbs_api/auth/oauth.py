@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OAuth 2.0 client_credentials primitives per ADR 0032 (with pressure-test fixes).
 
 Pure helpers: JWT issuance, JWT verification, client_secret hash/verify.

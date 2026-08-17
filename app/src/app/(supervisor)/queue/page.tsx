@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ListChecks } from 'lucide-react';
 
 import { EmptyState } from '@/components/ui';

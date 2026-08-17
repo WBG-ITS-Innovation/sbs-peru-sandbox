@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Canonical OAuth scope set per ADR 0032.
 
 Adding a scope is an ADR amendment; renaming one is a breaking change.

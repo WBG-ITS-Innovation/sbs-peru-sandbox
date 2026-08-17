@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Anexo 1-A complaint taxonomy — 15-field curated subset for May 25 sandbox.
 
 The 15 fields below are reconciled against Anexo N° 1-A of Resolución SBS

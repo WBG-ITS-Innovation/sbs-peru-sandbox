@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Draft narrative editor. Client component — controlled textarea, save
 // button POSTs to /app/api/findings/:id/draft (Next.js proxy) which
 // forwards to /v1/internal/findings/:id/draft. The backend writes a

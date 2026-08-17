@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """HMAC verification dependency end-to-end tests — workstream B.
 
 Spins up a minimal FastAPI app with a route depending on

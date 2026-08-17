@@ -96,35 +96,31 @@ standards-pack/examples/
 .demo-internal-api-secret
 app/.env.local
 
-# Backup files — `.env.backup`, `docker-compose.yaml.bak`, etc. These tend to
-# be created during local debugging; slipping one through into a commit would
-# re-leak whatever the live file contained at that moment. Series 1 scrub.
-*.bak
-*.backup
-
-# Local-only sandbox bundles and tunneling binaries that occasionally land
-# in the repo root from quick experiments. Never to be committed. Series 1.
-/bore
-/cloudflared
-/dev-ca.zip
-
-# Real SBS sample spreadsheets used for offline analysis on the maintainer's
-# machine. Not synthetic — must never be committed. Series 1 scrub.
+# Real SBS Annex 1-A sample — PII-bearing (even with partial
+# pre-anonymization). Operator places the file here locally; never
+# commit. See docs/demo/2026-05-27-demo-ready.md.
 data/sbs_sample/
 
-# Anexo 1-A reglamento PDF. Source 4a5b0e1 committed `annexo.pdf` as the
-# spec-of-record for the DQ code lists; the agent salvage dropped it pending
-# human provenance verification (must be the public Res. SBS 04036-2022
-# reglamento, not internal SBS material). See release-evidence/track-b-salvage-TODO.md.
-annexo.pdf
-
-# release-evidence/ — internal build-and-salvage notes. Three of them carry
-# credential-handling detail and maintainer machine paths; none of it is
-# reference material for anyone integrating with the sandbox. Untracked here
-# and pinned so it cannot come back.
+# Workshop session — binaries and local config (don't commit)
+bore
+cloudflared
+dev-ca.zip
+*.bak
+.env
+app/.env.local
 release-evidence/
+part17-TODO.md
+part17-TODO.md
 
-# .scratch — local UI artifacts and one-off mockups. Already excluded via
-# .git/info/exclude on the maintainer's clone; pinned here so it applies to
-# every clone.
-.scratch/
+# secrets / local / generated — never commit
+*.pem
+*.key
+dev-ca/
+.env
+.env.local
+*.bak
+*.pdf
+*.pdf
+CLAUDE.md
+updates
+updates

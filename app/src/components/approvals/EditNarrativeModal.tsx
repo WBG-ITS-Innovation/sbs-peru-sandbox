@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Edit-narrative modal — used by Approve with Edits. Two fields:
 // the edited narrative (long-form), and the rationale (>= 20 chars,
 // same gate as the rationale modal).

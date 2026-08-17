@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // CSRF double-submit cookie pattern — ADR 0040 §D4. Every state-
 // changing request carries the session cookie (automatic) and an
 // X-SBS-CSRF header whose value matches the sbs-csrf cookie. The

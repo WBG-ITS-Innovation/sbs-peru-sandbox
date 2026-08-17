@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook signing + delivery (ADR 0035).
 
 The signing module mirrors the inbound HMAC canonical-request shape

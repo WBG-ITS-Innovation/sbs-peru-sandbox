@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // i18n lookup — see ./README.md for namespace taxonomy and conventions.
 // Pure module: usable from both server and client components. Locale
 // resolution from the request cookie lives in ./server.ts because that

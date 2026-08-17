@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // PageHeader — the serif title row that lives directly under the
 // navy TopBar inside the supervisor route group. The visual language
 // matches the Claude Design artifact: a mono breadcrumb in caps, a

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Capture uvicorn's SSL transport on every request.
 
 Uvicorn 0.47 does not implement the ASGI TLS extension. The peer cert

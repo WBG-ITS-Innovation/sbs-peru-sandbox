@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Annex 1-A data-quality rules — DQ-A1A-007 through DQ-A1A-027.
 
 P11 DQ completion. The existing six rules in

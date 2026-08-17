@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for the deterministic data-quality checker (P11A / ADR 0045).
 
 The DQ checker runs on a **redacted** narrative — it never sees raw

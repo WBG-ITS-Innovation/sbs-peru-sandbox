@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Integration tests for the WS4 findings endpoints.
 
 Covers list + detail + draft-save + send-to-approvals + role scoping

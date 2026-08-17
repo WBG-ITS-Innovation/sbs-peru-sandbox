@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Read-only query tools — pass-through to existing tables.
 
 These tools never mutate state. They give the agent a structured

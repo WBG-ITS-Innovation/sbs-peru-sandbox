@@ -46,7 +46,7 @@ The CI-runs-only-gitleaks choice is **not** a divergence — it is alignment wit
 
 ## Flagged for cross-review
 
-The defense-in-depth claim. Cross-review owner: Othman. Triage line will record whether the marginal coverage of running both scanners locally is worth the friction, or whether one scanner would do.
+The defense-in-depth claim. Cross-review owner: Maintainer. Triage line will record whether the marginal coverage of running both scanners locally is worth the friction, or whether one scanner would do.
 
 ## Amendment — 2026-05-16
 

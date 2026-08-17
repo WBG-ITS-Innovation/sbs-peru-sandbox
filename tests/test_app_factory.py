@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Application factory smoke tests.
 
 No DB needed — these assert the FastAPI shape only.

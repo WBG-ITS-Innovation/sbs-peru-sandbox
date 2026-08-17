@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Tier 2 batch ingestion smoke test (Prompt 8).
 #
 # Stage flags (per spec §4):
@@ -11,6 +12,11 @@
 #   stage-g-full     — stage-g-contract + the live-stack signed-callback test
 #                       (compose worker + webhook-listener required up;
 #                        scripts/smoke_stage_g_live.py drives the live path)
+#   stage-h-contract — agent layer wired into canonical ingestion (in-process)
+#   stage-h-full     — stage-h-contract + the live agent gate: signed POSTs on
+#                       both tiers over mTLS, agent runs asserted in the live
+#                       DB with a non-null model_provider
+#                       (scripts/smoke_stage_h_live.py drives the live path)
 #
 # Pre-conditions:
 #   stage-a … stage-f and stage-g-contract:
@@ -50,7 +56,7 @@ case "$STAGE" in
       tests/test_alembic_migration.py \
       || fail "stage-a pytest assertions did not pass"
     note "Spectral lint check on api/openapi/sbs-api-v1.yaml"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
     echo
@@ -79,7 +85,7 @@ case "$STAGE" in
       tests/test_batch_rejections_pagination.py \
       || fail "stage-c assertions did not pass"
     note "Spectral lint 0 errors"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
     echo
@@ -156,7 +162,7 @@ case "$STAGE" in
       || fail "stage-g-contract pytest assertions did not pass"
 
     note "Spectral lint 0 errors on api/openapi/sbs-api-v1.yaml"
-    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json 2>/dev/null \
+    ./node_modules/.bin/spectral lint api/openapi/sbs-api-v1.yaml --format=json --quiet 2>/dev/null \
       | python -c "import json, sys; d=json.load(sys.stdin); errs=[r for r in d if r.get('severity')==0]; sys.exit(0 if not errs else 1)" \
       || fail "Spectral reports errors"
 
@@ -183,18 +189,87 @@ case "$STAGE" in
     note "  6. Tail webhook-listener log for PASS line"
     echo
 
-    # First run the contract suite so any contract regression fails
-    # before we touch the live stack.
-    bash "$0" stage-g-contract || fail "stage-g-contract failed; live-stack check skipped"
+    # Both halves always run. Aborting the live half on a contract
+    # regression meant the only genuinely live assertion in this gate was
+    # skipped exactly when the stack most needed checking, and the gate
+    # reported failure without ever having exercised the live path.
+    contract_rc=0
+    bash "$0" stage-g-contract || contract_rc=$?
+    if [[ $contract_rc -ne 0 ]]; then
+      note "stage-g-contract FAILED (exit $contract_rc) — running the"
+      note "live-stack check anyway so this gate still reports on it."
+    fi
 
     echo
     step "Live-stack check"
-    uv run python scripts/smoke_stage_g_live.py || fail "live-stack signed-callback path failed"
+    live_rc=0
+    uv run python scripts/smoke_stage_g_live.py || live_rc=$?
 
     echo
+    [[ $contract_rc -eq 0 ]] && echo "  contract half: PASS" || echo "  contract half: FAIL"
+    [[ $live_rc -eq 0 ]] && echo "  live half:     PASS" || echo "  live half:     FAIL"
+    if [[ $contract_rc -ne 0 || $live_rc -ne 0 ]]; then
+      fail "stage-g-full: contract_rc=$contract_rc live_rc=$live_rc"
+    fi
     echo "stage-g-full: PASS"
     ;;
+  stage-h-contract)
+    step "Stage H (contract) — agent layer wired into canonical ingestion"
+    note "  tests/test_agent_ingest_wiring.py — both tiers dispatch the chain,"
+    note "  DIValeVale runs ahead of Triage with one validation_audit row,"
+    note "  dispatch cannot break the ingesting request, provider identity"
+    note "  is persisted, and the record adapter invents no fields."
+    note "  tests/test_orm_model_registry.py — every ORM model on disk is"
+    note "  registered in Base.metadata."
+    uv run pytest -q --tb=short \
+      tests/test_agent_ingest_wiring.py \
+      tests/test_orm_model_registry.py \
+      || fail "stage-h-contract pytest assertions did not pass"
+    echo
+    echo "stage-h-contract: PASS"
+    ;;
+  stage-h-full)
+    step "Stage H (full) — live agent gate across the docker network"
+    note "Requires: docker compose postgres + redis + worker up with"
+    note "SBS_API_AGENTS_PIPELINE_ENABLED=true, and the API running with"
+    note "mTLS direct on :8443 with the pipeline enabled and the reloader"
+    note "off:"
+    note "  SBS_API_AGENTS_PIPELINE_ENABLED=true docker compose up -d worker"
+    note "  SBS_API_MTLS_MODE=direct SBS_API_AUTH_STUB_ENABLED=false \\"
+    note "    SBS_API_PORT=8443 SBS_API_AGENTS_PIPELINE_ENABLED=true \\"
+    note "    SBS_API_RELOAD=false bash scripts/run-api.sh"
+    note ""
+    note "Sequence (scripts/smoke_stage_h_live.py):"
+    note "  1. Confirm compose services + worker pipeline flag"
+    note "  2. Confirm the API answers over mTLS"
+    note "  3. Tier 1: TWO signed POST /v1/complaints -> assert both traces"
+    note "  4. Tier 2: 2-row signed POST /v1/batches -> worker -> assert both"
+    note "  5. Both tiers, every complaint: validation_audit row ahead of the"
+    note "     first agent_run, triage run with a non-null model_provider,"
+    note "     NON-EMPTY tool_calls, and the routed downstream chain present"
+    echo
+
+    contract_rc=0
+    bash "$0" stage-h-contract || contract_rc=$?
+    if [[ $contract_rc -ne 0 ]]; then
+      note "stage-h-contract FAILED (exit $contract_rc) — running the live"
+      note "gate anyway so this gate still reports on it."
+    fi
+
+    echo
+    step "Live agent gate"
+    live_rc=0
+    uv run python scripts/smoke_stage_h_live.py || live_rc=$?
+
+    echo
+    [[ $contract_rc -eq 0 ]] && echo "  contract half: PASS" || echo "  contract half: FAIL"
+    [[ $live_rc -eq 0 ]] && echo "  live half:     PASS" || echo "  live half:     FAIL"
+    if [[ $contract_rc -ne 0 || $live_rc -ne 0 ]]; then
+      fail "stage-h-full: contract_rc=$contract_rc live_rc=$live_rc"
+    fi
+    echo "stage-h-full: PASS"
+    ;;
   *)
-    fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-f stage-g-contract stage-g-full"
+    fail "Unknown stage: $STAGE. Valid: stage-a stage-b stage-c stage-d stage-e stage-f stage-g-contract stage-g-full stage-h-contract stage-h-full"
     ;;
 esac

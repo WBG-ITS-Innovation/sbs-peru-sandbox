@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # End-to-end smoke test for the full auth chain (workstream G).
 #
 # This is the regulator-credibility test: every assertion below

@@ -1,7 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
 """ReplayProvider — load pre-recorded turn sequences from disk.
 
-For the May 27 demo, two scaffolded agents (taxonomy-harmonizer,
-cross-source-correlator) use this provider end-to-end. The real
+For the May 27 demo, the cross-source-correlator scaffold agent uses
+this provider end-to-end. The real
 agents also fall back to it when the runtime is asked for
 deterministic behaviour on a known fixture complaint (e.g. the demo
 invariant test for BCO-2026-000001).
@@ -10,16 +11,28 @@ Fixture layout: ``fixtures/replay/<agent_name>/<complaint_id>.json``.
 The file shape is the same as the mock script — a list of turns —
 plus an optional ``model_id`` and ``final_output`` override the
 runtime stamps onto the agent_run when the script ends.
+
+**Every served request logs a WARNING.** Replayed fixtures look exactly
+like inference from the caller's side, and this provider is selectable at
+runtime (``SBS_API_MODEL_PROVIDER=replay``), so the log is the only place
+a reader tailing a live run can see that no model was consulted. It is
+per-request on purpose — a once-per-process banner scrolls away and then
+the run looks live for the next hour. Every response also carries
+``served_by="replay"``, which is what reaches
+``agent_runs.model_provider``.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
 
 from sbs_api.agents.providers.base import ModelProvider, ModelResponse, ToolCallRequest
+
+log = logging.getLogger(__name__)
 
 FIXTURE_ROOT = Path(__file__).parent.parent / "fixtures" / "replay"
 
@@ -85,6 +98,19 @@ class ReplayProvider:
 
         model_id = data.get("model_id", "replay-1")
 
+        log.warning(
+            "REPLAYED FIXTURE — NOT LIVE INFERENCE: agent=%s complaint=%s "
+            "turn=%d served_by=%s model_id=%s. No model was called; this "
+            "response was read from disk under %s. Set "
+            "SBS_API_MODEL_PROVIDER=on_prem or =cloud for real inference.",
+            agent_name,
+            complaint_id,
+            idx,
+            self.name,
+            model_id,
+            self._root,
+        )
+
         if "tool_calls" in turn:
             calls = [
                 ToolCallRequest(
@@ -95,6 +121,7 @@ class ReplayProvider:
                 for tc in turn["tool_calls"]
             ]
             return ModelResponse(
+                served_by=self.name,
                 text=None,
                 tool_calls=calls,
                 model_id=model_id,
@@ -102,6 +129,7 @@ class ReplayProvider:
             )
 
         return ModelResponse(
+            served_by=self.name,
             text=turn.get("text", ""),
             model_id=model_id,
             finish_reason="stop",

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Findings table — used on the /app/findings list view. Row click
 // navigates to /app/findings/:id; the row is wrapped in a <Link> so
 // the URL changes without a JS navigation handler.

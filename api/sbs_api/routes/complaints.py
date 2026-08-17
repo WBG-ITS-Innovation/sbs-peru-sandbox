@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1 complaint endpoints.
 
 Five endpoints from the canonical OpenAPI spec land here:
@@ -20,7 +21,11 @@ import json
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
+
+from sbs_api.agents.dispatch import dispatch_agent_pipeline
+from sbs_api.ingestion.circuit_breaker import assert_ingestion_allowed
 from fastapi.responses import JSONResponse
+from starlette.background import BackgroundTask
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -184,6 +189,11 @@ async def create_complaint(
             detail="institution_id in body does not match the authenticated caller."
         )
 
+    # Stage 0 — circuit breaker (P-RESHAPE-9). SBS IT can PAUSE ingestion
+    # for one FI; reject before idempotency claims a slot. The Tier-2
+    # batch path runs the same check in ingestion/pipeline.py.
+    await assert_ingestion_allowed(session, token.institution_id)
+
     # Idempotency: build context from the raw body so the hash matches across
     # equivalent JSON serialisations.
     body_bytes = await request.body()
@@ -305,7 +315,21 @@ async def create_complaint(
     # explicitly. Existing `headers` (Location, ETag) take precedence.
     for k, v in response.headers.items():
         headers.setdefault(k, v)
-    return JSONResponse(status_code=201, content=body, headers=headers)
+
+    # Part 12 — hand the committed complaint to the agent chain. Attached
+    # as a Starlette background task, so it runs only after this 201 has
+    # been written to the wire: the institution's request is never slowed,
+    # blocked or failed by agent work. dispatch_agent_pipeline opens its
+    # own session (this one is closed by then), honours
+    # SBS_API_AGENTS_PIPELINE_ENABLED, and swallows its own exceptions.
+    return JSONResponse(
+        status_code=201,
+        content=body,
+        headers=headers,
+        background=BackgroundTask(
+            dispatch_agent_pipeline, record.complaint_id, tier="tier1"
+        ),
+    )
 
 # --- GET /complaints (list) -----------------------------------------------
 

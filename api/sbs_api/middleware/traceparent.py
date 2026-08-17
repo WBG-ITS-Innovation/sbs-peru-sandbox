@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Observe and echo the OpenTelemetry-managed W3C traceparent.
 
 ADR 0028 §4 — OpenTelemetry owns the trace context. This middleware does not

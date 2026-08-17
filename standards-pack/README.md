@@ -5,7 +5,7 @@ institutional integrators download to start an integration with the
 SBS SupTech Complaints API. The `scripts/build-standards-pack.sh`
 script populates the subdirectories from authoritative sources
 elsewhere in the repository and produces the distributable tarball
-`dist/standards-pack-v0.2.0.tar.gz` with a `.sha256` companion.
+`dist/standards-pack-v0.1.0.tar.gz` with a `.sha256` companion.
 
 See [ADR 0039](../docs/adr/0039-standards-pack-v0-1-distribution-and-manifest.md)
 for the distribution and manifest decisions and
@@ -50,10 +50,10 @@ standards-pack/
 
 ```bash
 # Verify the tarball:
-sha256sum -c standards-pack-v0.2.0.tar.gz.sha256
+sha256sum -c standards-pack-v0.1.0.tar.gz.sha256
 
 # Extract and verify every file:
-tar -xzf standards-pack-v0.2.0.tar.gz
+tar -xzf standards-pack-v0.1.0.tar.gz
 cd standards-pack/
 sha256sum -c checksums.sha256
 

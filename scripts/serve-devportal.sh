@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Serve the SBS developer portal on http://localhost:8080.
 #
 # The portal is a single HTML page that loads Stoplight Elements from a CDN

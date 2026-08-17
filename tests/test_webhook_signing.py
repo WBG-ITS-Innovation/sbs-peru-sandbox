@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook HMAC signing — Workstream D unit tests (ADR 0035).
 
 Pure-function tests; no DB / Redis / HTTP. Asserts the canonical

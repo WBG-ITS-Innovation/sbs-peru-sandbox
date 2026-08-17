@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Class-merging utility — the standard shadcn / Tailwind pattern.
 // Combines clsx's conditional inputs with tailwind-merge's
 // conflict-resolution so `cn('px-2', cond && 'px-4')` returns `px-4`

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Outbound webhook delivery worker job (ADR 0035).
 
 ``deliver_webhook_for_batch(ctx, batch_id, event_type)`` is the arq

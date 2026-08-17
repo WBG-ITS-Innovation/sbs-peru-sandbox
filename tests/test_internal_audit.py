@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the supervisor-UI-facing audit endpoint.
 
 POST /v1/internal/audit is the single path by which the Next.js

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Rate-limit FastAPI dependencies — ADR 0033 with pressure-test amendments.
 
 Two pre-built dependencies:

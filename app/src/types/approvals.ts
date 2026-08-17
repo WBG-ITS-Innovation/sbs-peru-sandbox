@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Approvals list + detail types — mirror api/sbs_api/approvals/builder.py.
 
 import type { Severity } from '@/types/cockpit';

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Seed the three demo oauth_clients rows with argon2id-hashed client
 # secrets. The plain-text secrets are deliberately stable so SDK
 # integrators can copy them from this file into a Postman collection

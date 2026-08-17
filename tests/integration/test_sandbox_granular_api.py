@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """End-to-end test for the P11A.5a sandbox granular institutional endpoint.
 
 Drives ``POST /v1/sandbox/complaints/granular`` through the in-process

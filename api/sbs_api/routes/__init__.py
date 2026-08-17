@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """HTTP route groupings.
 
 Each router file corresponds to a section of the canonical OpenAPI spec.
@@ -8,6 +9,7 @@ Each router file corresponds to a section of the canonical OpenAPI spec.
 
 from fastapi import APIRouter
 
+from sbs_api.routes.aggregates import router as aggregates_router
 from sbs_api.routes.approvals import router as approvals_router
 from sbs_api.routes.audit import router as audit_router
 from sbs_api.routes.batches import router as batches_router
@@ -32,6 +34,7 @@ v1_router.include_router(oauth_router)
 v1_router.include_router(openapi_router)
 v1_router.include_router(portal_router)
 v1_router.include_router(internal_router)
+v1_router.include_router(aggregates_router)
 v1_router.include_router(cockpit_router)
 v1_router.include_router(findings_router)
 v1_router.include_router(approvals_router)

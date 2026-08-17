@@ -1,10 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
 """i18n parity gate.
 
 The Spanish dictionary (`app/src/i18n/es.json`) is canonical; English
 (`en.json`) is offered via the toggle. Both must carry the same key set.
 A PR that adds a key to one and not the other fails this test.
 
-Native-speaker review of the Spanish dictionary by the SBS technical counterpart happens
+Native-speaker review of the Spanish dictionary by Luis happens
 separately (WS0c); this test only enforces structural parity.
 """
 

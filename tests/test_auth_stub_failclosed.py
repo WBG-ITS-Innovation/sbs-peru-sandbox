@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Foot-gun mitigation: tenant-requiring endpoints fail closed without auth.
 
 After workstream F.7 the protected routes use the real auth chain

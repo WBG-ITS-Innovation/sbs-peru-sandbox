@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, type HTMLAttributes } from 'react';
 
@@ -36,7 +37,7 @@ const badgeVariants = cva(
         // Source chips (Tier 1 / Tier 2 / Cross-source channels)
         source:
           'border-brand-cyan/40 bg-brand-cyan/10 text-brand-navy',
-        // Role chips (Supervisor / Analyst / Unit Head)
+        // Role chips (Supervisor / Analyst / Head)
         role:
           'border-brand-gold/40 bg-brand-gold/10 text-brand-navy',
         // P11 demo-ui-polish — explicit tier badges. WBG palette:

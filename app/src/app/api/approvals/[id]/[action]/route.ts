@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Proxy: POST /app/api/approvals/:id/:action → FastAPI's
 // /v1/internal/approvals/:id/:action. One route handler covers all
 // four actions; the action is validated against an allowlist before

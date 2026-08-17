@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tool-calling loop.
 
 Pure orchestration: the loop alternates between provider.complete()
@@ -50,6 +51,10 @@ class LoopResult:
     iterations: int = 0
     finish_reason: str = "stop"
     model_id: str = "unknown"
+    # Provider that actually served the last completion — "mock" when
+    # OnPremProvider fell back, not the configured "on_prem". Written to
+    # agent_runs.model_provider by the agents.
+    served_by: str | None = None
 
 
 @dataclass
@@ -88,6 +93,7 @@ async def run_loop(
     final_text: str | None = None
     finish_reason = "stop"
     model_id = "unknown"
+    served_by: str | None = None
 
     for iteration in range(1, config.max_iterations + 1):
         span_cm = (
@@ -112,6 +118,7 @@ async def run_loop(
                 complaint_id=config.complaint_id,
             )
             model_id = response.model_id
+            served_by = response.served_by or served_by
             finish_reason = response.finish_reason
             log.info(
                 "agent_iteration",
@@ -192,6 +199,7 @@ async def run_loop(
         iterations=iteration,
         finish_reason=finish_reason,
         model_id=model_id,
+        served_by=served_by,
     )
 
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the in-process SSE bus.
 
 The bus is the substrate ADR 0040 §D5 names. These tests cover the

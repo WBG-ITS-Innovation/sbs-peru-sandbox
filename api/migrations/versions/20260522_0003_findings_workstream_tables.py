@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """complaint_narrative_drafts + pending_approvals — WS4 substrate
 
 Revision ID: 20260522_0003
@@ -7,7 +8,7 @@ Create Date: 2026-05-22
 Prompt 10 / WS4. Two tables that the Findings drilldown writes to:
 
 * ``complaint_narrative_drafts`` — append-only history of every
-  the Conduct Analyst-edit of an agent-drafted narrative. The matching
+  Analyst-edit of an agent-drafted narrative. The matching
   ``audit_events`` row (action='edit-draft-narrative') ties the edit
   to the operator. The latest row by ``created_at`` is the current
   draft.

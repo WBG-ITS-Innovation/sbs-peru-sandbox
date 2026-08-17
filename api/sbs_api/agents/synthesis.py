@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """SynthesisAgent — plain-Spanish brief for the Superintendent.
 
 Runs after Investigation. Reads the audit chain for context and
@@ -131,6 +132,7 @@ async def run_synthesis(
         status=status,
         tool_call_records=result.tool_call_records,
         final_output=final_output,
+        model_provider=result.served_by,
         error=None
         if status == "success"
         else {

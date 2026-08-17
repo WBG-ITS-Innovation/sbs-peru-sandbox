@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Pinned evidence panel — regex hits + top XGBoost features +
 // cross-source channel contributions, side by side. Reads from the
 // pinned_evidence block in the approvals detail response.

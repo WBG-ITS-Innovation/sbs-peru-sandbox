@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Serve the canonical OpenAPI YAML at ``/v1/openapi.yaml``.
 
 ADR 0027 made the YAML the canonical contract. ADR 0028 turns off FastAPI's

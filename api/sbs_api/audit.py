@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Audit-event recording — the single entrypoint for the cross-screen audit chain.
 
 Every screen that mutates state writes through :func:`record_audit_event`.

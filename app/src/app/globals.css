@@ -5,7 +5,7 @@
 /*
  * SBS visual design system — ADR 0041 D2 (semantic tokens, not literal
  * hex). Every component reads from these custom properties; a palette
- * tweak after the native-speaker reviewer's review touches this file only.
+ * tweak after Luis's review touches this file only.
  *
  * Light theme is canonical for May 25. Dark theme is reserved — every
  * token below has a future-mappable companion under a `.dark` ancestor,

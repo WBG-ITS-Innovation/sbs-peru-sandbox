@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Actions row — Send to Approvals + Mark false positive (stub) +
 // Assign (visible-but-disabled tooltip per the WS4 drop ladder).
 // Lives below the draft editor on the detail page.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """tier 2 batch — file_path on batches, complaints.source, rejections, webhook tables
 
 Revision ID: 20260520_0001

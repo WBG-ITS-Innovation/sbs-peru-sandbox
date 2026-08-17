@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Bootstrap the GitHub labels this repo's tooling and CODEOWNERS rely on.
 #
 # Idempotent. Re-run safely after a label set changes.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Contract test for the persona-switcher audit row.
 
 The switcher lives in the Next.js process (app/src/app/api/persona/switch).
@@ -8,7 +9,7 @@ chain. If you change the meta keys here, change them in
 ``app/src/app/api/persona/switch/route.ts`` in the same PR.
 
 The user-facing reading test guards against is: a row that says
-"the WBG technical lead switched persona at 14:32" is useless audit data; the row
+"An operator switched persona at 14:32" is useless audit data; the row
 must carry from_persona AND to_persona so an auditor can reconstruct
 the transition.
 """
@@ -38,28 +39,28 @@ async def test_switch_persona_row_carries_from_and_to() -> None:
     event = await record_audit_event(
         session,  # type: ignore[arg-type]
         actor_type="user",
-        actor_id="test-operator",
+        actor_id="operator",
         action="switch-persona",
         object_type="session",
         object_id="session-abc-123",
         meta={
             "from_persona": "supervisor",
             "from_email": "supervisor@sandbox.example.com",
-            "to_persona": "unit-head",
-            "to_email": "unit-head@sandbox.example.com",
+            "to_persona": "head",
+            "to_email": "head@sandbox.example.com",
         },
     )
     assert isinstance(event, AuditEvent)
     assert event.action == "switch-persona"
-    assert event.actor_id == "test-operator", (
+    assert event.actor_id == "operator", (
         "operator must be the actor; using the persona's email would lose "
         "the 'who triggered the switch' signal from the audit"
     )
     assert event.meta is not None
     assert event.meta.get("from_persona") == "supervisor"
-    assert event.meta.get("to_persona") == "unit-head"
+    assert event.meta.get("to_persona") == "head"
     assert event.meta.get("from_email") == "supervisor@sandbox.example.com"
-    assert event.meta.get("to_email") == "unit-head@sandbox.example.com"
+    assert event.meta.get("to_email") == "head@sandbox.example.com"
 
 
 @pytestmark_db
@@ -79,7 +80,7 @@ async def test_switch_persona_row_round_trips_against_live_db(
             await record_audit_event(
                 session,
                 actor_type="user",
-                actor_id="test-operator",
+                actor_id="operator",
                 action="switch-persona",
                 object_type="session",
                 object_id="session-abc-123",
@@ -103,7 +104,7 @@ async def test_switch_persona_row_round_trips_against_live_db(
 
     assert len(rows) == 1
     row = rows[0]
-    assert row.actor_id == "test-operator"
+    assert row.actor_id == "operator"
     assert row.meta == {
         "from_persona": "supervisor",
         "from_email": "supervisor@sandbox.example.com",

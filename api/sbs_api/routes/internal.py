@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Server-to-server endpoints for the supervisor UI.
 
 The Next.js supervisor UI calls FastAPI for cross-screen state that

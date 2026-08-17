@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Audit nested layout — adds the footer per the WS4 directive. The
 // audit screen is the only place the WBG attribution renders; everywhere
 // else the supervisor layout owns the chrome and the footer is omitted.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Audit row + paginated response shape.
 
 export interface AuditRow {

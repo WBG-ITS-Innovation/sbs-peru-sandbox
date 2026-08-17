@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Smoke test for the P11A.5a institution-side CLI sender.
 
 Drives ``scripts/institution_push_demo.py`` against the in-process

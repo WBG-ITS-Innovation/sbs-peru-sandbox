@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the Pydantic v2 models in sbs_api.models.
 
 Covers: happy-path construction, per-field validator failures, and the one

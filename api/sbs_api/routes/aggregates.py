@@ -1,0 +1,418 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Grouped-aggregate endpoint over the enriched complaints data.
+
+GET /v1/internal/aggregates/patterns?scope=entity|group|all
+
+Every number is computed from SQL over ``complaints`` + ``institutions`` —
+nothing is hardcoded. Rows are grouped by (motivo_code, submotivo, topic),
+plus a per-scope institution dimension:
+
+* ``entity`` (default) — adds ``institution_id``.
+* ``group``            — adds the peer ``cohort_id`` (segment:tier), derived
+                         via :func:`sbs_api.peer_risk.cohorts.assign_cohort`.
+* ``all``              — no institution dimension.
+
+Favour percentages are over RESOLVED complaints only (``tipo_resolucion``
+not null): ``pct_favor_user`` + ``pct_favor_bank`` + ``pct_partial`` sum to
+100% of resolved. A bucket with no resolved complaints returns ``null`` for
+all three — never a fabricated 0. ``n_pending`` lets the UI show the honest
+unresolved share.
+
+Auth mirrors the other ``/v1/internal/*`` routes: the shared-secret Bearer
+guard (:func:`verify_internal_secret`).
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from sbs_api.db.models.complaint import ComplaintRecord
+from sbs_api.db.models.institution import InstitutionRecord
+from sbs_api.dependencies.db import get_session
+from sbs_api.observability.logging import get_logger
+from sbs_api.peer_risk.cohorts import CohortAssignmentError, assign_cohort
+from sbs_api.routes._internal_auth import verify_internal_secret
+
+log = get_logger(__name__)
+
+router = APIRouter(prefix="/internal/aggregates", tags=["Internal"])
+
+Scope = Literal["entity", "group", "all"]
+
+# tipo_resolucion follows the Anexo 1-A TIP_RES convention. The enrichment
+# writes exactly these three labels; match by equality (not pattern) so the
+# counts are unambiguous. solucion_parcial is neither user- nor bank-
+# favouring, so pct_favor_user + pct_favor_bank + pct_partial = 100% of
+# resolved complaints — the partial share is surfaced explicitly.
+_LABEL_FAVOR_USER = "favor_usuario"
+_LABEL_FAVOR_BANK = "favor_entidad"
+_LABEL_PARTIAL = "solucion_parcial"
+
+
+def _cohort_for(display_name: str, tier_classification: str | None) -> dict[str, str]:
+    """(cohort_id, segment, size_tier) for an institution. Calls the canonical
+    cohort logic; falls back to a derived label only if that raises."""
+    try:
+        c = assign_cohort(
+            display_name=display_name, tier_classification=tier_classification
+        )
+        return {
+            "cohort_id": c.cohort_id,
+            "segment": c.segment.value,
+            "size_tier": c.size_tier.value,
+        }
+    except CohortAssignmentError:
+        segment = (display_name.split("_", 1)[0].upper() if display_name else "OTHER")
+        tier = (tier_classification or "unknown").upper()
+        return {"cohort_id": f"{segment}:{tier}", "segment": segment, "size_tier": tier}
+
+
+def _pct(numer: int, denom: int) -> float | None:
+    """Percentage 0–100 (1 decimal), or None when the denominator is 0 —
+    an honest 'no resolved complaints', never a fabricated 0."""
+    if denom <= 0:
+        return None
+    return round(100.0 * numer / denom, 1)
+
+
+@router.get(
+    "/patterns",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_aggregate_patterns(
+    scope: Scope = Query(default="entity"),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        # One SQL pass at the finest (per-institution) grain with raw counts;
+        # the scope-specific roll-up happens in Python so the cohort logic in
+        # peer_risk.cohorts is reused rather than reimplemented in SQL.
+        favor_user = func.count().filter(
+            ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_USER
+        )
+        favor_bank = func.count().filter(
+            ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_BANK
+        )
+        favor_partial = func.count().filter(
+            ComplaintRecord.tipo_resolucion == _LABEL_PARTIAL
+        )
+        stmt = (
+            select(
+                ComplaintRecord.institution_id,
+                InstitutionRecord.display_name,
+                InstitutionRecord.tier_classification,
+                ComplaintRecord.motivo_code,
+                ComplaintRecord.submotivo,
+                ComplaintRecord.submotivo_2,
+                ComplaintRecord.topic,
+                func.count().label("n_complaints"),
+                func.count()
+                .filter(ComplaintRecord.resolution_status == "pendiente")
+                .label("n_pending"),
+                func.count()
+                .filter(ComplaintRecord.tipo_resolucion.is_not(None))
+                .label("n_resolved"),
+                favor_user.label("n_favor_user"),
+                favor_bank.label("n_favor_bank"),
+                favor_partial.label("n_favor_partial"),
+                func.array_agg(ComplaintRecord.complaint_id).label("complaint_ids"),
+            )
+            .join(
+                InstitutionRecord,
+                InstitutionRecord.institution_id == ComplaintRecord.institution_id,
+            )
+            .group_by(
+                ComplaintRecord.institution_id,
+                InstitutionRecord.display_name,
+                InstitutionRecord.tier_classification,
+                ComplaintRecord.motivo_code,
+                ComplaintRecord.submotivo,
+                ComplaintRecord.submotivo_2,
+                ComplaintRecord.topic,
+            )
+        )
+        base = (await session.execute(stmt)).all()
+    except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
+        log.warning("aggregates.patterns.query_failed", scope=scope, exc_info=True)
+        return {
+            "scope": scope,
+            "generated_at": generated_at,
+            "total_in_scope": 0,
+            "rows": [],
+        }
+
+    # Fold the per-institution base rows into the requested scope.
+    buckets: dict[tuple, dict[str, Any]] = {}
+    cohort_cache: dict[str, dict[str, str]] = {}
+    total = 0
+
+    for r in base:
+        total += r.n_complaints
+        dims: dict[str, Any] = {
+            "motivo_code": r.motivo_code,
+            "submotivo": r.submotivo,
+            "submotivo_2": r.submotivo_2,
+            "topic": r.topic,
+        }
+        if scope == "entity":
+            dims["institution_id"] = r.institution_id
+            dims["institution_name"] = r.display_name
+            key = (r.institution_id, r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
+        elif scope == "group":
+            coh = cohort_cache.get(r.institution_id)
+            if coh is None:
+                coh = _cohort_for(r.display_name, r.tier_classification)
+                cohort_cache[r.institution_id] = coh
+            dims.update(coh)
+            key = (coh["cohort_id"], r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
+        else:  # all
+            key = (r.motivo_code, r.submotivo, r.submotivo_2, r.topic)
+
+        b = buckets.get(key)
+        if b is None:
+            b = {
+                **dims,
+                "n_complaints": 0,
+                "n_pending": 0,
+                "n_resolved": 0,
+                "n_favor_user": 0,
+                "n_favor_bank": 0,
+                "n_favor_partial": 0,
+                "_ids": [],
+            }
+            buckets[key] = b
+        b["n_complaints"] += r.n_complaints
+        b["n_pending"] += r.n_pending
+        b["n_resolved"] += r.n_resolved
+        b["n_favor_user"] += r.n_favor_user
+        b["n_favor_bank"] += r.n_favor_bank
+        b["n_favor_partial"] += r.n_favor_partial
+        b["_ids"].extend(r.complaint_ids or [])
+
+    rows: list[dict[str, Any]] = []
+    for b in buckets.values():
+        # Raw numerators stay in the row so every percentage is reconstructable.
+        b["pct_of_all"] = _pct(b["n_complaints"], total)
+        b["pct_favor_user"] = _pct(b["n_favor_user"], b["n_resolved"])
+        b["pct_favor_bank"] = _pct(b["n_favor_bank"], b["n_resolved"])
+        b["pct_partial"] = _pct(b["n_favor_partial"], b["n_resolved"])
+        # Contributing complaint ids for the "Ver reclamos" drill-in (capped).
+        b["complaint_ids"] = sorted(b.pop("_ids"))[:100]
+        rows.append(b)
+
+    rows.sort(key=lambda x: x["n_complaints"], reverse=True)
+
+    return {
+        "scope": scope,
+        "generated_at": generated_at,
+        "total_in_scope": total,
+        "rows": rows,
+    }
+
+
+@router.get(
+    "/trend",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_aggregate_trend(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Time-series + motivo distribution for the charts tab. All real SQL.
+
+    * ``by_motivo`` — complaint count + % per motivo_code (desc).
+    * ``by_month``  — complaint volume per YYYY-MM from received_date, with
+      the social-signal count per month overlaid (real social_signals;
+      coverage is whatever has been ingested — currently recent months only).
+    """
+    from sbs_api.db.models.social_signal import SocialSignal
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        total = (await session.execute(select(func.count()).select_from(ComplaintRecord))).scalar_one()
+
+        motivo_rows = (
+            await session.execute(
+                select(ComplaintRecord.motivo_code, func.count())
+                .group_by(ComplaintRecord.motivo_code)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        by_motivo = [
+            {
+                "motivo_code": m,
+                "n_complaints": n,
+                "pct_of_all": _pct(n, total),
+            }
+            for m, n in motivo_rows
+        ]
+
+        month = func.to_char(ComplaintRecord.received_date, "YYYY-MM")
+        complaint_month_rows = (
+            await session.execute(select(month, func.count()).group_by(month))
+        ).all()
+        smonth = func.to_char(SocialSignal.post_authored_at, "YYYY-MM")
+        social_month_rows = (
+            await session.execute(select(smonth, func.count()).group_by(smonth))
+        ).all()
+        product_rows = (
+            await session.execute(
+                select(ComplaintRecord.product_category, func.count())
+                .group_by(ComplaintRecord.product_category)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        channel_rows = (
+            await session.execute(
+                select(ComplaintRecord.channel, func.count())
+                .group_by(ComplaintRecord.channel)
+                .order_by(func.count().desc())
+            )
+        ).all()
+        # Outcome split per month — favor_user / favor_bank / partial / pending.
+        omonth = func.to_char(ComplaintRecord.received_date, "YYYY-MM")
+        outcome_month_rows = (
+            await session.execute(
+                select(
+                    omonth,
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_USER),
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_FAVOR_BANK),
+                    func.count().filter(ComplaintRecord.tipo_resolucion == _LABEL_PARTIAL),
+                    func.count().filter(ComplaintRecord.resolution_status == "pendiente"),
+                ).group_by(omonth)
+            )
+        ).all()
+        period_row = (
+            await session.execute(
+                select(func.min(ComplaintRecord.received_date), func.max(ComplaintRecord.received_date))
+            )
+        ).one()
+        # Real aggregate-agent output: pattern_detections written by the
+        # Investigation/Lupaman aggregation tick. Zero is honest if the tick
+        # has not produced any yet.
+        from sbs_api.db.models.pattern_detection import PatternDetection
+
+        n_patterns = (
+            await session.execute(select(func.count()).select_from(PatternDetection))
+        ).scalar_one()
+        n_patterns_high = (
+            await session.execute(
+                select(func.count()).select_from(PatternDetection).where(PatternDetection.severity_band == "HIGH")
+            )
+        ).scalar_one()
+    except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
+        log.warning("aggregates.trend.query_failed", exc_info=True)
+        return {"generated_at": generated_at, "by_motivo": [], "by_month": [], "by_product": [], "by_channel": [], "by_outcome_month": [], "period": None, "n_patterns": 0, "n_patterns_high": 0}
+
+    complaints_by_month = {m: n for m, n in complaint_month_rows if m}
+    social_by_month = {m: n for m, n in social_month_rows if m}
+    months = sorted(set(complaints_by_month) | set(social_by_month))
+    by_month = [
+        {
+            "month": m,
+            "complaints": complaints_by_month.get(m, 0),
+            "social": social_by_month.get(m, 0),
+        }
+        for m in months
+    ]
+    by_product = [
+        {"product_category": p, "n_complaints": n, "pct_of_all": _pct(n, total)}
+        for p, n in product_rows
+        if p
+    ]
+    by_channel = [
+        {"channel": c, "n_complaints": n, "pct_of_all": _pct(n, total)}
+        for c, n in channel_rows
+        if c
+    ]
+    by_outcome_month = sorted(
+        (
+            {"month": m, "user": u, "bank": b, "partial": p, "pending": pe}
+            for m, u, b, p, pe in outcome_month_rows
+            if m
+        ),
+        key=lambda x: x["month"],
+    )
+    period = {
+        "start": period_row[0].isoformat() if period_row[0] else None,
+        "end": period_row[1].isoformat() if period_row[1] else None,
+    }
+
+    return {
+        "generated_at": generated_at,
+        "by_motivo": by_motivo,
+        "by_month": by_month,
+        "by_product": by_product,
+        "by_channel": by_channel,
+        "by_outcome_month": by_outcome_month,
+        "period": period,
+        "n_patterns": n_patterns,
+        "n_patterns_high": n_patterns_high,
+    }
+
+
+@router.get(
+    "/sources",
+    dependencies=[Depends(verify_internal_secret)],
+)
+async def get_aggregate_sources(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Cross-source signal tables for the red-flags view. Real aggregates.
+
+    * ``social_*``  — counts from ``social_signals`` (fraud indicator,
+      institutions flagged). PII-safe: post text is never read or returned.
+    * ``indecopi_*`` — counts from ``indecopi_cases`` by (institution,
+      category), plus the distinct institution ids (used for the
+      social∩INDECOPI correlation flag).
+    """
+    from collections import Counter
+
+    from sbs_api.db.models.indecopi_case import IndecopiCase
+    from sbs_api.db.models.social_signal import SocialSignal
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        socials = (await session.execute(select(SocialSignal))).scalars().all()
+        cases = (await session.execute(select(IndecopiCase))).scalars().all()
+    except Exception:  # noqa: BLE001 — degrade to empty, never fabricate.
+        log.warning("aggregates.sources.query_failed", exc_info=True)
+        return {
+            "generated_at": generated_at,
+            "social_by_indicator": [],
+            "social_institution_codes": [],
+            "social_total": 0,
+            "indecopi": [],
+            "indecopi_institution_ids": [],
+        }
+
+    ind_counts: Counter[str] = Counter()
+    social_insts: Counter[str] = Counter()
+    for s in socials:
+        for k in s.detected_fraud_indicators or []:
+            ind_counts[k] += 1
+        for c in s.detected_institution_codes or []:
+            social_insts[c] += 1
+
+    case_counts: Counter[tuple[str, str]] = Counter()
+    for c in cases:
+        case_counts[(c.institution_id, c.complaint_category)] += 1
+
+    return {
+        "generated_at": generated_at,
+        "social_by_indicator": [
+            {"indicator": k, "n": n} for k, n in ind_counts.most_common()
+        ],
+        "social_institution_codes": sorted(social_insts),
+        "social_total": len(socials),
+        "indecopi": [
+            {"institution_id": i, "complaint_category": cat, "n": n}
+            for (i, cat), n in sorted(case_counts.items(), key=lambda x: -x[1])
+        ],
+        "indecopi_institution_ids": sorted({i for (i, _cat) in case_counts}),
+    }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Footer — rendered only inside the audit route's nested layout per
 // the WS4 directive. Renders the WBG attribution.
 

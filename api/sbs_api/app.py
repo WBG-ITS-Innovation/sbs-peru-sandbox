@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """FastAPI application factory.
 
 Why a factory: per-test fresh apps with overridden dependencies. The factory
@@ -33,8 +34,78 @@ from sbs_api.scheduler import (
 )
 
 
+async def _healthcheck_provider_or_die(settings: Settings) -> None:
+    """Prove the agent pipeline has a working provider, or refuse to boot.
+
+    One canary tool-call request. Runs only when the pipeline is enabled —
+    an API that never invokes an agent does not need a model — and never
+    inside pytest, where a live inference call at boot would make the
+    suite depend on network reachability.
+
+    Before this existed, ``on_prem`` answered from ``MockProvider`` when no
+    vLLM was reachable, so a misconfigured host booted clean and produced
+    fabricated agent_runs for hours. Failing here is the point.
+    """
+
+    if not settings.agents_pipeline_enabled or not settings.provider_healthcheck_on_boot:
+        return
+
+    from sbs_api.agents.providers.healthcheck import (
+        check_ingestion_path_compatibility,
+        check_provider,
+    )
+    from sbs_api.agents.providers.mock import in_test_process
+
+    if in_test_process():
+        return
+
+    result = await check_provider()
+    logger = get_logger(__name__)
+
+    # A provider can pass the canary and still be unusable here: this
+    # process reaches agents only through the ingestion path, and
+    # DIValeVale gates that path to its own allowlist.
+    if result.ok:
+        incompatible = check_ingestion_path_compatibility(result.provider)
+        if incompatible is not None:
+            logger.error(
+                "provider.healthcheck.incompatible_with_ingestion",
+                provider=result.provider,
+                detail=incompatible,
+            )
+            raise RuntimeError(
+                "Agent pipeline is enabled but its model provider cannot "
+                f"serve the ingestion path, so the API will not start.\n  "
+                f"{incompatible}"
+            )
+
+    if not result.ok:
+        logger.error(
+            "provider.healthcheck.failed",
+            provider=result.provider,
+            detail=result.detail,
+        )
+        raise RuntimeError(
+            "Agent pipeline is enabled but its model provider is not usable, "
+            f"so the API will not start.\n  {result.render()}\n"
+            "Fix the provider configuration, set "
+            "SBS_API_AGENTS_PIPELINE_ENABLED=false, or select a different "
+            "SBS_API_MODEL_PROVIDER (on_prem | cloud | replay). Run "
+            "`uv run python scripts/provider_healthcheck.py` to retest."
+        )
+    logger.info(
+        "provider.healthcheck.ok",
+        provider=result.provider,
+        skipped=result.skipped,
+        detail=result.detail,
+        model_id=result.model_id,
+        latency_ms=result.latency_ms,
+    )
+
+
 def _build_lifespan(settings: Settings):
-    """Construct the lifespan context manager that starts/stops APScheduler.
+    """Construct the lifespan context manager that starts/stops APScheduler
+    and healthchecks the model provider.
 
     The scheduler runs only when ``settings.idempotency_sweep_enabled`` is
     True so tests can leave it off without monkey-patching APScheduler.
@@ -42,6 +113,7 @@ def _build_lifespan(settings: Settings):
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):  # noqa: ARG001
+        await _healthcheck_provider_or_die(settings)
         scheduler: AsyncIOScheduler | None = None
         if settings.idempotency_sweep_enabled:
             scheduler = AsyncIOScheduler()

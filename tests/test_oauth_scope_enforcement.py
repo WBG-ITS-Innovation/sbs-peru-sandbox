@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """verified_oauth_token_with_scope dependency tests — workstream C.
 
 A route declaring ``Depends(verified_oauth_token_with_scope("complaints:write"))``

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Cockpit snapshot assembly.
 
 The cockpit reads from the same Postgres the institutional ingestion

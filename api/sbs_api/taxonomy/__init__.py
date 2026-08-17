@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Taxonomy normalization (P11 demo-ready overlay).
 
 The real Annex 1-A sample carries the same logical value under several

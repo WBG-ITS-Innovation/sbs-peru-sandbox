@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // AnomalyCard — the highest-leverage UI element on the cockpit.
 // Tooltip carries the composite-signal math so the demo answers
 // "show me the math" without a pause.

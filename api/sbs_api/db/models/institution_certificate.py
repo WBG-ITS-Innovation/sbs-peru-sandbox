@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Institution certificate registry — ADR 0031.
 
 Each row maps a leaf certificate (identified by its SHA-256 thumbprint)

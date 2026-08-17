@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { cn } from '@/lib/cn';
 import { sparklinePath } from '@/lib/sparkline';
 

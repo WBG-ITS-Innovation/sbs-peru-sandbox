@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Generate a sandbox dev CA + two leaf client certs for mTLS testing.
 #
 # Outputs (all under dev-ca/, gitignored):

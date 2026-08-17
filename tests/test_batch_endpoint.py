@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 2 batch endpoint — Workstream A (ADR 0034).
 
 Multipart upload happy/sad paths against the standard auth-bypass app

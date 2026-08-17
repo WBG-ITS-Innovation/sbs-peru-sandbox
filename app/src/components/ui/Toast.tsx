@@ -1,4 +1,5 @@
 'use client';
+// SPDX-License-Identifier: Apache-2.0
 
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';

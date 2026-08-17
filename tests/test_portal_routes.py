@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Developer portal HTML and vendored-asset routes.
 
 ADR 0037 — Stoplight Elements vendored locally; portal served from

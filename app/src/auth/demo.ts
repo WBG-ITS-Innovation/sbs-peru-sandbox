@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
 // Demo-mode session bootstrap — ADR 0040 §D8.
 //
-// In demo mode the operator at the keyboard wants to switch between
-// the Conduct Supervisor, the Conduct Analyst, and the Conduct Unit
-// Head without four sign-out cycles during a 15-minute regulator
-// demo. The server pre-loads tokens for all three personas via the
-// Resource Owner Password Credentials grant, stores them in the
-// server-side session, and flips an active-persona pointer on switch.
+// In demo mode the operator at the keyboard wants
+// to switch between Supervisor / Analyst / Head without four sign-out
+// cycles during a 15-minute regulator demo. The server pre-loads
+// tokens for all three personas via the Resource Owner Password
+// Credentials grant, stores them in the server-side session, and
+// flips an active-persona pointer on switch.
 //
 // ROPC is permitted here because (a) the demo realm has seeded,
 // sandbox-only passwords, (b) the feature is feature-flagged behind
@@ -39,16 +40,16 @@ export const DEMO_PERSONAS = {
     passwordEnv: 'SBS_DEMO_ANALYST_PASSWORD', // pragma: allowlist secret
     passwordDefault: 'analyst-demo-2026', // pragma: allowlist secret
   },
-  'unit-head': {
-    email: 'unit-head@sandbox.example.com',
-    passwordEnv: 'SBS_DEMO_UNIT_HEAD_PASSWORD', // pragma: allowlist secret
-    passwordDefault: 'unit-head-demo-2026', // pragma: allowlist secret
+  head: {
+    email: 'head@sandbox.example.com',
+    passwordEnv: 'SBS_DEMO_HEAD_PASSWORD', // pragma: allowlist secret
+    passwordDefault: 'head-demo-2026', // pragma: allowlist secret
   },
 } as const;
 
 export type DemoPersonaKey = keyof typeof DEMO_PERSONAS;
 
-export const DEMO_PERSONA_KEYS: readonly DemoPersonaKey[] = ['supervisor', 'analyst', 'unit-head'];
+export const DEMO_PERSONA_KEYS: readonly DemoPersonaKey[] = ['supervisor', 'analyst', 'head'];
 
 function passwordFor(key: DemoPersonaKey): string {
   const config = DEMO_PERSONAS[key];
@@ -57,8 +58,8 @@ function passwordFor(key: DemoPersonaKey): string {
 
 /**
  * Acquire tokens for all three demo personas in parallel. Returns a
- * record keyed by persona key (`supervisor` / `analyst` / `unit-head`)
- * suitable for direct assignment into the ServerSession.personas map.
+ * record keyed by persona key (`supervisor` / `analyst` / `head`) suitable
+ * for direct assignment into the ServerSession.personas map.
  */
 export async function loadAllPersonaTokens(): Promise<Record<DemoPersonaKey, PersonaSession>> {
   if (!authConfig.demoMode) {

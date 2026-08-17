@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Idempotency-Key cache.
 
 ADR 0029 locks the policy: 24-hour TTL, body-hash on store, 409 on replay

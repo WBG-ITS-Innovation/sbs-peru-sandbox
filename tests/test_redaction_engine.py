@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Unit tests for the deterministic PII redaction engine (P11A / ADR 0044).
 
 These tests use the canonical "Carlos Rodríguez Mendoza" PII bundle the

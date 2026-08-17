@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Classification panel — BERT label + confidence bar + top-3 + model
 // version. Confidence is rendered as a tabular number to 2 decimals,
 // never as a label bucket (one of the WS4 non-droppables).

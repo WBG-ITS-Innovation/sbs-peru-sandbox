@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1 POST writes `complaints.source = 'api_realtime'`.
 
 The Tier 2 path writes ``source='batch'``; this test confirms the Tier 1

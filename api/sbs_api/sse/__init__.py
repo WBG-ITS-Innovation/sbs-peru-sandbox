@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """In-process Server-Sent Events bus.
 
 ADR 0040 §D5 names the SSE refresh contract; this package implements

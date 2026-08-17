@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "SBS SupTech Prototype"
+abstract: "Reference implementation of a multi-agent supervisory technology platform for consumer complaint ingestion and analytics, built for a sandbox demonstration with SBS Peru. All complaint data is synthetic."
+type: software
+authors:
+  - name: "The World Bank"
+license: MIT
+year: 2026
+repository-code: "https://github.com/worldbank/sbs-suptech-prototype"
+keywords:
+  - suptech
+  - supervisory-technology
+  - financial-consumer-protection
+  - multi-agent
+  - complaint-analytics

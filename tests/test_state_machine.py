@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Resolution-status state machine — unit tests.
 
 No FastAPI, no DB. Exercises the rules ADR 0028 §9 locks. The terminal-state

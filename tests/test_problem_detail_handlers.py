@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Every error path emits RFC 9457 ``application/problem+json``.
 
 Three handlers under test:

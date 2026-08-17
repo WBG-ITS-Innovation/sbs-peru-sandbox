@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """GET /v1/internal/cockpit — supervisor-UI hero data (Prompt 10 / WS3).
 
 Returns the initial-render snapshot the Next.js server component

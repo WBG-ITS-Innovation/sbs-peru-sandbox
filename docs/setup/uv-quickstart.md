@@ -11,7 +11,7 @@ This is the short tour for getting `uv` running on a fresh machine and using it 
 Choose the first path that works on your machine. Document which path you took in the session journal (helps the next contributor).
 
 1. **Homebrew (preferred on macOS, when available).** `brew install uv`. Cleanest path under Zscaler because Homebrew handles its own certificate chain. Requires admin to install Homebrew if it is not already present.
-2. **Astral curl installer.** `curl -LsSf https://astral.sh/uv/install.sh | sh`. Downloads a signed binary. If Zscaler interrupts signature verification, set `CURL_CA_BUNDLE` and `REQUESTS_CA_BUNDLE` to the WBG CA bundle (see [corporate-proxy-and-zscaler.md](corporate-proxy-and-zscaler.md)) and retry.
+2. **Astral curl installer.** `curl -LsSf https://astral.sh/uv/install.sh | sh`. Downloads a signed binary. If Zscaler interrupts signature verification, set `CURL_CA_BUNDLE` and `REQUESTS_CA_BUNDLE` to the WBG CA bundle and retry.
 3. **pipx.** `pipx install uv`. Requires `pipx` itself to be installed first; not faster than the curl installer in practice.
 4. **`pip install uv` against the system Python.** `python3 -m pip install --user uv`. This is the path the maintainer took on the WBG-issued laptop where Prompt 3 was developed: Homebrew required admin access that was not available at the time, and the curl installer was not attempted because `pip install` worked on the first try. The resulting binary lives under `~/.local/bin/`; if that directory is not on your `PATH`, either add it or invoke uv by full path (`~/.local/bin/uv`). `uv` itself does not need to be on `PATH` for `uv run` to work once a project is initialised, but the install step needs `uv` to be invokable.
 
@@ -58,13 +58,13 @@ Each member has its own `pyproject.toml` for package-local dependencies; the roo
 
 ## Working behind Zscaler
 
-If `uv sync` or `uv python install 3.12` fails with a TLS error, the WBG CA bundle is not visible to uv. See [corporate-proxy-and-zscaler.md](corporate-proxy-and-zscaler.md) for the full troubleshooting path; the short version is: set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the WBG bundle, retry. Both `uv` and its child processes (pytest, the harness scripts, the Azure OpenAI client) inherit those variables, so one fix covers the whole tree.
+If `uv sync` or `uv python install 3.12` fails with a TLS error, the WBG CA bundle is not visible to uv. The short version: set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the WBG bundle, retry. Both `uv` and its child processes (pytest included) inherit those variables, so one fix covers the whole tree.
 
-The end-to-end verification for cert inheritance is: `uv run python scripts/cross_review.py --target docs/PLAN.md`. If that succeeds, both `uv` itself and its subprocesses are correctly routed through Zscaler. The maintainer's first run on the WBG laptop completed in 53.8 seconds without any explicit CA-bundle configuration; the bundle was already in the system trust store. Your mileage may vary depending on how your laptop was provisioned.
+The end-to-end verification for cert inheritance is: `uv run python -c 'import urllib.request as u; print(u.urlopen("https://pypi.org").status)'`. If that prints 200, both `uv` itself and its Python subprocesses are correctly routed through Zscaler. The maintainer's first run on the WBG laptop completed in 53.8 seconds without any explicit CA-bundle configuration; the bundle was already in the system trust store. Your mileage may vary depending on how your laptop was provisioned.
 
 ## Common errors
 
 - **`error: No interpreter found for Python 3.12`** — run `uv python install 3.12`.
 - **`error: The lockfile at uv.lock needs to be updated`** — someone changed `pyproject.toml` without running `uv lock`. Run `uv sync` (which re-locks if needed) and commit the diff.
 - **`error: requires-python = '>=3.12,<3.13' is incompatible with X.Y.Z`** — your local interpreter is not 3.12. Either install one with `uv python install 3.12` or let uv pick its managed interpreter automatically.
-- **`error: CERTIFICATE_VERIFY_FAILED` (during `uv sync` against PyPI)** — Zscaler is intercepting and uv cannot see the WBG CA. See [corporate-proxy-and-zscaler.md](corporate-proxy-and-zscaler.md).
+- **`error: CERTIFICATE_VERIFY_FAILED` (during `uv sync` against PyPI)** — Zscaler is intercepting and uv cannot see the WBG CA; set the variables above.

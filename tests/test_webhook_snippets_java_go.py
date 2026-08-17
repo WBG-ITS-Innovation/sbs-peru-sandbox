@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """CI fixture tests for the Java + Go webhook verification snippets.
 
 Each snippet is committed inline in its markdown recipe at

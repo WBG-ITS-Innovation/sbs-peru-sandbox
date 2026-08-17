@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Runtime loop unit tests — no DB.
 
 The loop drives provider.complete() → tool execution → next provider

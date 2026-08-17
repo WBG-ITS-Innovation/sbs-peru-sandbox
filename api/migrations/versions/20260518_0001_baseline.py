@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """baseline — institutions, complaints, batches, idempotency_records
 
 Revision ID: 20260518_0001

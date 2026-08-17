@@ -39,6 +39,11 @@
     "findings": "Findings",
     "approvals": "Approvals",
     "audit": "Audit",
+    "demo_journey": "Complaint journey",
+    "ingestion": "Live ingestion",
+    "processing": "Processing",
+    "rr1": "RR1 · 2025 reports",
+    "docs": "Documentation",
     "analytics": "Reports",
     "assistant": "Assistant",
     "pilot_phase": "Pilot phase",
@@ -65,16 +70,16 @@
     "missing_code_or_state": "Missing information from identity provider.",
     "token_exchange_failed": "Identity provider rejected the code.",
     "demo_section_title": "Demo mode",
-    "demo_section_body": "Loads all three demo roles (Supervisor, Analyst, Unit Head) into one session. Sandbox environment only.",
+    "demo_section_body": "Loads all three identities (Supervisor, Analyst, Head) into one session. Sandbox environment only.",
     "demo_enter": "Enter demo mode",
     "demo_login_failed": "Could not start demo mode. Check that Keycloak is running."
   },
   "personas": {
     "switch_to": "Switch to",
     "active": "Active",
-    "supervisor": "Conduct Supervisor (Demo)",
-    "analyst": "Conduct Analyst (Demo)",
-    "unit-head": "Conduct Unit Head (Demo)"
+    "supervisor": "Supervisor",
+    "analyst": "Analyst",
+    "head": "Head"
   },
   "cockpit": {
     "title": "Cockpit",
@@ -256,7 +261,7 @@
     },
     "access_denied": {
       "title": "Approvals are restricted to analyst and head roles",
-      "body": "The supervisor view does not include the approvals queue. Use the persona switcher in the top bar to continue as the Unit Head or the Analyst. The hand-off after Send to Approvals is by design.",
+      "body": "The supervisor view does not include the approvals queue. Use the persona switcher in the top bar to continue as Head (head) or Analyst (analyst). The hand-off after Send to Approvals is by design.",
       "primary": "Back to findings"
     },
     "kpis": {
@@ -385,9 +390,9 @@
     "subtitle": "Superintendency of Banking, Insurance and Private Pension Funds · Peru",
     "sso_button": "Sign in with SBS institutional SSO",
     "demo_button": "Enter evaluation sandbox",
-    "demo_subline": "Loads the three pilot-phase demo roles (Supervisor, Analyst, Unit Head) into one session. Synthetic sandbox only.",
+    "demo_subline": "Loads the three pilot-phase identities (Supervisor, Analyst, Head) into one session. Synthetic sandbox only.",
     "integrator_link": "Integrator access · developer portal",
-    "footer_version": "Sandbox build · support: sbs-suptech-sandbox@worldbank.org",
+    "footer_version": "Sandbox build · support: gcmif@sandbox.example.com",
     "footer_location": "Lima, Peru",
     "mfa_notice": "Authorized personnel only · session recorded · MFA required when enabled",
     "secure_session": "secure session"
@@ -488,7 +493,7 @@
     "preview_only": "Preview · synthetic data · not wired into the operational flow yet",
     "matrix": {
       "title": "Matrix · reasons × channels",
-      "subtitle": "values: complaints · % resolved on time · illustrative",
+      "subtitle": "values: complaints · % resolved on time · pilot phase",
       "motivo_col": "Reason · Annex 1-A",
       "total_row": "TOTAL",
       "motivo_304": "Unrecognised charges on account",
@@ -500,7 +505,7 @@
     },
     "motivos": {
       "title": "Top reasons reported",
-      "subtitle": "May 2026 · illustrative",
+      "subtitle": "May 2026 · pilot phase",
       "rank_col": "#",
       "code_col": "Code",
       "label_col": "Reason",
@@ -509,7 +514,7 @@
     },
     "products": {
       "title": "Top products reported",
-      "subtitle": "May 2026 · illustrative"
+      "subtitle": "May 2026 · pilot phase"
     }
   },
   "assistant": {
@@ -526,9 +531,9 @@
       "explain_anomaly": "Why did the open anomaly fire today?",
       "free_text": "What reasons fell into free text (999)?"
     },
-    "preview_only": "Preview · illustrative responses · not wired to an LLM provider",
+    "preview_only": "Preview · pilot phase responses · not wired to an LLM provider",
     "exchanges": {
-      "user_label": "Conduct Supervisor (Demo)",
+      "user_label": "Supervisor Velásquez",
       "bot_label": "assistant",
       "anomaly_q": "How many active anomalies are there today on BANCO_DEMO_001?",
       "anomaly_a": "There is 1 active anomaly on BANCO_DEMO_001 with composite 0.74 (threshold 0.70), detected today at 09:14 PET. Pattern: recurring complaints across 3 channels (API NRT, INDECOPI, Internal), reason 304 on the savings product.",

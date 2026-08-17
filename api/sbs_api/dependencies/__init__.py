@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """FastAPI dependencies.
 
 ``auth`` is the tenancy-binding stub (Prompt 7 replaces it with real mTLS +

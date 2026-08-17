@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // TierPanel — one of the two panels in the Tier 1 / Tier 2 hero view.
 // Both panels render the same component identically; the difference is
 // the source label, the institution name, and the velocity descriptor.

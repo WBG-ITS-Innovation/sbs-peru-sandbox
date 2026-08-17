@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """HMAC SHA-256 request-signing primitives per ADR 0027 amendment.
 
 Six lines of canonical request:

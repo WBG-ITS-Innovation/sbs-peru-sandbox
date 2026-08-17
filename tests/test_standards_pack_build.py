@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for the standards pack v0.1 build pipeline (ADR 0039).
 
 Exercises ``scripts/build-standards-pack.sh`` against the working

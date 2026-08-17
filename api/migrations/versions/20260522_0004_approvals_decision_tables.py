@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """supervisory_observations + agent_feedback — WS5 substrate
 
 Revision ID: 20260522_0004

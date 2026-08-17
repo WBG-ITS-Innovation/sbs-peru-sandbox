@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Agent reasoning panel — vertical timeline. Reads agent_runs for the
 // complaint and renders each tool_call as a step. Status icons + colors
 // distinguish success / failed / timeout per WS4 non-droppable. The

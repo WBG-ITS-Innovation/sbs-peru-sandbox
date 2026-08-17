@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Architectural invariant test: raw PII lives only in raw_complaints.
 
 The P11A demo path is the **only** code surface that accepts raw PII.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Structured logging and OpenTelemetry wiring.
 
 Imported by :mod:`sbs_api.app` at create-app time so logging and tracing are

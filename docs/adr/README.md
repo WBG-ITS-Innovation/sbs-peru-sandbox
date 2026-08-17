@@ -10,7 +10,7 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 
 | #    | Slug                                  | Status   | Target prompt / Part | One-line description |
 | ---- | ------------------------------------- | -------- | -------------------- | -------------------- |
-| 0001 | three-layer-mcp-a2a-langgraph         | Accepted | Part 12 (Agent Layer) | Three-layer agent architecture (agents / tools / supervisors); the original MCP + A2A + LangGraph stack is rejected in favour of an in-house tool-calling loop. Slug kept verbatim to preserve the anchor; see the file for the supersede note. |
+| 0001 | three-layer-mcp-a2a-langgraph         | Accepted | Part 12 (Agent Layer) | Three-layer agent architecture (agents / tools / supervisors); the original MCP + A2A + LangGraph stack is rejected in favour of an in-house tool-calling loop. Slug kept verbatim to preserve the anchor; see the file for the supersede note. **Amended 2026-08-13:** the `cloud` provider is implemented behind the legal opt-in (superseding "permanently-gated scaffold"), `on_prem` raises instead of falling back to mock, and `mock` is test-only. |
 | 0002 | taxonomy-as-configuration             | Proposed | Part 2               | Anexo 1-A taxonomy as YAML, loaded into Pydantic models, single source of truth |
 | 0003 | api-authentication                    | Superseded | Part 3             | Superseded 2026-05-19 by ADRs 0031 (mTLS), 0032 (OAuth scopes), 0033 (rate limiting), and the ADR 0027 HMAC amendment — the three concerns split into separate ADRs in Prompt 7. |
 | 0004 | error-model-rfc-9457                  | Proposed | Part 3               | RFC 9457 problem+json with stable error codes and type URIs |
@@ -23,8 +23,8 @@ Every Accepted ADR must contain a `## Precedent` section citing a specific secti
 | 0011 | tenancy-and-credential-model          | Proposed | Part 8               | Per-institution tenancy, credential rotation, scope and rate-limit policy |
 | 0012 | ai-ml-evaluation-framework            | Proposed | Part 10              | Per-model eval datasets, metrics, regression gates, drift dashboards |
 | 0013 | standards-pack-distribution           | Proposed | Part 11              | Standards Pack versioning, OCI artifact + GitHub release distribution |
-| 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with the WBG technical lead |
-| 0015 | cross-review-llm-backend-azure        | Proposed | Prompt 1.5 / Part 2  | Cross-review LLM backend: Azure OpenAI via WBG tenancy (no personal openai.com keys); aligns with likely SBS Azure-tenancy production posture |
+| 0014 | dev-llm-stack                         | Proposed | Prompt 6             | Dev-time LLM stack and tooling — flagged for cross-model review with a second reviewer |
+| 0015 | cross-review-llm-backend-azure        | Accepted | Prompt 1.5 / Part 2 (extended Part 12) | Azure OpenAI via WBG tenancy for every non-on-prem model call (no personal openai.com keys); the four bare `AZURE_OPENAI_*` variables; the agent runtime's `cloud` provider reads the same four behind the `SBS_API_CLOUD_LEGAL_APPROVED` opt-in. Written 2026-08-13 to close the reference from ADR 0020 §3. |
 | 0016 | secret-scanner-stack                  | Accepted | Prompt 2 / Part 1    | gitleaks + detect-secrets locally; gitleaks only in CI; committed baseline is a developer aid, not a CI gate |
 | 0017 | dependency-update-tooling-dependabot  | Accepted | Prompt 2 / Part 1    | Dependabot (not Renovate) for Part 1, weekly schedule, grouped minor+patch for pip and npm; docker ecosystem deferred to Part 9 |
 | 0018 | sbom-format-cyclonedx-via-syft        | Accepted | Prompt 2 / Part 1    | SBOM format is CycloneDX JSON produced by syft; implementation workflow deferred to Part 9 |

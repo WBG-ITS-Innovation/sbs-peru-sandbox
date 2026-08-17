@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """CrossSourceCorrelatorAgent — correlate across stubbed channels (scaffolded).
 
 Scaffolded: replays a pre-recorded correlation card so the demo
@@ -102,6 +103,7 @@ async def run_cross_source_correlator(
         status="success",
         tool_call_records=result.tool_call_records,
         final_output=final_output,
+        model_provider=result.served_by,
         error=None,
     )
     return final_output

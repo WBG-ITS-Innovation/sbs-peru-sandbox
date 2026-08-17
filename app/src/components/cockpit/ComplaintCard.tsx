@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // ComplaintCard — used identically on both the Tier 1 and Tier 2
 // panels. The visual sameness is the proportionality argument made
 // visible (per the WS3 directive): both tiers produce the same

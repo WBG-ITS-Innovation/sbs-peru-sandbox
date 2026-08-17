@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """agent_runs — durable execution trace for the supervisor UI
 
 Revision ID: 20260522_0001

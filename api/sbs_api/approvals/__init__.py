@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Approvals queue + detail + decision endpoints (Prompt 10 / WS5)."""
 
 from sbs_api.approvals.builder import (

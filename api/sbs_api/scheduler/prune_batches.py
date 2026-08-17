@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Batch storage prune job — Workstream F.2 (ADR 0034 §sandbox-storage).
 
 Deletes CSV files in ``settings.batch_storage_path`` whose mtime is

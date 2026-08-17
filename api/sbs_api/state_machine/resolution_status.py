@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Resolution-status state machine.
 
 ADR 0028 §9 locks the permitted transitions. Decoupled from the route handler

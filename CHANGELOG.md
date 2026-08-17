@@ -129,8 +129,10 @@ Carried forward deliberately; each is detailed in `docs/HANDOVER-NOTES.md`.
   and an ADR 0026 decision on amount/currency.
 - The cross-source correlator returns an empty result for every complaint
   except the golden one.
-- `agent_runs` rows predating migration `20260810_0001` have
-  `model_provider = NULL`, left un-backfilled rather than guessed.
+- `agent_runs.model_provider` is NULL for two reasons: rows predating migration
+  `20260810_0001` (left un-backfilled rather than guessed), and runs on the
+  journey / demo-ingestion path, which record NULL today. A
+  `model_provider IS NOT NULL` filter drops both.
 - `rank_features` returns a constant list; `reclamito`, `lupaman`, and
   `insight-chatbot` are registry entries with no runtime.
 

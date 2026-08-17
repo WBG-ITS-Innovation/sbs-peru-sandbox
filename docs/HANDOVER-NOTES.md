@@ -35,12 +35,31 @@ and from the correlator; with `cloud` configured, the loop-driven agents record
 `cloud`. Rows written before this branch may record `mock` from the old
 fallback.
 
-**`agent_runs` rows predating migration `20260810_0001` have
-`model_provider = NULL`.** That column was added nullable with no backfill,
-deliberately: inventing a provider for historical rows would put a guess into an
-audit table. Filter on `model_provider IS NOT NULL` when you need rows whose
-provenance is known. Around 197 of the rows in a long-lived dev database are in
-this state.
+**`model_provider` is NULL for two different reasons, and only one of them is
+history.** Filter on `model_provider IS NOT NULL` when you need rows whose
+provenance is known — but know what that filter drops.
+
+1. **Rows predating migration `20260810_0001`.** The column was added nullable
+   with no backfill, deliberately: inventing a provider for historical rows
+   would put a guess into an audit table. Around 200 rows in a long-lived dev
+   database are in this state, and the number cannot grow.
+
+2. **Runs on the journey / demo-ingestion path, written today.** The
+   `/v1/sandbox/complaints/granular` surface — what the cockpit's
+   `/app/ingestion` loop and `scripts/sandbox_send.py` drive — records
+   `agent_runs` rows with a NULL provider, including `status=success` rows for
+   `triage`, `investigation` and `synthesis` and the
+   `live-ingestion-orchestrator` row itself. `finish_agent_run` applies the
+   column only `if model_provider is not None`, and that path passes None.
+
+The consequence is the part worth knowing: on a database that has seen
+`/app/ingestion` traffic, `model_provider IS NOT NULL` silently excludes current
+successful analysis, not merely pre-migration history. The canonical Tier-1 and
+Tier-2 paths are unaffected — they record `replay` / `cloud` / `on_prem`
+correctly, which is what `stage-h-full` asserts.
+
+Found by the independent check in
+[docs/audit/2026-08-17-v02-check.md](audit/2026-08-17-v02-check.md) (F3).
 
 **The cross-source-correlator returns a degenerate result on any complaint that
 is not the golden one.** It is replay-driven, and `ReplayProvider` falls back to

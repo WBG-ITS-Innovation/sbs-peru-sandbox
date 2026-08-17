@@ -171,11 +171,19 @@ authority substitutes its own equivalents — the shape of each decision holds.
       email, account/card numbers, and an allowlist of known names. Confirm that
       set matches what your jurisdiction treats as personal data, and that the
       residual risk of a miss is accepted by the accountable owner.
-- [ ] **Historical `agent_runs` provenance gap understood.** Rows predating
-      migration `20260810_0001` have `model_provider = NULL`, deliberately left
-      un-backfilled rather than guessing into an audit table. Anyone reporting
-      over that table filters on `model_provider IS NOT NULL` when provenance
-      matters.
+- [ ] **`agent_runs` provenance gaps understood — both of them.**
+      `model_provider = NULL` has two causes, and a reporting filter of
+      `model_provider IS NOT NULL` drops both. (a) Rows predating migration
+      `20260810_0001`, deliberately left un-backfilled rather than guessing into
+      an audit table; that set cannot grow. (b) Runs on the journey /
+      demo-ingestion path (`/v1/sandbox/complaints/granular`, which the
+      cockpit's `/app/ingestion` loop drives), which record NULL **today**,
+      including successful `triage` / `investigation` / `synthesis` rows. So on
+      a database that has seen `/app/ingestion` traffic that filter excludes
+      current analysis, not just history. The canonical Tier-1 and Tier-2 paths
+      record provenance correctly and `stage-h-full` asserts it. Confirm which
+      surfaces your deployment actually uses, and whether your reporting
+      tolerates (b).
 
 ---
 

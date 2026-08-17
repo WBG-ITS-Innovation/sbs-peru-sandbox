@@ -54,6 +54,10 @@ The developer portal renders the spec via locally vendored Stoplight Elements ([
 - Never commit secrets. Pre-commit runs gitleaks and detect-secrets against the committed `.secrets.baseline`; if a legitimate high-entropy string trips it, refresh the baseline (`uv run detect-secrets scan > .secrets.baseline`) and include it in the PR.
 - Design decisions are recorded as ADRs under [docs/adr/](docs/adr/) — open an issue with the "ADR request" template to propose one.
 
+## Versioning
+
+Versioning is semver-shaped rather than strictly semver, and **`main` is the release line** — the latest commit on `main` is the supported version, and there are no maintenance branches or backports. Releases are marked by an entry in [CHANGELOG.md](CHANGELOG.md), which is the authoritative record of what moved and when; a git tag may or may not accompany one. The MAJOR.MINOR.PATCH intent is the usual one: a breaking change to a published interface bumps MAJOR, new capability bumps MINOR, fixes bump PATCH. The published interfaces we hold ourselves to are the OpenAPI contract at [api/openapi/sbs-api-v1.yaml](api/openapi/sbs-api-v1.yaml), the `SBS_API_*` configuration surface, and the database schema as reached through migrations. Internal Python and TypeScript module layout is not a published interface and can change in any release. Anything breaking is called out under a `### Breaking` heading in the changelog, with the migration path — read that heading before upgrading a fork.
+
 ## Security
 
-Never open a public issue for a vulnerability — see [SECURITY.md](SECURITY.md).
+Never open a public issue for a vulnerability — see [SECURITY.md](SECURITY.md), which sets out the supported versions and the coordinated-disclosure window.

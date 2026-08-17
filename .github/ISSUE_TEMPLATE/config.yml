@@ -1,0 +1,12 @@
+# Issue-template chooser. `blank_issues_enabled: false` forces contributors
+# through a template, which keeps reports actionable — and, more importantly,
+# keeps vulnerability reports out of public issues by giving them a visible
+# route to private disclosure instead.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/security/advisories/new
+    about: Never open a public issue for a vulnerability. Use private reporting — see SECURITY.md for the disclosure window.
+  - name: Deploying this beyond a sandbox
+    url: https://github.com/WBG-ITS-Innovation/sbs-peru-sandbox/blob/main/docs/OPERATOR-CHECKLIST.md
+    about: This is a reference implementation; production deployment requires completing the operator checklist.

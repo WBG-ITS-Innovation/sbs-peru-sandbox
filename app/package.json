@@ -37,7 +37,7 @@
     "eslint-plugin-i18next": "^6.1.1",
     "postcss": "^8.4.49",
     "server-only": "^0.0.1",
-    "tailwindcss": "^3.4.15",
+    "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.6.3"
   },

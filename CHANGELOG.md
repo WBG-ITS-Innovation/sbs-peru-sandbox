@@ -41,6 +41,18 @@ and versioning is described in [CONTRIBUTING.md](CONTRIBUTING.md#versioning).
   egress and not its success. **It stores no text — neither raw nor redacted**;
   a column holding the redacted prompt would be a second copy of the complaint
   in an audit table. A test pins the column set so it cannot acquire one.
+- **`stage-h-full` gains a cloud leg**, opt-in and skipped with a specific
+  reason otherwise (a skip is labelled as not being evidence). With real Azure
+  credentials it submits one signed Tier-1 complaint whose narrative carries
+  planted synthetic PII, then asserts `model_provider='cloud'` on every
+  model-served run, one `cloud_inference_audit` row per outbound call with
+  `redaction_applied=true`, and that none of the planted values appear in the
+  payload handed to the transport. Verified live against Azure OpenAI
+  (`gpt-5.4-2026-03-05`) on synthetic data.
+- `SBS_API_CLOUD_EGRESS_CAPTURE_PATH` — off by default, refused when
+  `SBS_API_ENVIRONMENT` is `staging` or `prod`. Writes the redacted outbound
+  payload so the gate can assert against the exact bytes that leave the
+  process. There is no code path that can capture the pre-redaction payload.
 
 ### Changed
 

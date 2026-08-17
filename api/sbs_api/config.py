@@ -381,6 +381,20 @@ class Settings(BaseSettings):
             "(ADR 0001 §Divergence). It is not a legal sign-off itself."
         ),
     )
+    cloud_egress_capture_path: str = Field(
+        default="",
+        description=(
+            "Verification hook, off by default. When set to a writable path, "
+            "CloudProvider appends one JSON line per outbound call containing "
+            "the REDACTED payload it is about to send, so a test can assert "
+            "against the exact bytes that leave the process — which is what "
+            "stage-h-full's cloud leg does to prove planted PII never "
+            "egresses. Refused when SBS_API_ENVIRONMENT is staging or prod: "
+            "the file is a copy of prompt content, and although it is "
+            "post-redaction by construction, a deployment has no reason to "
+            "write one. Never enable it in production."
+        ),
+    )
     azure_openai_api_key: str = Field(
         default="",
         validation_alias=AliasChoices("AZURE_OPENAI_API_KEY"),

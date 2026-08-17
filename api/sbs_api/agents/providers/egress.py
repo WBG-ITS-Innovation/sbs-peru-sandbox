@@ -29,6 +29,20 @@ back with a ``<RUC_1>`` token in place of the digits, so the payload is no
 longer strictly parseable JSON — the model reads it as text and we never
 re-parse it, but it is worth knowing before debugging a prompt.
 
+**Observed false positives, and why they are tolerated.** Tool results here are
+full of UUIDs, and ``\\b(\\d{8})\\b`` matches an eight-digit run inside one:
+the first live cloud run through ``stage-h-full`` rewrote an ``agent_run_id`` of
+``12345678-af01-…`` to ``<DNI_1>-af01-…`` and reported ``pii_id: 2``. Those
+counts in ``cloud_inference_audit`` are therefore an upper bound on PII, not a
+measurement of it — read a non-zero count as "the sweep replaced something",
+not as "PII was about to leak". The consequence for analysis is that a model
+cannot reliably quote an internal id back, which no agent depends on. Masking
+UUID-shaped tokens before the sweep and restoring them after would fix it
+locally, without touching the shared engine's semantics; that is a deliberate
+follow-up rather than a change made in the same train that introduced the
+sweep, because the current behaviour errs toward redacting and the alternative
+errs toward not.
+
 The audit trail for what this produced is ``cloud_inference_audit``, one row per
 outbound call, carrying counts by entity kind and **never** the text — neither
 the raw text nor the redacted text. A table that stored the redacted narrative

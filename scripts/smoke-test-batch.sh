@@ -258,6 +258,14 @@ case "$STAGE" in
     note "  5. Both tiers, every complaint: validation_audit row ahead of the"
     note "     first agent_run, triage run with a non-null model_provider,"
     note "     NON-EMPTY tool_calls, and the routed downstream chain present"
+    note "  6. Cloud leg (opt-in): one signed Tier-1 POST with planted"
+    note "     synthetic PII through provider=cloud -> model_provider='cloud',"
+    note "     a cloud_inference_audit row per call with redaction_applied,"
+    note "     and NO planted value in the captured outbound payload."
+    note "     Runs only with real Azure creds plus:"
+    note "       SBS_API_CLOUD_LEGAL_APPROVED=true"
+    note "       SBS_API_CLOUD_EGRESS_CAPTURE_PATH=<writable path>"
+    note "     Otherwise SKIPPED with a reason. A skip is not evidence."
     echo
 
     contract_rc=0

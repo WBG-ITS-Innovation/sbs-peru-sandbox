@@ -79,6 +79,7 @@ from sbs_api.agents.providers.egress_audit import (
     record_cloud_egress,
     summarise_for_log,
 )
+from sbs_api.agents.providers.egress_capture import capture_redacted_payload
 
 log = logging.getLogger(__name__)
 
@@ -247,6 +248,17 @@ class CloudProvider:
                 "message_count": len(redacted_messages),
                 **summarise_for_log(entity_counts),
             },
+        )
+        # Verification hook, off unless SBS_API_CLOUD_EGRESS_CAPTURE_PATH is
+        # set and refused outside dev/test. Takes the redacted payload only —
+        # there is no path here that can see the raw messages. stage-h-full's
+        # cloud leg reads it to prove planted PII never egressed.
+        capture_redacted_payload(
+            redacted_messages=redacted_messages,
+            entity_counts=entity_counts,
+            complaint_id=complaint_id,
+            agent_name=agent_name,
+            model_id=self._deployment,
         )
         # ---------------------------------------------------------------------
 

@@ -174,6 +174,27 @@ exactly. They are the same secret named twice — one for each side of the hop.
 | `SBS_API_CORS_ALLOW_ORIGINS` | permissive for dev | your cockpit origin only |
 | `SBS_DEMO_MODE` (cockpit) | `true` in the sandbox | `false` — see §3 |
 
+### One limit you should not raise casually
+
+Free-text narrative fields are capped at **8000 characters**
+(`anexo_1a.Complaint.description_text`,
+`demo_ingestion.DemoSubmissionRequest.narrative`). That cap is not only a
+schema nicety — it bounds a quadratic in the redaction engine.
+
+`redaction/engine.py::_resolve_overlaps` compares each detected entity against
+every already-kept entity, so its cost grows with the *square* of the entity
+count, and a long run of digits manufactures roughly one account-number
+candidate per 19 characters. At the 8000-character cap the worst input we could
+construct costs about 7 ms. Well past it, the curve bites: ~20 ms at 16k, ~275
+ms at 64k, ~1.1 s at 128k, and tens of seconds in the hundreds of thousands.
+
+Redaction runs on attacker-influenced complaint narratives, so treat the cap as
+an availability control. If you raise it, or add a code path that redacts text
+from a source with no length bound of its own, re-measure first —
+`tests/test_redaction_engine.py` pins both the cap and a 100 ms budget at it, so
+the test suite will tell you. The distinct regex-backtracking issue in the
+DNI/RUC patterns (CodeQL `py/polynomial-redos`) is separately fixed and bounded.
+
 ---
 
 ## 3. Keycloak

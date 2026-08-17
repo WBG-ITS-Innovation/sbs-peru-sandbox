@@ -320,3 +320,103 @@ def test_pathological_input_completes_within_budget(attack):
     # No digits in the attack strings, so nothing is detected — the point
     # is that reaching that conclusion is cheap.
     assert result.entities == ()
+
+
+# ---------------------------------------------------------------------------
+# v0.2.0 hardening — the 8000-character input cap is a security boundary
+#
+# The four cases above are all "keyword, then whitespace, never any digits".
+# They pin the two patterns CodeQL flagged, and they cannot pin anything
+# else: with no digits in the input the engine detects **zero** entities, so
+# they never reach the entity post-processing at all.
+#
+# ``_resolve_overlaps`` is O(n^2) in entity count — it compares each
+# candidate against every already-kept entity. A long digit run is a cheap
+# way to manufacture tens of thousands of non-overlapping ``pii_account``
+# candidates, and the cost is real: measured 2.9 s at 216k chars, 11.7 s at
+# 432k, 47.7 s at 864k, growing 4x per doubling (see
+# docs/audit/2026-08-17-v02-check.md F2).
+#
+# What contains it is the input cap. Both narrative surfaces bound free text
+# at 8000 characters — ``anexo_1a.description_text`` on the canonical path and
+# ``demo_ingestion.narrative`` on the sandbox one — so nothing an institution
+# can post reaches the expensive region. That cap is therefore load-bearing
+# for availability, not merely a schema nicety, and these tests pin it as
+# such: if someone raises it, or adds a caller that redacts unbounded text,
+# one of these fails.
+# ---------------------------------------------------------------------------
+
+
+# Mirrors anexo_1a.description_text / demo_ingestion.narrative max_length.
+NARRATIVE_MAX_CHARS = 8_000
+
+
+def test_narrative_cap_matches_the_models_that_enforce_it():
+    """The constant above must track the Pydantic models, or the rest lies."""
+
+    from sbs_api.models.anexo_1a import Complaint
+    from sbs_api.models.demo_ingestion import DemoSubmissionRequest
+
+    for model, field in (
+        (Complaint, "description_text"),
+        (DemoSubmissionRequest, "narrative"),
+    ):
+        constraint = model.model_fields[field].metadata
+        limits = [getattr(m, "max_length", None) for m in constraint]
+        assert NARRATIVE_MAX_CHARS in limits, (
+            f"{model.__name__}.{field} no longer caps at {NARRATIVE_MAX_CHARS}; "
+            f"found {limits}. The redaction engine's O(n^2) overlap resolution "
+            f"is bounded by this cap — re-measure before changing it."
+        )
+
+
+@pytest.mark.parametrize(
+    "attack",
+    [
+        # Maximises pii_account entities: one candidate per ~19 digits.
+        pytest.param("9" * NARRATIVE_MAX_CHARS, id="all-digits"),
+        # Soles markers and account candidates interleaved, so the
+        # exclude-range check runs against a long range list too.
+        pytest.param(
+            ("S/ 700 cuenta 0011223344556677 " * 260)[:NARRATIVE_MAX_CHARS],
+            id="soles-and-accounts",
+        ),
+        # Spaced digit groups: the account pattern's [\s\-]? branch.
+        pytest.param(
+            ("1234 5678 9012 34 " * 450)[:NARRATIVE_MAX_CHARS],
+            id="spaced-digit-groups",
+        ),
+        # Every entity kind at once, repeated to the cap.
+        pytest.param(
+            (
+                "Carlos Rodríguez Mendoza, DNI 12345678, RUC 20512345678, "
+                "tel +51 987 654 321, correo x@sandbox.example.com, "
+                "cuenta 0011-2233-4455-6677, cargo de S/ 245.00. "
+            )
+            * 40,
+            id="all-kinds-mixed",
+        ),
+    ],
+)
+def test_entity_dense_input_at_the_cap_completes_within_budget(attack):
+    """A narrative-sized input, however entity-dense, must stay cheap.
+
+    Unlike the digit-free cases above these produce hundreds of entities, so
+    they exercise ``_resolve_overlaps`` and the Soles exclude-range check —
+    the paths the whitespace attacks cannot reach.
+    """
+
+    text = attack[:NARRATIVE_MAX_CHARS]
+    start = time.perf_counter()
+    result = redact(text)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+
+    assert elapsed_ms < PATHOLOGICAL_BUDGET_MS, (
+        f"redact() took {elapsed_ms:.1f}ms on {len(text)} chars producing "
+        f"{len(result.entities)} entities, budget is {PATHOLOGICAL_BUDGET_MS}ms. "
+        f"Entity-count-quadratic behaviour in _resolve_overlaps may have "
+        f"regressed, or the input cap may have been raised."
+    )
+    # These inputs are entity-dense by construction; a zero here would mean
+    # the test had stopped testing what it claims to.
+    assert len(result.entities) > 0

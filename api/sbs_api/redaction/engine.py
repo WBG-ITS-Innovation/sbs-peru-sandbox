@@ -287,6 +287,29 @@ def _resolve_overlaps(entities: list[RedactionEntity]) -> list[RedactionEntity]:
 
     With ties, the longer span wins so ``Carlos Rodríguez Mendoza`` is
     preferred over a partial inside it.
+
+    **This is O(n^2) in entity count, and the input cap is what makes that
+    safe.** Every candidate is compared against every already-kept entity,
+    so cost grows 4x per doubling of the entity count — measured at 2.9 s
+    for 11,368 entities, 11.7 s for 22,737, and 47.7 s for 45,474 (64.6
+    million ``_ranges_overlap`` calls at the middle figure). A long run of
+    digits is an efficient way to manufacture entities, because each ~19
+    digits yields one non-overlapping ``pii_account`` candidate.
+
+    Callers must therefore bound their input. Both narrative surfaces cap
+    free text at 8000 characters (``anexo_1a.Complaint.description_text``
+    and ``demo_ingestion.DemoSubmissionRequest.narrative``), which holds the
+    worst construable input to ~7 ms. ``tests/test_redaction_engine.py``
+    pins both the cap and the runtime budget, so raising the cap or adding
+    a caller that redacts unbounded text fails a test rather than becoming
+    a quiet denial-of-service surface. If unbounded input ever becomes a
+    requirement, replace this loop with a sweep over spans sorted by start
+    offset — O(n log n) — rather than raising the budget.
+
+    Background: docs/audit/2026-08-17-v02-check.md F2. This is distinct from
+    the bounded-separator fix above, which closed a regex-backtracking
+    (CodeQL py/polynomial-redos) issue in the DNI/RUC patterns; nothing here
+    involves the regex engine.
     """
 
     sorted_ents = sorted(

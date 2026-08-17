@@ -333,7 +333,7 @@ The worker consumes the arq queue on Redis and runs the Tier-2 batch pipeline.
 It is stateless with respect to any single batch and scales horizontally by
 running more replicas against the same Redis.
 
-Two operational rules, both of which have cost time before:
+Three operational rules, all of which have cost time before:
 
 1. **The agent pipeline is off by default.** `SBS_API_AGENTS_PIPELINE_ENABLED`
    defaults to `false`, so a worker started without it ingests batches normally
@@ -345,18 +345,46 @@ Two operational rules, both of which have cost time before:
    recreated — restarting it is not enough:
 
    ```bash
-   SBS_API_AGENTS_PIPELINE_ENABLED=true docker compose up -d --force-recreate worker
+   SBS_API_AGENTS_PIPELINE_ENABLED=true SBS_API_MODEL_PROVIDER=replay \
+     docker compose up -d --force-recreate worker
    ```
+
+   Both variables are required — see rule 3 for why the provider cannot be
+   left to its default here.
 
    In a production deployment built from an image this does not arise, because
    a new image means a new container. It matters when you run the compose stack
    as a staging environment, and it is a standing trap there. See
    [HANDOVER-NOTES.md](HANDOVER-NOTES.md#operating-the-stack).
 
-Model provider: `SBS_API_MODEL_PROVIDER` defaults to `on_prem`, which expects a
-vLLM endpoint and refuses to boot without one when the pipeline is enabled
-(`provider.healthcheck.failed`). **The `on_prem` path has never been observed
-against a real vLLM** — that is a checklist item, not a footnote. `replay` is
+3. **The worker does not fail fast on an unreachable model provider.** This is
+   the asymmetry that costs the most time. `SBS_API_MODEL_PROVIDER` defaults to
+   `on_prem`, and `docker-compose.yaml` passes it through from the invoking
+   shell with that same default — so a worker recreated with only the pipeline
+   flag runs on `on_prem` with no vLLM behind it.
+
+   On the **API** process that combination is caught at startup: enabling the
+   pipeline arms a boot healthcheck that refuses to listen unless the provider
+   serves a canary tool-call, and the process exits with
+   `provider.healthcheck.failed`. **The worker has no such healthcheck.** It
+   boots cleanly, logs `Starting worker for 2 functions`, ingests batches
+   normally, and fails each dispatch after the fact:
+
+   ```json
+   {"event": "agents.dispatch.failed", "tier": "tier2",
+    "error_type": "ProviderUnavailableError",
+    "error": "provider 'on_prem' unavailable: vLLM unreachable at ..."}
+   ```
+
+   The symptom is the same as rule 1 — batches ingest, `agent_runs` stays
+   empty, nothing looks broken. Set the provider explicitly, and run
+   `stage-h-full` after any change to the worker: its Tier-2 half asserts a
+   `triage` row per row and is what turns this into a red gate rather than a
+   quiet absence of analysis.
+
+Model provider, in summary: `on_prem` is the default and expects a vLLM
+endpoint. **The `on_prem` path has never been observed against a real vLLM** —
+that is a checklist item, not a footnote. `replay` is
 fixture-backed and logs a warning on every request. `cloud` (Azure OpenAI) has
 run live against synthetic data only, behind
 `SBS_API_CLOUD_LEGAL_APPROVED=true`. The provider semantics are in

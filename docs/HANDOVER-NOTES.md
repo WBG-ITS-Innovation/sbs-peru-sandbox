@@ -71,8 +71,19 @@ up code changes.** After editing anything under `api/`, recreate it or the
 container keeps running the old code:
 
 ```bash
-SBS_API_AGENTS_PIPELINE_ENABLED=true docker compose up -d --force-recreate worker
+SBS_API_AGENTS_PIPELINE_ENABLED=true SBS_API_MODEL_PROVIDER=replay \
+  docker compose up -d --force-recreate worker
 ```
+
+**Both variables are required.** `docker-compose.yaml` reads
+`SBS_API_MODEL_PROVIDER` from the invoking shell and defaults it to `on_prem`,
+so recreating the worker with only the pipeline flag gives you a worker that
+boots cleanly, accepts batches, and then fails **every** agent dispatch with
+`ProviderUnavailableError` because no vLLM answers. Unlike the API, the worker
+has no boot healthcheck to catch this: the failure appears once per complaint
+in the worker log as `agents.dispatch.failed`, and `agent_runs` stays empty.
+`stage-h-full`'s Tier-2 half is what catches it — `no triage agent_run for
+<id> within 60s`.
 
 `stage-h-full` has caught this staleness more than once, which is the argument
 for running that gate after agent-layer changes rather than trusting the

@@ -26,6 +26,12 @@
 #     docker compose up -d worker webhook-listener
 #     The host API does NOT need to be running for stage-g-full; the
 #     live path enqueues directly via arq, not via HTTP.
+#   stage-h-full additionally requires a worker with BOTH the pipeline flag
+#   and an explicit, reachable model provider — compose defaults the provider
+#   to on_prem and the worker has no boot healthcheck, so the pipeline flag
+#   alone yields a worker that fails every dispatch silently:
+#     SBS_API_AGENTS_PIPELINE_ENABLED=true SBS_API_MODEL_PROVIDER=replay \
+#       docker compose up -d --force-recreate worker
 #
 # Exit codes:
 #   0 — stage passed
@@ -231,10 +237,15 @@ case "$STAGE" in
   stage-h-full)
     step "Stage H (full) — live agent gate across the docker network"
     note "Requires: docker compose postgres + redis + worker up with"
-    note "SBS_API_AGENTS_PIPELINE_ENABLED=true, and the API running with"
-    note "mTLS direct on :8443 with the pipeline enabled and the reloader"
-    note "off:"
-    note "  SBS_API_AGENTS_PIPELINE_ENABLED=true docker compose up -d worker"
+    note "SBS_API_AGENTS_PIPELINE_ENABLED=true *and* a reachable model"
+    note "provider, and the API running with mTLS direct on :8443 with the"
+    note "pipeline enabled and the reloader off:"
+    note "  SBS_API_AGENTS_PIPELINE_ENABLED=true SBS_API_MODEL_PROVIDER=replay \\"
+    note "    docker compose up -d --force-recreate worker"
+    note "  (the provider is NOT optional: compose defaults it to on_prem,"
+    note "   the worker has no boot healthcheck, and every Tier-2 dispatch"
+    note "   then fails with ProviderUnavailableError — which shows up in"
+    note "   step 4 below as 'no triage agent_run ... within 60s')"
     note "  SBS_API_MTLS_MODE=direct SBS_API_AUTH_STUB_ENABLED=false \\"
     note "    SBS_API_PORT=8443 SBS_API_AGENTS_PIPELINE_ENABLED=true \\"
     note "    SBS_API_RELOAD=false bash scripts/run-api.sh"

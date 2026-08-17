@@ -10,6 +10,7 @@ from sbs_api.db.models.agent_run import AgentRun
 from sbs_api.db.models.audit_event import AuditEvent
 from sbs_api.db.models.batch import BatchRecord
 from sbs_api.db.models.batch_row_rejection import BatchRowRejection
+from sbs_api.db.models.cloud_inference_audit import CloudInferenceAudit
 from sbs_api.db.models.complaint import ComplaintRecord
 from sbs_api.db.models.complaint_narrative_draft import ComplaintNarrativeDraft
 from sbs_api.db.models.digest_audit import DigestAudit
@@ -51,6 +52,7 @@ __all__ = [
     "AuditEvent",
     "BatchRecord",
     "BatchRowRejection",
+    "CloudInferenceAudit",
     "ComplaintRecord",
     "ComplaintNarrativeDraft",
     "DigestAudit",

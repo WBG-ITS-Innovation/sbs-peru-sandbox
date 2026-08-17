@@ -22,6 +22,15 @@ constructor raises. Setting it asserts development use against synthetic
 data only, pending legal sign-off on PII isolation and data residency
 (ADR 0001 §Divergence, amended). It is an opt-in, not a sign-off.
 
+**Redaction before egress.** This is the only provider that puts complaint
+content on infrastructure the authority does not run, so ``complete()`` passes
+every string in the payload through the redaction engine immediately before
+building the request body — see :mod:`sbs_api.agents.providers.egress` for why
+the boundary is here rather than at each upstream call site. One
+``cloud_inference_audit`` row is written per outbound call recording the
+deployment, the complaint, whether redaction ran, and entity counts by kind;
+it stores no text, raw or redacted.
+
 **Parameter dialects.** Azure deployments disagree about two request
 fields. The current ``gpt-5.4`` deployment rejects ``max_tokens``
 ("Unsupported parameter: 'max_tokens' is not supported with this model.
@@ -64,6 +73,11 @@ from sbs_api.agents.providers.base import (
     ProviderUnavailableError,
     ToolCallRequest,
     Usage,
+)
+from sbs_api.agents.providers.egress import redact_messages
+from sbs_api.agents.providers.egress_audit import (
+    record_cloud_egress,
+    summarise_for_log,
 )
 
 log = logging.getLogger(__name__)
@@ -202,9 +216,43 @@ class CloudProvider:
         agent_name: str | None = None,
         complaint_id: str | None = None,
     ) -> ModelResponse:
+        # --- egress boundary -------------------------------------------------
+        # Last thing before the request body exists: redact every string the
+        # payload carries. Structural rather than trusting each upstream call
+        # site to have done it (see providers/egress.py). The agent's own
+        # message history is not mutated — only the copy that goes on the wire.
+        redacted_messages, entity_counts = redact_messages(messages)
+        redacted_chars = sum(
+            len(m["content"]) for m in redacted_messages if isinstance(m.get("content"), str)
+        )
+
+        # Written before the call, because the audited event is the egress and
+        # not its outcome. Never raises, never blocks (see egress_audit.py).
+        await record_cloud_egress(
+            complaint_id=complaint_id,
+            agent_name=agent_name,
+            model_id=self._deployment,
+            redaction_applied=True,
+            entity_counts=entity_counts,
+            message_count=len(redacted_messages),
+            redacted_chars=redacted_chars,
+        )
+        log.info(
+            "cloud.egress.redacted",
+            extra={
+                "event": "cloud.egress.redacted",
+                "deployment": self._deployment,
+                "agent_name": agent_name,
+                "complaint_id": complaint_id,
+                "message_count": len(redacted_messages),
+                **summarise_for_log(entity_counts),
+            },
+        )
+        # ---------------------------------------------------------------------
+
         request: dict[str, Any] = {
             "model": self._deployment,  # Azure routes on deployment name
-            "messages": messages,
+            "messages": redacted_messages,
         }
         if tools:
             request["tools"] = tools

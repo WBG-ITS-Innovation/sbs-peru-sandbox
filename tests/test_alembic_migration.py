@@ -123,6 +123,9 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
         "supervisory_observations",
         "agent_feedback",
         "raw_complaints",
+        # v0.2.0: egress audit for outbound cloud inference calls. One row per
+        # call, counts by entity kind, no text — see the model docstring.
+        "cloud_inference_audit",
         "alembic_version",
     }
     missing = expected - tables
@@ -130,8 +133,9 @@ async def test_baseline_migration_applies_cleanly(test_database_url, monkeypatch
     # Part 12 added an additive migration that bumps the head past the
     # P11 demo-ui-polish overlay. The exact head string is recorded in
     # api/migrations/versions/ alongside the down-revision chain.
-    # 20260810_0001 adds the nullable agent_runs.model_provider column.
-    assert version_num == "20260810_0001"
+    # 20260810_0001 adds the nullable agent_runs.model_provider column;
+    # 20260817_0001 adds the cloud_inference_audit table.
+    assert version_num == "20260817_0001"
 
 
 # --- autogenerate parity ---------------------------------------------------

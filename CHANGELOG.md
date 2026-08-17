@@ -27,6 +27,20 @@ and versioning is described in [CONTRIBUTING.md](CONTRIBUTING.md#versioning).
 - Supported-versions table and an explicit coordinated-disclosure window in
   `SECURITY.md`.
 - Versioning statement in `CONTRIBUTING.md`.
+- **Redaction before cloud egress.** `CloudProvider.complete()` now passes every
+  string in the outbound payload — message content, multimodal text parts, and
+  the arguments of any replayed assistant tool call — through the redaction
+  engine immediately before the request body is built. Enforced at the provider
+  boundary rather than at each upstream call site, so a new agent or a reordered
+  prompt cannot reintroduce raw narrative text. The agent's own message history
+  is not mutated, so a run behaves identically whichever provider serves it.
+- **`cloud_inference_audit` table** (migration `20260817_0001`, additive, no
+  DROP or ALTER against existing objects). One row per outbound cloud call:
+  complaint, agent, deployment addressed, whether redaction ran, and entity
+  counts by kind. Written *before* the request, because the audited event is the
+  egress and not its success. **It stores no text — neither raw nor redacted**;
+  a column holding the redacted prompt would be a second copy of the complaint
+  in an audit table. A test pins the column set so it cannot acquire one.
 
 ### Changed
 

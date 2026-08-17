@@ -3,7 +3,14 @@
 
 Runs Pass 1 → (RECOVERABLE only) Pass 2 → tier-differentiated routing,
 persisting a ``validation_audit`` row and firing the FI webhook where
-the routing action requires it. On-prem only (cloud rejected).
+the routing action requires it.
+
+**Provider policy.** ``on_prem``, ``replay`` and ``mock`` are permitted
+unconditionally — all three keep content inside the trust boundary. ``cloud``
+is permitted only when a recorded legal approval and an active egress
+redaction layer are *both* in place; see :func:`_ensure_provider_permitted`.
+Pass 2 reads the complaint narrative to recover missing fields, which makes it
+the most PII-dense prompt the system builds, so it gets the strictest gate.
 """
 
 from __future__ import annotations
@@ -30,7 +37,19 @@ from sbs_api.webhooks.validation_delivery import (
     deliver_enrichment_request,
 )
 
+# Providers DIValeVale will run Pass-2 extraction on unconditionally. All
+# three keep content inside the trust boundary: on_prem talks to a vLLM the
+# authority runs, replay reads a committed fixture, mock computes.
 _ALLOWED_PROVIDERS = {"on_prem", "replay", "mock"}
+
+# ``cloud`` is admitted too, but only behind both of the conditions below —
+# see :func:`_ensure_provider_permitted`. Pass 2 reads the complaint narrative
+# to recover missing fields, so it is the most PII-dense prompt the system
+# builds; that is why it was gated when the cloud provider first landed, and
+# why admitting it now requires the redaction layer to be demonstrably in
+# place rather than merely configured.
+_CONDITIONAL_PROVIDERS = {"cloud"}
+
 ENRICHMENT_BUSINESS_DAYS = 5
 RESUBMIT_URL = "https://api-sandbox.sbs.gob.pe/v1/sandbox/complaints/granular"
 
@@ -49,12 +68,85 @@ class ValidationResult:
     enrichment_request_id: str | None = None
 
 
-def _ensure_on_prem(provider: ModelProvider) -> None:
-    if provider.name not in _ALLOWED_PROVIDERS:
+def redaction_layer_active() -> bool:
+    """Whether the cloud egress redaction layer is wired into the provider.
+
+    Checked rather than assumed. The guarantee that makes cloud Pass-2
+    acceptable is that no raw narrative leaves the process, and that guarantee
+    is implemented in ``CloudProvider.complete()`` — so this asks whether that
+    code path is actually present, not whether a setting says it should be.
+
+    A refactor that moved the redaction sweep out of ``complete()`` would flip
+    this to False and DIValeVale would refuse cloud again, which is the
+    intended failure direction: lose the control, lose the permission.
+    """
+
+    try:
+        from sbs_api.agents.providers import cloud as cloud_module
+        from sbs_api.agents.providers.egress import redact_messages
+    except ImportError:
+        return False
+
+    # The provider module must import the sweep, and calling it must actually
+    # redact. Two cheap checks that together cover "the module exists" and
+    # "the module works".
+    if getattr(cloud_module, "redact_messages", None) is not redact_messages:
+        return False
+    probe, counts = redact_messages([{"role": "user", "content": "DNI 12345678"}])
+    return "12345678" not in str(probe) and counts.get("pii_id", 0) >= 1
+
+
+def _ensure_provider_permitted(provider: ModelProvider) -> None:
+    """Refuse to run Pass-2 extraction on a provider that is not permitted.
+
+    ``cloud`` is permitted only when **both** conditions hold:
+
+    1. ``SBS_API_CLOUD_LEGAL_APPROVED=true`` — the recorded assertion that
+       sending complaint narratives off-premises is approved.
+    2. The egress redaction layer is active, so what is sent has been through
+       the redaction engine.
+
+    Either one alone is insufficient, and the refusal is unchanged from before
+    when either is missing: a ``RuntimeError`` naming what is wrong. Legal
+    approval without redaction would send raw narratives with permission;
+    redaction without legal approval would send off-premises without one.
+    """
+
+    name = provider.name
+    if name in _ALLOWED_PROVIDERS:
+        return
+
+    if name in _CONDITIONAL_PROVIDERS:
+        from sbs_api.config import get_settings
+
+        legal_ok = bool(get_settings().cloud_legal_approved)
+        redaction_ok = redaction_layer_active()
+        if legal_ok and redaction_ok:
+            return
+
+        unmet = []
+        if not legal_ok:
+            unmet.append(
+                "SBS_API_CLOUD_LEGAL_APPROVED is not true (the recorded "
+                "approval for sending complaint narratives off-premises)"
+            )
+        if not redaction_ok:
+            unmet.append(
+                "the cloud egress redaction layer is not active "
+                "(sbs_api.agents.providers.egress must be wired into "
+                "CloudProvider.complete)"
+            )
         raise RuntimeError(
-            f"DIValeVale requires an on-prem provider in v1; got "
-            f"'{provider.name}'. Cloud Pass-2 extraction is gated."
+            f"DIValeVale Pass-2 extraction on provider '{name}' requires BOTH "
+            f"a recorded legal approval AND an active egress redaction layer. "
+            f"Unmet: {'; '.join(unmet)}. Pass 2 reads the complaint narrative, "
+            f"so it is the most PII-dense prompt the system builds."
         )
+
+    raise RuntimeError(
+        f"DIValeVale requires an on-prem provider in v1; got "
+        f"'{name}'. Cloud Pass-2 extraction is gated."
+    )
 
 
 def _business_days_from(start: datetime, days: int) -> datetime:
@@ -100,7 +192,7 @@ async def validate_tier1_record(
     requests from there would mean one spurious webhook per complaint.
     Defaults to False, leaving every existing caller unchanged."""
     provider = provider or get_provider()
-    _ensure_on_prem(provider)
+    _ensure_provider_permitted(provider)
     now = now or datetime.now(tz=timezone.utc)
     started = datetime.now(tz=timezone.utc)
 
@@ -270,7 +362,7 @@ async def validate_tier2_batch(
     Idempotent on batch_id: a resubmit with the same id REPLACES a prior
     quarantined batch."""
     provider = provider or get_provider()
-    _ensure_on_prem(provider)
+    _ensure_provider_permitted(provider)
     now = now or datetime.now(tz=timezone.utc)
 
     # Idempotency: a resubmit with the same batch_id REPLACES the prior

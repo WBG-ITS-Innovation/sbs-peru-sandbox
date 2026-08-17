@@ -182,29 +182,95 @@ async def test_enrichment_fulfillment_marks_fulfilled(test_database_url, db_sche
     assert any(r.state == "FULFILLED" for r in reqs)
 
 
+# --- cloud provider policy (changed in v0.2.0) ------------------------------
+#
+# This test previously asserted that DIValeVale rejects `cloud` unconditionally
+# ("Cloud Pass-2 extraction is gated"). As of v0.2.0 cloud is admitted when BOTH
+# a recorded legal approval and an active egress redaction layer are in place,
+# because the redaction layer now guarantees no raw narrative leaves the
+# process. The refusal is unchanged whenever either condition is missing, which
+# is what these two tests pin.
+#
+# A stub carrying only `name` is used rather than a real CloudProvider: the gate
+# reads the provider name, and constructing the real one needs Azure
+# credentials that CI does not have.
+
+
+class _CloudNamed:
+    """Stand-in with the only attribute the gate reads."""
+
+    name = "cloud"
+
+    async def complete(self, *a, **k):  # pragma: no cover — must never be called
+        raise AssertionError(
+            "the gate should have refused before any completion was attempted"
+        )
+
+
 @pytest.mark.asyncio
-async def test_cloud_provider_rejected(test_database_url, db_schema):
-    import os
+async def test_cloud_provider_rejected_without_the_legal_approval(
+    test_database_url, db_schema, monkeypatch
+):
+    """The default posture: no recorded approval, so cloud is refused.
 
-    os.environ["SBS_API_CLOUD_LEGAL_APPROVED"] = "true"
-    try:
-        from sbs_api.agents.providers.cloud import CloudProvider
+    The refusal must happen before Pass 2 builds a prompt — hence the stub
+    whose `complete` raises if it is ever reached.
+    """
+    from sbs_api.config import get_settings
 
-        cloud = CloudProvider()
-    except NotImplementedError:
-        pytest.skip("CloudProvider gate raises upstream")
-        return
-    finally:
-        os.environ.pop("SBS_API_CLOUD_LEGAL_APPROVED", None)
+    monkeypatch.setenv("SBS_API_CLOUD_LEGAL_APPROVED", "false")
+    get_settings.cache_clear()
 
     engine = create_async_engine(test_database_url)
     SM = async_sessionmaker(engine, expire_on_commit=False)
     try:
         async with SM() as session:
-            with pytest.raises(RuntimeError, match="on-prem"):
+            with pytest.raises(RuntimeError, match="requires BOTH"):
                 await validate_tier1_record(
                     session, record=_rec(), sbs_institution_id="SBS-001234",
-                    provider=cloud,
+                    provider=_CloudNamed(),
                 )
     finally:
         await engine.dispose()
+        get_settings.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_cloud_provider_rejected_without_the_redaction_layer(
+    test_database_url, db_schema, monkeypatch
+):
+    """Legal approval alone must not admit cloud — it would send raw text."""
+    from sbs_api.agents.divalevale import agent as dv
+    from sbs_api.config import get_settings
+
+    monkeypatch.setenv("SBS_API_CLOUD_LEGAL_APPROVED", "true")
+    get_settings.cache_clear()
+    monkeypatch.setattr(dv, "redaction_layer_active", lambda: False)
+
+    engine = create_async_engine(test_database_url)
+    SM = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with SM() as session:
+            with pytest.raises(RuntimeError, match="redaction layer is not active"):
+                await validate_tier1_record(
+                    session, record=_rec(), sbs_institution_id="SBS-001234",
+                    provider=_CloudNamed(),
+                )
+    finally:
+        await engine.dispose()
+        get_settings.cache_clear()
+
+
+def test_cloud_provider_permitted_when_both_conditions_hold(monkeypatch):
+    """The permitting direction, at the gate — no ingestion, no network."""
+    from sbs_api.agents.divalevale.agent import _ensure_provider_permitted
+    from sbs_api.config import get_settings
+
+    monkeypatch.setenv("SBS_API_CLOUD_LEGAL_APPROVED", "true")
+    get_settings.cache_clear()
+    try:
+        # redaction_layer_active() is deliberately not stubbed: the real
+        # egress layer has to satisfy it.
+        assert _ensure_provider_permitted(_CloudNamed()) is None
+    finally:
+        get_settings.cache_clear()

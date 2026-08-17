@@ -185,36 +185,66 @@ def check_ingestion_path_compatibility(provider_name: str) -> str | None:
     """Return an error string if the ingestion path rejects this provider.
 
     DIValeVale runs ahead of Triage on both ingestion tiers and refuses any
-    provider outside its allowlist — cloud Pass-2 extraction is gated in v1
-    (``agents/divalevale/agent.py``). A canary that passes therefore does
-    not mean ingestion works: with ``cloud`` configured, every Tier 1 and
-    Tier 2 dispatch raises, and the dispatch layer swallows the error to
-    protect the ingesting request. That combination is invisible unless it
-    is checked here.
+    provider it does not permit (``agents/divalevale/agent.py``). A canary that
+    passes therefore does not mean ingestion works: with a rejected provider
+    configured, every Tier 1 and Tier 2 dispatch raises, and the dispatch layer
+    swallows the error to protect the ingesting request. That combination is
+    invisible unless it is checked here — nothing surfaces except a missing
+    ``agent_runs`` row.
 
-    Reads DIValeVale's own allowlist rather than restating it, so the two
-    cannot drift.
+    ``cloud`` is now permitted, but conditionally: a recorded legal approval
+    **and** an active egress redaction layer. Since the two conditions can fail
+    independently, this delegates to DIValeVale's own gate rather than
+    restating the policy, so the boot message names exactly what is unmet and
+    the two cannot drift.
     """
 
     try:
-        from sbs_api.agents.divalevale.agent import _ALLOWED_PROVIDERS
+        from sbs_api.agents.divalevale.agent import (
+            _ALLOWED_PROVIDERS,
+            _CONDITIONAL_PROVIDERS,
+            _ensure_provider_permitted,
+        )
     except Exception:  # noqa: BLE001 — never let this probe be the failure
         return None
 
     if provider_name in _ALLOWED_PROVIDERS:
         return None
 
-    return (
-        f"provider {provider_name!r} answers the canary but the ingestion "
-        "path will reject it: DIValeVale runs ahead of Triage and allows "
-        f"only {sorted(_ALLOWED_PROVIDERS)} in v1 (cloud Pass-2 extraction "
-        "is gated — see api/sbs_api/agents/divalevale/agent.py). Every "
-        "Tier 1 and Tier 2 dispatch would fail, and the dispatcher swallows "
-        "the error to protect the ingesting request, so nothing would "
-        "surface except a missing agent_runs row. Use on_prem or replay for "
-        "ingestion, or run the chain directly with "
+    # Ask the real gate. A tiny stand-in carries just the attribute it reads,
+    # so this stays a pure policy question and constructs no provider.
+    class _NameOnly:
+        name = provider_name
+
+    try:
+        _ensure_provider_permitted(_NameOnly())  # type: ignore[arg-type]
+        return None
+    except RuntimeError as exc:
+        reason = str(exc)
+    except Exception:  # noqa: BLE001
+        reason = (
+            f"DIValeVale rejected provider {provider_name!r} for an "
+            "unrecognised reason"
+        )
+
+    remedy = (
+        "Use on_prem or replay for ingestion, or run the chain directly with "
         "scripts/run_agent_pipeline_on_new.py, which does not go through "
         "DIValeVale."
+    )
+    if provider_name in _CONDITIONAL_PROVIDERS:
+        remedy = (
+            "Satisfy both conditions — set SBS_API_CLOUD_LEGAL_APPROVED=true "
+            "and keep the egress redaction layer wired into "
+            "CloudProvider.complete — or use on_prem or replay for ingestion."
+        )
+
+    return (
+        f"provider {provider_name!r} answers the canary but the ingestion path "
+        f"will reject it. {reason} Every Tier 1 and Tier 2 dispatch would "
+        f"fail, and the dispatcher swallows the error to protect the ingesting "
+        f"request, so nothing would surface except a missing agent_runs row. "
+        f"{remedy}"
     )
 
 

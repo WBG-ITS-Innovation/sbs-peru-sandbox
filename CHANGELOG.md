@@ -50,6 +50,15 @@ and versioning is described in [CONTRIBUTING.md](CONTRIBUTING.md#versioning).
 - `docs/PRODUCTION.md` records that the cockpit's Redis session backend is
   **not implemented** — `SBS_SESSION_BACKEND=redis` exists only as a comment —
   so the cockpit is single-replica and a restart ends every session.
+- **DIValeVale admits the `cloud` provider, conditionally.** Its Pass-2
+  extraction reads the complaint narrative to recover missing fields, making it
+  the most PII-dense prompt the system builds, and it previously refused `cloud`
+  outright. It now permits `cloud` when **both** `SBS_API_CLOUD_LEGAL_APPROVED`
+  is true **and** the egress redaction layer is active — the second checked by
+  exercising the code path, not by reading a setting, so unwiring the redaction
+  sweep revokes the permission. The refusal is unchanged when either condition
+  is missing, and the boot healthcheck's incompatibility message now names which
+  one is unmet instead of stating a flat prohibition.
 
 ### Fixed
 

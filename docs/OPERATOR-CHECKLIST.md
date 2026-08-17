@@ -86,21 +86,38 @@ in [HANDOVER-NOTES.md](HANDOVER-NOTES.md).
 **Owner:** the team accountable for the AI/ML runtime
 
 - [ ] **On-prem path proven against live vLLM on your target hardware.**
-      `SBS_API_MODEL_PROVIDER=on_prem` is the default and **has never once been
-      observed working against a real vLLM endpoint** — not in this engagement,
-      not on any machine used to build this repository. Every on-prem code path
-      is therefore unexercised in practice. Expect integration problems no test
-      in this repository could have caught, and budget for them. Prove it end to
-      end before it carries traffic.
+      `SBS_API_MODEL_PROVIDER=on_prem` is the default, and it is **architected
+      and gated, proven at vendor acceptance on GPU hardware — and never once
+      observed working against a real vLLM on any machine used to build this
+      repository.** Every on-prem code path is therefore unexercised here.
+      Expect integration problems no test in this repository could have caught,
+      and budget for them. Prove it end to end before it carries traffic.
 
       *or*
 
-- [ ] **Cloud legal gate formally approved.** If running
+- [ ] **Cloud legal gate formally approved, naming specifics.** If running
       `SBS_API_MODEL_PROVIDER=cloud` (Azure OpenAI), the approval that
       `SBS_API_CLOUD_LEGAL_APPROVED=true` asserts must be a real, recorded
-      decision by the accountable authority — covering the fact that complaint
-      narratives leave your infrastructure. The cloud provider has been
-      exercised live **against synthetic data only**.
+      decision by the accountable authority, and it must name the deployment
+      **region**, the provider's **retention and sub-processor terms**, and the
+      **legal basis** — prompt content is processed outside any infrastructure
+      you control. The cloud provider has been exercised live **against
+      synthetic data only**.
+
+      Know what the code actually sends, because it is less than "complaint
+      narratives leave your infrastructure" implies: the agents' ten tools run
+      locally against Postgres and only their structured output egresses — a
+      classification label, a data-quality summary, taxonomy results and the
+      complaint id. The complainant's narrative does not reach the model, and
+      `stage-h-full`'s cloud leg fails if that ever changes, so it becomes a
+      decision rather than a drift. Redaction at the provider boundary is a
+      backstop behind that, not the primary control.
+
+      Two operational confirmations: the compliance sweep
+      `SELECT * FROM cloud_inference_audit WHERE redaction_applied = false`
+      returns nothing, and `cloud.egress.audit_failed` is alerted on — the audit
+      sink never fails an inference call, so without that alert row count is not
+      guaranteed to equal call count.
 - [ ] **Provider posture confirmed as deliberate.** `replay` is fixture-backed
       and logs a warning on every request; it must never serve production. Check
       what is actually configured rather than what is assumed.

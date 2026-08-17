@@ -12,8 +12,10 @@ needs. This file is about what to expect once it is running.
 
 ## Agents and model providers
 
-**The demo posture is `replay`, and `on_prem` has still never been observed
-against a real vLLM.** `SBS_API_MODEL_PROVIDER` defaults to `on_prem`, which as
+**The demo posture is `replay`. `on_prem` is architected and gated, proven at
+vendor acceptance on GPU hardware — and has still never been observed against a
+real vLLM on any machine used here.**
+`SBS_API_MODEL_PROVIDER` defaults to `on_prem`, which as
 of `part-12/cloud-provider-azure` raises `ProviderUnavailableError` when no vLLM
 answers — the situation on every machine used in this engagement. It used to
 fall back to `MockProvider` instead, which is why earlier notes and audit
@@ -23,10 +25,38 @@ now pins `replay`, which logs a WARNING on every request saying the response is
 a replayed fixture. The first person with a vLLM endpoint should still expect
 integration problems that no test on this branch could have caught.
 
-**`cloud` (Azure OpenAI) has been exercised live** — one canary tool-call and
-the full pipeline — but only against synthetic data, and only behind
-`SBS_API_CLOUD_LEGAL_APPROVED=true`. On the WBG network it also needs
-`SBS_API_CLOUD_CA_BUNDLE`; see `.env.example` and ADR 0015.
+**`cloud` (Azure OpenAI) is now first-class on the ingestion path**, behind two
+conditions that must both hold: `SBS_API_CLOUD_LEGAL_APPROVED=true` and an
+active egress redaction layer. It has been exercised live end to end on the
+canonical Tier-1 path — signed submission, four-agent chain,
+`model_provider=cloud` persisted — but **only against synthetic data**. The boot
+healthcheck names whichever condition is unmet; DIValeVale enforces both before
+Pass-2 extraction. See ARCHITECTURE §3 and PRODUCTION §10.
+
+Three things that will cost you time on this path:
+
+- **TLS interception.** On the WBG network you need `SBS_API_CLOUD_CA_BUNDLE`
+  pointed at a bundle carrying the intercepting root — `certs/wbg-trust.pem`
+  worked; `certs/corp_bundle.pem` did not. The symptom is confusing: `curl`
+  reaches the endpoint fine and Python fails with
+  `CERTIFICATE_VERIFY_FAILED: self-signed certificate in certificate chain`,
+  because certifi does not carry the root that macOS system trust does. See
+  `.env.example` and ADR 0015.
+- **Latency, and what it breaks.** Live cloud inference is roughly two orders
+  of magnitude slower than `replay`: one investigation turn measured 15 s, a
+  full four-agent chain ~98 s. `stage-h-full` used to fail against a perfectly
+  working cloud stack purely because its poll budget was 60 s; it now scales to
+  240 s when the provider is `cloud`. Anything else with a timeout around the
+  chain needs the same treatment.
+- **The narrative does not reach the model, and that is load-bearing.** The
+  tools run locally and only their structured output egresses — a
+  classification label, a DQ summary, taxonomy results, the complaint id.
+  Redaction at the provider boundary is a backstop behind that, not the primary
+  control. `stage-h-full`'s cloud leg fails if narrative text ever appears in an
+  outbound payload, so putting it there is a deliberate data-residency decision.
+  Entity counts in `cloud_inference_audit` are an upper bound, not a
+  measurement: tool results are full of UUIDs and an eight-digit run inside one
+  matches the bare-DNI branch.
 
 `agent_runs.model_provider` records which provider *actually served* each run,
 not which one was configured. It discriminates in practice: with `replay`

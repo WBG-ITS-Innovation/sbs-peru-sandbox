@@ -404,11 +404,12 @@ Three operational rules, all of which have cost time before:
    quiet absence of analysis.
 
 Model provider, in summary: `on_prem` is the default and expects a vLLM
-endpoint. **The `on_prem` path has never been observed against a real vLLM** —
-that is a checklist item, not a footnote. `replay` is
-fixture-backed and logs a warning on every request. `cloud` (Azure OpenAI) has
-run live against synthetic data only, behind
-`SBS_API_CLOUD_LEGAL_APPROVED=true`. The provider semantics are in
+endpoint. It is **architected and gated, proven at vendor acceptance on GPU
+hardware** — but no vLLM existed on any machine used in this engagement, so
+every on-prem code path is unexercised here. That is a checklist item, not a
+footnote. `replay` is fixture-backed and logs a warning on every request.
+`cloud` (Azure OpenAI) is now first-class on the ingestion path behind two
+conditions — see §10. The provider semantics are in
 [ARCHITECTURE.md](ARCHITECTURE.md) §3 and the caveats in
 [HANDOVER-NOTES.md](HANDOVER-NOTES.md#agents-and-model-providers).
 
@@ -496,3 +497,61 @@ a load test at your volume, certificates from a real CA, tested backups, live
 monitoring, and a set of governance decisions specific to your authority.
 
 **→ [OPERATOR-CHECKLIST.md](OPERATOR-CHECKLIST.md)**
+## 10. Running the cloud model provider
+
+`SBS_API_MODEL_PROVIDER=cloud` sends prompt content to Azure OpenAI. It is
+permitted on the ingestion path only when **both** of these hold, and the boot
+healthcheck names whichever is missing:
+
+| Condition | How it is enforced |
+|---|---|
+| `SBS_API_CLOUD_LEGAL_APPROVED=true` | `CloudProvider` refuses to construct without it |
+| The egress redaction layer is active | DIValeVale calls `redaction_layer_active()`, which exercises the code path rather than reading a setting |
+
+Setting the flag is an operator assertion, not a legal sign-off. The formal
+approval is a checklist item.
+
+**What actually leaves the process.** The agents' tools run locally against
+Postgres and only their structured output reaches the model — a classification
+label, a data-quality summary, taxonomy results, and the complaint id. On a live
+Tier-1 run captured at the transport, the complainant's narrative was **not in
+the payload at all**. `stage-h-full`'s cloud leg pins that: it plants a DNI, a
+RUC, a phone and an email in a narrative and fails if any of them, or any
+narrative text, reaches the wire. Redaction at the provider boundary is a
+backstop behind that design.
+
+**Data residency.** Prompt content is processed in the region of the configured
+deployment, outside infrastructure the authority controls, under the cloud
+provider's terms and retention rather than the authority's. Everything exercised
+on this path has been synthetic. See [ARCHITECTURE.md](ARCHITECTURE.md) §3
+"Data residency" before enabling it for anything else, and
+[OPERATOR-CHECKLIST.md](OPERATOR-CHECKLIST.md) for the approval this requires.
+
+**Audit.** Every outbound call writes a `cloud_inference_audit` row —
+complaint, agent, deployment, `redaction_applied`, entity counts by kind — and
+the table stores no prompt text, raw or redacted. Written before the request, so
+a call that times out still leaves a record. Alert on
+`cloud.egress.audit_failed`: the sink deliberately never fails an inference
+call, so row count is not guaranteed to equal call count without it. The
+compliance sweep is
+`SELECT * FROM cloud_inference_audit WHERE redaction_applied = false` — it
+should return nothing, ever.
+
+**Two operational traps.**
+
+- **TLS interception.** On a corporate network, stock certifi verification fails
+  with `CERTIFICATE_VERIFY_FAILED` even where `curl` succeeds, because certifi
+  does not carry the intercepting root. Point `SBS_API_CLOUD_CA_BUNDLE` at a
+  bundle that does. A bad path fails at construction rather than on the first
+  completion.
+- **Latency.** Live cloud inference is roughly two orders of magnitude slower
+  than the fixture providers: one investigation turn measured 15 s, a full
+  four-agent chain ~98 s. Size any timeout around the agent chain, and any
+  worker concurrency planning, for that rather than for `replay` numbers.
+
+`SBS_API_CLOUD_EGRESS_CAPTURE_PATH` exists for verification only. It writes the
+redacted outbound payload to a file so a test can assert against the exact bytes
+sent, is off by default, and is **refused when `SBS_API_ENVIRONMENT` is
+`staging` or `prod`**. Never enable it in production.
+
+---

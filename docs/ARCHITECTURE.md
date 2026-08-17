@@ -257,8 +257,8 @@ four implementations, selected by `SBS_API_MODEL_PROVIDER`:
 
 | Provider | Status | Notes |
 |---|---|---|
-| `on_prem` | **Default.** Target state for the SBS workstation. | OpenAI-compatible HTTP against self-hosted vLLM. **Never yet observed against a real vLLM endpoint** — no such endpoint existed on any machine used in this engagement. Expect integration problems no test on this branch could catch. |
-| `cloud` | Implemented, gated. | Azure OpenAI with native tool calling. Exercised live — one canary tool-call and the full pipeline — against synthetic data only. |
+| `on_prem` | **Default.** Target state for the SBS workstation. | OpenAI-compatible HTTP against self-hosted vLLM. **Architected and gated, proven at vendor acceptance on GPU hardware** — no vLLM endpoint existed on any machine used in this engagement, so every on-prem code path is unexercised here. Expect integration problems no test on this branch could catch. |
+| `cloud` | **First-class on the ingestion path**, behind two conditions. | Azure OpenAI with native tool calling. Permitted when a recorded legal approval and the egress redaction layer are both in place; see §3 below. Exercised live end to end on the canonical Tier-1 ingestion path against synthetic data only. |
 | `replay` | Deterministic demos and CI. | Reads pre-recorded turns from disk; logs a WARNING on every request naming itself a replay. |
 | `mock` | **Test-only.** | Refuses to construct outside a pytest process. |
 
@@ -303,43 +303,98 @@ so the API will not start.
 
 That is the intended behaviour, not a defect.
 
-### The cloud legal gate, and why cloud is refused at boot on the ingestion path
+### Cloud on the ingestion path: two conditions, and what actually egresses
 
-`CloudProvider` refuses to construct unless **`SBS_API_CLOUD_LEGAL_APPROVED=true`**.
-Setting the flag asserts development use against synthetic data only, pending
-legal sign-off on PII isolation and data residency. It is an operator
-assertion, **not** a sign-off ([ADR 0015](adr/0015-cross-review-llm-backend-azure.md),
-ADR 0001 §Divergence).
+`cloud` is now first-class on the canonical ingestion path, behind two
+independent conditions that must **both** hold.
 
-A second, independent control sits underneath it. DIValeVale enforces its own
-provider allowlist — `_ALLOWED_PROVIDERS = {"on_prem", "replay", "mock"}` in
-[divalevale/agent.py](../api/sbs_api/agents/divalevale/agent.py) — because
-cloud Pass-2 extraction is gated in v1. Since DIValeVale runs ahead of Triage
-on *both* ingestion tiers, `cloud` cannot serve the ingestion path at all. The
-boot healthcheck checks for exactly this combination and refuses to start
-rather than let it fail silently per complaint:
+**1. A recorded legal approval.** `CloudProvider` refuses to construct unless
+`SBS_API_CLOUD_LEGAL_APPROVED=true`. Setting the flag asserts development use
+against synthetic data only, pending legal sign-off on PII isolation and data
+residency. It is an operator assertion, **not** a sign-off
+([ADR 0015](adr/0015-cross-review-llm-backend-azure.md), ADR 0001 §Divergence).
 
-> provider 'cloud' answers the canary but the ingestion path will reject it …
-> the dispatcher swallows the error to protect the ingesting request, so
-> nothing would surface except a missing `agent_runs` row.
+**2. An active egress redaction layer.** `CloudProvider.complete()` passes
+every string in the outbound payload through the redaction engine immediately
+before the request body is built
+([providers/egress.py](../api/sbs_api/agents/providers/egress.py)) — message
+content, multimodal text parts, and the arguments of any replayed assistant
+tool call. The boundary is the provider, not each upstream call site, so a new
+agent or a reordered prompt cannot reintroduce raw text. The agent's own
+message history is not mutated, so a run behaves identically whichever provider
+serves it.
 
-So the honest statement of cloud's status is: **implemented, credential path
-and tool-calling contract proven live against synthetic data, and still
-refused at boot together with the ingestion pipeline until the DIValeVale
-allowlist decision is made.** The full-pipeline cloud run was driven through
-[scripts/run_agent_pipeline_on_new.py](../scripts/run_agent_pipeline_on_new.py),
-which does not go through DIValeVale.
+DIValeVale enforces both conditions before Pass-2 extraction, which reads the
+narrative and is therefore the most PII-dense prompt the system builds
+([divalevale/agent.py](../api/sbs_api/agents/divalevale/agent.py)). Condition 2
+is verified by exercising the code path — `redaction_layer_active()` checks that
+the provider imports the sweep and that calling it actually redacts a DNI —
+rather than by reading a setting. Unwire the sweep and the permission is
+revoked. Since DIValeVale runs ahead of Triage on both tiers, the same gate
+governs the whole ingestion path, and the boot healthcheck reports which
+condition is unmet rather than a flat prohibition.
 
-Two operational details. The provider learns its deployment's **parameter
+**What leaves the process, measured.** Less than the redaction layer implies.
+The agents' ten tools execute locally against Postgres, and only their
+structured output reaches the model. A live Tier-1 run captured at the
+transport shows the triage prompt carrying a system instruction, the line
+`Analiza el reclamo BCO-2026-998237 usando los tools disponibles`, and three
+tool results — a classification label, a data-quality summary, taxonomy
+normalisations. **The complainant's narrative is not in the payload at all.**
+`stage-h-full`'s cloud leg pins this: it plants a valid DNI, a valid RUC, a
+phone and an email in a narrative, submits it over the real signed chain, reads
+back the exact bytes handed to the transport, and fails if any planted value —
+or any narrative text — appears. Redaction at the boundary is the backstop
+behind that design, not the thing holding the line.
+
+**Every outbound call is audited.** One `cloud_inference_audit` row per call
+(migration `20260817_0001`) recording complaint, agent, deployment addressed,
+`redaction_applied`, and entity counts by kind. Written *before* the request,
+because the audited event is the egress rather than its success. It stores **no
+text, raw or redacted** — a column holding the redacted prompt would be a
+second copy of the complaint in an audit table. Read a non-zero entity count as
+"the sweep replaced something", not as "PII was about to leak": tool results
+carry UUIDs, and an eight-digit run inside one matches the bare-DNI branch, so
+the counts are an upper bound.
+
+#### Data residency
+
+With `cloud` selected, prompt content is processed by Azure OpenAI in the
+region of the configured deployment — **outside any infrastructure the
+supervisory authority controls** — and is subject to that provider's terms,
+sub-processors and retention behaviour rather than to the authority's. Three
+things follow, and none of them is a technical control:
+
+- Everything exercised on this path to date has been **synthetic data**. No
+  real complaint has been sent to a cloud model at any point in this
+  engagement.
+- The narrative not appearing in the payload today is a property of how the
+  agents are built, not a contractual guarantee. Anyone changing an agent to
+  put narrative text in a prompt changes the residency position, which is why
+  the gate fails on it.
+- `SBS_API_CLOUD_LEGAL_APPROVED=true` records that someone accepted this. It
+  does not establish that they were entitled to. The formal approval — naming
+  the region, the retention terms and the legal basis — is an item on
+  [OPERATOR-CHECKLIST.md](OPERATOR-CHECKLIST.md), and `on_prem` exists so an
+  authority that cannot obtain one still has a path.
+
+**Two operational details.** The provider learns its deployment's **parameter
 dialect** at runtime — deployments disagree over `max_completion_tokens` vs
 `max_tokens`, and some reject an explicit `temperature` — sending the modern
 form first and retrying once on a 400 that names the parameter, then
 remembering the answer for the process lifetime. And on a corporate network
 that terminates TLS, `SBS_API_CLOUD_CA_BUNDLE` points httpx at a CA bundle
-carrying the intercepting root; unset, stock certifi verification applies. A
-bad bundle path fails at construction, not on the first completion. The API
-key is never logged, never placed in an exception message, and never in a
-`repr`.
+carrying the intercepting root; unset, stock certifi verification applies —
+which on the WBG network fails with `CERTIFICATE_VERIFY_FAILED` even though
+`curl` succeeds, because certifi does not carry the intercepting root. A bad
+bundle path fails at construction, not on the first completion. The API key is
+never logged, never placed in an exception message, and never in a `repr`.
+
+**Latency.** Live cloud inference is roughly two orders of magnitude slower
+than the fixture providers: a single investigation turn measured 15 s and a
+full four-agent chain ~98 s, against well under a second for `replay`. Anything
+with a timeout around the agent chain needs sizing for that — `stage-h-full`
+scales its own poll budget to 240 s when the provider is `cloud`.
 
 ---
 
@@ -459,10 +514,16 @@ The full register is [HANDOVER-NOTES.md](HANDOVER-NOTES.md). In summary:
   reserved `@sandbox.example.com` addresses. See
   [DATA_PROVENANCE.md](DATA_PROVENANCE.md) and
   [ADR 0036](adr/0036-synthetic-corpus-fidelity-tiers.md).
-- **`on_prem` has never been observed against a real vLLM.** It is the default
-  and the target state, and it currently fails fast everywhere.
-- **`cloud` is gated twice** — the legal opt-in, and DIValeVale's allowlist,
-  which refuses it at boot alongside the ingestion pipeline.
+- **`on_prem` is architected and gated, proven at vendor acceptance on GPU
+  hardware — and unexercised here.** It is the default and the target state, no
+  vLLM existed on any machine used in this engagement, and it fails fast
+  everywhere on this branch.
+- **`cloud` is gated twice** — a recorded legal opt-in, and an active egress
+  redaction layer, both enforced by DIValeVale ahead of Triage on either tier.
+  It now serves the ingestion path when both hold. Prompt content is processed
+  outside the authority's infrastructure; everything exercised on that path has
+  been synthetic, and the formal residency approval is a checklist item, not a
+  code change.
 - **DIValeVale records but does not gate**, pending the two prerequisites in
   §2.
 - **The cross-source correlator is degenerate off the golden complaint**

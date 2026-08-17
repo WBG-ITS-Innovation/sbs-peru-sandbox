@@ -62,6 +62,16 @@ and versioning is described in [CONTRIBUTING.md](CONTRIBUTING.md#versioning).
 - `docs/PRODUCTION.md` records that the cockpit's Redis session backend is
   **not implemented** — `SBS_SESSION_BACKEND=redis` exists only as a comment —
   so the cockpit is single-replica and a restart ends every session.
+- **`cloud` is documented as first-class on the ingestion path** behind the two
+  conditions above, with a **data-residency disclosure** in `ARCHITECTURE.md` §3
+  and a new `PRODUCTION.md` §10 covering the two conditions, what actually
+  egresses, the audit table and its compliance sweep, TLS interception, and the
+  latency gap. `on_prem` is now described as **"architected and gated, proven at
+  vendor acceptance on GPU hardware"** — and still unexercised on any machine
+  used here — consistently across `ARCHITECTURE.md`, `HANDOVER-NOTES.md` and
+  `OPERATOR-CHECKLIST.md`. The checklist's cloud item now requires the approval
+  to name the deployment region, retention and sub-processor terms, and the legal
+  basis.
 - **DIValeVale admits the `cloud` provider, conditionally.** Its Pass-2
   extraction reads the complaint narrative to recover missing fields, making it
   the most PII-dense prompt the system builds, and it previously refused `cloud`

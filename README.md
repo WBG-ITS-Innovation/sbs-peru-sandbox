@@ -4,6 +4,8 @@ An AI-enabled conduct-supervision sandbox for consumer-complaint analytics, buil
 
 This is a prototype for demonstration and reuse, not an official SBS system, and it contains no SBS data.
 
+> **Deploying this beyond a sandbox?** It is a production-ready reference implementation — production deployment requires completing **[docs/OPERATOR-CHECKLIST.md](docs/OPERATOR-CHECKLIST.md)**. Start there, then follow **[docs/PRODUCTION.md](docs/PRODUCTION.md)** for the deployment guide.
+
 ![Supervisor cockpit](docs/assets/cockpit.png)
 
 ## What this demonstrates

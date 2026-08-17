@@ -16,6 +16,7 @@ prompt specifies. Asserts:
 from __future__ import annotations
 
 import re
+import time
 
 import pytest
 
@@ -200,3 +201,122 @@ def test_masked_preview_partials_ruc():
     assert "20512345678" not in preview
     # last 4 digits preserved per the documented mask shape.
     assert "5678" in preview
+
+
+# ---------------------------------------------------------------------------
+# v0.2.0 hardening — ReDoS resistance of the identifier patterns
+#
+# ``_DNI_PATTERN`` / ``_RUC_PATTERN`` previously used ``\s*[:.-]?\s*``
+# between the keyword and its digits. Two adjacent unbounded ``\s*``
+# let N whitespace characters split N+1 ways, so a keyword followed by
+# a long whitespace run and no digits cost O(N^2) (CodeQL
+# py/polynomial-redos, alerts #2 and #3). The separator is now bounded.
+#
+# These tests pin both halves: detection semantics are unchanged for
+# every realistic separator form, and pathological input completes fast.
+# ---------------------------------------------------------------------------
+
+
+PATHOLOGICAL_BUDGET_MS = 100.0
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "DNI 12345678",
+        "DNI: 12345678",
+        "DNI:12345678",
+        "DNI.12345678",
+        "DNI-12345678",
+        "DNI12345678",
+        "dni : 12345678",
+        "Su DNI  12345678 figura en la queja.",
+    ],
+)
+def test_dni_separator_forms_still_redact(text):
+    """Every realistic DNI separator form is still detected and replaced."""
+
+    result = redact(text)
+    assert "pii_id" in _kinds(result.entities), f"DNI not detected in {text!r}"
+    assert "12345678" not in result.redacted_text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "RUC 20512345678",
+        "RUC: 20512345678",
+        "RUC:20512345678",
+        "RUC.20512345678",
+        "RUC-20512345678",
+        "RUC20512345678",
+        "ruc : 20512345678",
+        "La empresa RUC  20512345678 emisora.",
+    ],
+)
+def test_ruc_separator_forms_still_redact(text):
+    """Every realistic RUC separator form is still detected and replaced."""
+
+    result = redact(text)
+    assert "pii_ruc" in _kinds(result.entities), f"RUC not detected in {text!r}"
+    assert "20512345678" not in result.redacted_text
+
+
+@pytest.mark.parametrize(
+    "text,absent_kind",
+    [
+        ("Referencia 1234567 del expediente.", "pii_id"),  # 7 digits, not a DNI
+        ("Expediente 2051234567 archivado.", "pii_ruc"),  # 10 digits, not a RUC
+        ("Codigo 205123456789 interno.", "pii_ruc"),  # 12 digits, not a RUC
+    ],
+)
+def test_wrong_length_digit_runs_are_not_identifiers(text, absent_kind):
+    """Length discipline is unchanged: only 8-digit DNI and 11-digit RUC."""
+
+    result = redact(text)
+    assert absent_kind not in _kinds(result.entities)
+
+
+def test_keyword_far_from_digits_still_redacts_the_digits():
+    """The documented safe degradation of the bounded separator.
+
+    More than four spaces between the keyword and the digits no longer
+    matches the prefixed branch, but the bare digit-run branch still
+    fires — the identifier is redacted either way. Only the keyword
+    itself stays outside the replaced span.
+    """
+
+    result = redact("DNI" + " " * 40 + "12345678 al final.")
+    assert "pii_id" in _kinds(result.entities)
+    assert "12345678" not in result.redacted_text
+
+
+@pytest.mark.parametrize(
+    "attack",
+    [
+        pytest.param("DNI" + " " * 200_000 + "!", id="dni-whitespace-run"),
+        pytest.param("RUC" + " " * 200_000 + "!", id="ruc-whitespace-run"),
+        pytest.param("DNI \t" * 50_000 + "!", id="dni-repeated-keyword"),
+        pytest.param("RUC \t" * 50_000 + "!", id="ruc-repeated-keyword"),
+    ],
+)
+def test_pathological_input_completes_within_budget(attack):
+    """~200k chars of adversarial repetition must not blow up the engine.
+
+    Before the fix the first two cases were O(N^2) and did not finish in
+    any practical time; the whole pipeline now runs in single-digit ms.
+    """
+
+    assert len(attack) >= 200_000
+    start = time.perf_counter()
+    result = redact(attack)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+
+    assert elapsed_ms < PATHOLOGICAL_BUDGET_MS, (
+        f"redact() took {elapsed_ms:.1f}ms on {len(attack)} chars of adversarial "
+        f"input, budget is {PATHOLOGICAL_BUDGET_MS}ms — polynomial backtracking "
+        f"may have regressed"
+    )
+    # No digits in the attack strings, so nothing is detected — the point
+    # is that reaching that conclusion is cheap.
+    assert result.entities == ()

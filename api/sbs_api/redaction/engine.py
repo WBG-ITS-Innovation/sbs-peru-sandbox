@@ -58,10 +58,27 @@ _SOLES_AMOUNT_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 
+# Separator between an identifier keyword and its digits: optional
+# whitespace, an optional ``:``/``.``/``-``, optional whitespace.
+#
+# Both whitespace runs are **bounded**. An unbounded ``\s*[:.-]?\s*``
+# is polynomial-time on backtracking: N spaces can be split between the
+# two stars N+1 ways, so a keyword followed by a long whitespace run and
+# no digits costs O(N^2). Redaction runs on attacker-influenced
+# complaint narratives, so that is a denial-of-service surface
+# (CodeQL py/polynomial-redos). Bounding each run to 4 makes the
+# separator cost constant.
+#
+# Degradation is safe: a keyword separated from its digits by more than
+# four spaces no longer matches the *prefixed* branch, but the bare
+# digit-run branch below still matches, so the identifier is still
+# redacted — only the keyword itself stays outside the replaced span.
+_ID_SEPARATOR = r"\s{0,4}[:.-]?\s{0,4}"
+
 # DNI: 8 contiguous digits, with optional ``DNI`` prefix. The prefix
 # itself is consumed so the replacement spans the whole construct.
 _DNI_PATTERN = re.compile(
-    r"\bDNI\s*[:.-]?\s*(\d{8})\b|\b(\d{8})\b",
+    rf"\bDNI{_ID_SEPARATOR}(\d{{8}})\b|\b(\d{{8}})\b",
     flags=re.IGNORECASE,
 )
 
@@ -70,7 +87,7 @@ _DNI_PATTERN = re.compile(
 # 11-digit run is overwhelmingly a RUC in Peruvian financial-complaint
 # narratives. The prefix is consumed.
 _RUC_PATTERN = re.compile(
-    r"\bRUC\s*[:.-]?\s*(\d{11})\b|\b(\d{11})\b",
+    rf"\bRUC{_ID_SEPARATOR}(\d{{11}})\b|\b(\d{{11}})\b",
     flags=re.IGNORECASE,
 )
 

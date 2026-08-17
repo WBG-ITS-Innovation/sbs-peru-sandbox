@@ -11,16 +11,17 @@ import { currentLocale } from '@/i18n/server';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function ProcessingDrilldownPage({ params }: Props) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function ProcessingDrilldownPage(props: Props) {
+  const params = await props.params;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
-  const locale = currentLocale();
+  const locale = await currentLocale();
   return (
     <main className="flex flex-col">
       <PageHeader

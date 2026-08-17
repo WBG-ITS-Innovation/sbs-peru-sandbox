@@ -41,18 +41,20 @@ function inferActivePersonaKey(
   return null;
 }
 
-export default function SupervisorLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function SupervisorLayout(
+  {
+    children,
+  }: {
+    children: React.ReactNode;
+  }
+) {
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   const navLabels = {
     cockpit: t(locale, 'nav.cockpit'),

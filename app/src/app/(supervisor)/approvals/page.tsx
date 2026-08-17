@@ -28,13 +28,13 @@ function canReadApprovalsQueue(roles: readonly string[]): boolean {
 }
 
 export default async function ApprovalsQueuePage() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   // Supervisor is intentionally outside the approvals action
   // path per ADR 0040 §D7 — but she gets read-only visibility so the

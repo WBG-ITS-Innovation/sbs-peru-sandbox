@@ -21,15 +21,16 @@ const ALLOWED_ACTIONS = new Set([
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string; action: string } },
+  props: { params: Promise<{ id: string; action: string }> }
 ) {
+  const params = await props.params;
   if (!ALLOWED_ACTIONS.has(params.action)) {
     return new NextResponse(null, { status: 404 });
   }
   if (!checkCsrf(request)) {
     return new NextResponse(null, { status: 403 });
   }
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return new NextResponse(null, { status: 401 });

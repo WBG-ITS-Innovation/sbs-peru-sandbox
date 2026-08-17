@@ -19,18 +19,19 @@ import type { ApprovalDetailResponse } from '@/types/approvals';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ApprovalDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function ApprovalDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   let detail: ApprovalDetailResponse;
   try {

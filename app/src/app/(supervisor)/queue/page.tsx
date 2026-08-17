@@ -9,8 +9,8 @@ import { currentLocale } from '@/i18n/server';
 // nav rail link works; the route doesn't fight. Filtering against the
 // complaints table is available on the Findings screen until the
 // queue's bulk-assign affordance lands in a follow-up.
-export default function QueuePage() {
-  const locale = currentLocale();
+export default async function QueuePage() {
+  const locale = await currentLocale();
   return (
     <main className="mx-auto max-w-5xl p-6">
       <h1 className="mb-4 text-2xl font-semibold text-fg">{t(locale, 'queue.title')}</h1>

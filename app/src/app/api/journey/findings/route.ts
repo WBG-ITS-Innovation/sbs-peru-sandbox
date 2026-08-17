@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   if (!checkCsrf(request)) {
     return NextResponse.json({ ok: false, error: 'csrf' }, { status: 403 });
   }
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return NextResponse.json({ ok: false, error: 'unauthenticated' }, { status: 401 });

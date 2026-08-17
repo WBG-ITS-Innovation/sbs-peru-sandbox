@@ -17,13 +17,13 @@ import emails from '@/lib/journey-emails.json';
 
 export const dynamic = 'force-dynamic';
 
-export default function IngestionPage() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function IngestionPage() {
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
-  const locale = currentLocale();
+  const locale = await currentLocale();
   return (
     <main className="flex flex-col">
       <PageHeader

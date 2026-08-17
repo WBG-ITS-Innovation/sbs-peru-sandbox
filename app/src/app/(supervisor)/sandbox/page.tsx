@@ -16,12 +16,12 @@ import { currentLocale } from '@/i18n/server';
 // appears here live.
 export const dynamic = 'force-dynamic';
 
-export default function SandboxPage() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function SandboxPage() {
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!getSession(sessionId)) {
     redirect('/login');
   }
-  const locale = currentLocale();
+  const locale = await currentLocale();
   return (
     <main className="flex flex-col">
       <PageHeader

@@ -25,8 +25,8 @@ interface Row {
   status: 'active' | 'pending';
 }
 
-export default function CredentialsPage() {
-  const locale = currentLocale();
+export default async function CredentialsPage() {
+  const locale = await currentLocale();
   const tr = (key: string) => t(locale, key);
 
   const previewDisclaimer = tr('pilot.preview_disclaimer');

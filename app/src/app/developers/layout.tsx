@@ -13,12 +13,12 @@ import { currentLocale } from '@/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
-export default function DevelopersLayout({
+export default async function DevelopersLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = currentLocale();
+  const locale = await currentLocale();
   const headerTitle = t(locale, 'developers.header_title');
   const headerSubtitle = t(locale, 'developers.header_subtitle');
   const lockup = t(locale, 'common.lockup');

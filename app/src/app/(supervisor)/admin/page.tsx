@@ -14,11 +14,11 @@ import { currentLocale } from '@/i18n/server';
 // the real audit log.
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
-  if (!getSession(cookies().get(SESSION_COOKIE)?.value)) {
+export default async function AdminPage() {
+  if (!getSession((await cookies()).get(SESSION_COOKIE)?.value)) {
     redirect('/login');
   }
-  const locale = currentLocale();
+  const locale = await currentLocale();
   return (
     <main className="flex flex-col">
       <PageHeader

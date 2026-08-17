@@ -36,12 +36,12 @@ export const metadata: Metadata = {
   description: 'Supervisor UI for the SBS SupTech prototype',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = currentLocale();
+  const locale = await currentLocale();
   return (
     <html
       lang={locale}

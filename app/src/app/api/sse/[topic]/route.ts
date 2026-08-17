@@ -12,11 +12,9 @@ import { getSession } from '@/auth/session';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { topic: string } },
-) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export async function GET(request: Request, props: { params: Promise<{ topic: string }> }) {
+  const params = await props.params;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return new Response(null, { status: 401 });

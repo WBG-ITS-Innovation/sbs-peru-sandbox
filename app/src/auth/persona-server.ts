@@ -28,8 +28,8 @@ export function personaCookieOptions() {
   };
 }
 
-export function activePersona(): PersonaConfig | null {
-  const slug = cookies().get(PERSONA_COOKIE)?.value;
+export async function activePersona(): Promise<PersonaConfig | null> {
+  const slug = (await cookies()).get(PERSONA_COOKIE)?.value;
   return isPersonaSlug(slug) ? PERSONAS[slug] : null;
 }
 

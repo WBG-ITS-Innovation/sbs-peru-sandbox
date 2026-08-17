@@ -27,8 +27,8 @@ import { currentLocale } from '@/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
-export default function DevelopersPortalPage() {
-  const locale = currentLocale();
+export default async function DevelopersPortalPage() {
+  const locale = await currentLocale();
   const tr = (key: string) => t(locale, key);
 
   const previewDisclaimer = tr('pilot.preview_disclaimer');

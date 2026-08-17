@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  const session = getSession(cookies().get(SESSION_COOKIE)?.value);
+  const session = getSession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }

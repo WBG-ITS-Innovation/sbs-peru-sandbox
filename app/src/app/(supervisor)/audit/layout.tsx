@@ -7,8 +7,8 @@ import { Footer } from '@/components/shell/Footer';
 import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
 
-export default function AuditLayout({ children }: { children: React.ReactNode }) {
-  const locale = currentLocale();
+export default async function AuditLayout({ children }: { children: React.ReactNode }) {
+  const locale = await currentLocale();
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex-1 overflow-auto">{children}</div>

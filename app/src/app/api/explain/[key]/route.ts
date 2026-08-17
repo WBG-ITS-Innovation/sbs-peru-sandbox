@@ -11,11 +11,9 @@ import type { ExplainEntry } from '@/types/persona-dashboards';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { key: string } },
-) {
-  const persona = activePersona();
+export async function GET(_request: Request, props: { params: Promise<{ key: string }> }) {
+  const params = await props.params;
+  const persona = await activePersona();
   if (!persona) {
     return NextResponse.json({ error: 'no_active_persona' }, { status: 401 });
   }

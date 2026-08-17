@@ -13,8 +13,9 @@ import { internalGet } from '@/lib/api';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const session = getSession(cookies().get(SESSION_COOKIE)?.value);
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const session = getSession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }

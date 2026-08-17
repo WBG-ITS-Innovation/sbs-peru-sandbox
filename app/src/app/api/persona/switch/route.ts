@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 403 });
   }
 
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return new NextResponse(null, { status: 401 });

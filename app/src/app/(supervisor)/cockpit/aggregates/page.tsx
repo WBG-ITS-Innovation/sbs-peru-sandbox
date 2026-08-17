@@ -7,7 +7,7 @@ import { currentLocale } from '@/i18n/server';
 // layout supplies the session guard, nav rail, and top bar.
 export const dynamic = 'force-dynamic';
 
-export default function AggregatesPage() {
-  const locale = currentLocale();
+export default async function AggregatesPage() {
+  const locale = await currentLocale();
   return <AggregatesWorkspace locale={locale} />;
 }

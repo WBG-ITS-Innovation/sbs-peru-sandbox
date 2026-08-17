@@ -12,8 +12,8 @@ import { SESSION_COOKIE } from '@/auth/cookies';
 //
 // The redirect happens server-side, so the user never sees a flash of
 // an intermediate page.
-export default function RootPage() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function RootPage() {
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
 
   if (!session) {

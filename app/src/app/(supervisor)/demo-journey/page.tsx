@@ -18,16 +18,17 @@ import golden from '@/lib/golden-complaint.json';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  searchParams?: { complaint_id?: string };
+  searchParams?: Promise<{ complaint_id?: string }>;
 }
 
-export default function DemoJourneyPage({ searchParams }: Props) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function DemoJourneyPage(props: Props) {
+  const searchParams = await props.searchParams;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
-  const locale = currentLocale();
+  const locale = await currentLocale();
   const complaintId = searchParams?.complaint_id || golden.complaint_id;
   return <DemoJourneySbs locale={locale} complaintId={complaintId} />;
 }

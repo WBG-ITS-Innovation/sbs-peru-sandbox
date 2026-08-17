@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
 const PROFILES = new Set(['banco-tier1', 'coopac-tier2']);
 
 export async function POST(request: Request) {
-  if (!getSession(cookies().get(SESSION_COOKIE)?.value)) {
+  if (!getSession((await cookies()).get(SESSION_COOKIE)?.value)) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }
   let body: { profile?: string; count?: number } = {};

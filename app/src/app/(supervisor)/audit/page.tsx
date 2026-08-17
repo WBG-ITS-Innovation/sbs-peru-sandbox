@@ -23,18 +23,19 @@ function asString(v: string | string[] | undefined): string | undefined {
   return v;
 }
 
-export default async function AuditPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>;
-}) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function AuditPage(
+  props: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   const page = Math.max(1, Number(asString(searchParams.page) ?? '1') || 1);
   const params = new URLSearchParams();

@@ -6,7 +6,7 @@ import { t } from '@/i18n';
 import { currentLocale } from '@/i18n/server';
 
 interface LoginPageProps {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }
 
 // /app/login — standalone sign-in page. No supervisor rail. The OAuth
@@ -14,8 +14,9 @@ interface LoginPageProps {
 // adds a single affordance that loads tokens for all three personas in
 // one round-trip. We preserve every backend route and behaviour and
 // just refresh the visual.
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  const locale = currentLocale();
+export default async function LoginPage(props: LoginPageProps) {
+  const searchParams = await props.searchParams;
+  const locale = await currentLocale();
   const errorCode = searchParams.error;
 
   const title = t(locale, 'login.title');

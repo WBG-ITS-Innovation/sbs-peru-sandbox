@@ -25,7 +25,7 @@ import type { CockpitSnapshot, TaxonomyStats } from '@/types/cockpit';
 export const dynamic = 'force-dynamic';
 
 export default async function CockpitPage() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
@@ -44,7 +44,7 @@ export default async function CockpitPage() {
       }) satisfies TaxonomyStats,
     ),
   ]);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   const labels = {
     locale,

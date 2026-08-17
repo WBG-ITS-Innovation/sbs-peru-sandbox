@@ -1,6 +1,6 @@
 # SBS SupTech — supervisor UI
 
-Next.js 14 (App Router) served under `basePath: '/app'`. Roughly twenty
+Next.js 15 (App Router) served under `basePath: '/app'`. Roughly twenty
 page routes across three audiences — the supervisor cockpit, an
 institution-facing (FI) surface, and integrator documentation — plus about
 thirty BFF route handlers under `/app/api/*`.

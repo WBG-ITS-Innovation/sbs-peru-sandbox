@@ -15,7 +15,7 @@ export async function setLocaleAction(locale: Locale): Promise<void> {
   if (!LOCALES.includes(locale)) {
     throw new Error(`Unknown locale: ${locale}`);
   }
-  cookies().set(LOCALE_COOKIE, locale, localeCookieOptions());
+  (await cookies()).set(LOCALE_COOKIE, locale, localeCookieOptions());
   // Invalidate the current route so the language change is reflected
   // server-side.
   revalidatePath('/', 'layout');

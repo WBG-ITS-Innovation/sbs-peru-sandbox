@@ -22,18 +22,19 @@ import type { FindingDetailResponse } from '@/types/findings';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FindingDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function FindingDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   let detail: FindingDetailResponse;
   try {

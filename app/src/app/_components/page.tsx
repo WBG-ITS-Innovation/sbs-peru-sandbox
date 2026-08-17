@@ -66,8 +66,8 @@ const RESERVED_PRIMITIVES = [
   { name: 'Toggle', reason: 'Language switch uses Select; no toggle use case before WS3.' },
 ];
 
-export default function ComponentIndexPage() {
-  const locale = currentLocale();
+export default async function ComponentIndexPage() {
+  const locale = await currentLocale();
   const section = (key: string): string => t(locale, `components_index.sections.${key}`);
 
   return (

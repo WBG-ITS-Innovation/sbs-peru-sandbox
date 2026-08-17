@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Config } from 'tailwindcss';
+// ESM import, not `require`. Next 15 loads this TypeScript config through
+// the ESM loader, where `require` is not defined — a bare
+// `require('tailwindcss-animate')` in `plugins` crashes `next dev` with
+// "ReferenceError: require is not defined" before the first page compiles.
+import tailwindcssAnimate from 'tailwindcss-animate';
 
 // SBS visual design system — ADR 0041. Every colour token here is the
 // semantic name; the literal palette lives in app/src/app/globals.css
@@ -114,7 +119,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [tailwindcssAnimate],
 };
 
 export default config;

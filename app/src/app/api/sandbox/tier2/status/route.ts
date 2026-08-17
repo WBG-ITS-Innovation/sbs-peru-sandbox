@@ -17,7 +17,7 @@ const PROFILES = new Set(['banco-tier1', 'coopac-tier2']);
 const BATCH_ID = /^batch_[A-Za-z0-9]{16,32}$/;
 
 export async function GET(request: Request) {
-  if (!getSession(cookies().get(SESSION_COOKIE)?.value)) {
+  if (!getSession((await cookies()).get(SESSION_COOKIE)?.value)) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }
   const url = new URL(request.url);

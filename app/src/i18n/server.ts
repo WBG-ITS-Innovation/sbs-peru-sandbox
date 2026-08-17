@@ -16,8 +16,8 @@ export const LOCALE_COOKIE = 'sbs-locale';
  * the top bar (lands with the OAuth commit) writes this cookie via a
  * server action.
  */
-export function currentLocale(): Locale {
-  const value = cookies().get(LOCALE_COOKIE)?.value;
+export async function currentLocale(): Promise<Locale> {
+  const value = (await cookies()).get(LOCALE_COOKIE)?.value;
   if (value && LOCALES.includes(value as Locale)) {
     return value as Locale;
   }

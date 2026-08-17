@@ -7,10 +7,11 @@ import emails from '@/lib/journey-emails.json';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { rowIndex: string };
+  params: Promise<{ rowIndex: string }>;
 }
 
-export default function FITriagePage({ params }: Props) {
+export default async function FITriagePage(props: Props) {
+  const params = await props.params;
   const idx = Number.parseInt(params.rowIndex, 10);
   const rows = emails as unknown as Array<Record<string, unknown>>;
   if (Number.isNaN(idx) || idx < 0 || idx >= rows.length) {

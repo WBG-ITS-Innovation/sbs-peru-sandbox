@@ -8,8 +8,8 @@ import { currentLocale } from '@/i18n/server';
 // over the real Tier-1 (granular) and Tier-2 (batch) channels.
 export const dynamic = 'force-dynamic';
 
-export default function CoopacSendPage() {
-  const locale = currentLocale();
+export default async function CoopacSendPage() {
+  const locale = await currentLocale();
   const es = locale === 'es-PE';
   return (
     <div className="space-y-4">

@@ -47,7 +47,7 @@ function run(): Promise<unknown> {
 }
 
 export async function GET() {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

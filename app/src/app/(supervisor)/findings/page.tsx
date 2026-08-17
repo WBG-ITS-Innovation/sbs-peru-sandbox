@@ -16,7 +16,7 @@ import type { FindingsListResponse } from '@/types/findings';
 export const dynamic = 'force-dynamic';
 
 interface FindingsPageProps {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 function asString(value: string | string[] | undefined): string | undefined {
@@ -24,14 +24,15 @@ function asString(value: string | string[] | undefined): string | undefined {
   return value;
 }
 
-export default async function FindingsListPage({ searchParams }: FindingsPageProps) {
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+export default async function FindingsListPage(props: FindingsPageProps) {
+  const searchParams = await props.searchParams;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');
   }
   const persona = activePersona(session);
-  const locale = currentLocale();
+  const locale = await currentLocale();
 
   // Forward filter query params straight through to the API. The
   // server-side defaults apply when nothing is set.

@@ -10,14 +10,15 @@ import emails from '@/lib/journey-emails.json';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { rowIndex: string };
+  params: Promise<{ rowIndex: string }>;
 }
 
-export default function FISubmitPage({ params }: Props) {
+export default async function FISubmitPage(props: Props) {
+  const params = await props.params;
   // Gated by session so the real signed POST through /app/api/journey/
   // submit picks up the supervisor's CSRF token; an anonymous browser
   // arriving here gets bounced to the SBS login.
-  const sessionId = cookies().get(SESSION_COOKIE)?.value;
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = getSession(sessionId);
   if (!session) {
     redirect('/login');

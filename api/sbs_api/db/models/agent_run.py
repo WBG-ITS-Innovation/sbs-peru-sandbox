@@ -75,8 +75,23 @@ class AgentRun(Base):
     # before this column the fact that a mock, not a model, produced an
     # output survived only in process stderr, which ADR 0001's "every
     # reasoning step is reconstructable from the database" contract needs
-    # it not to. Nullable: rows written before the column existed, and
-    # agents that make no model call, legitimately have none.
+    # it not to.
+    #
+    # Values: a provider name (``on_prem`` / ``replay`` / ``cloud`` / ``mock``)
+    # when a model served the run, or the sentinel ``none``
+    # (:data:`sbs_api.agents.persistence.NO_MODEL_CALL`) when the run made no
+    # model call by design — the live-ingestion orchestrator's own row, whose
+    # work is the deterministic anonymizer and data-quality pass.
+    #
+    # Nullable, but NULL now means exactly one thing: a row written before
+    # migration ``20260810_0001`` added the column, left un-backfilled rather
+    # than guessed. Previously NULL conflated that with "made no model call",
+    # which meant a provenance filter of ``model_provider IS NOT NULL``
+    # silently dropped current successful analysis
+    # (docs/audit/2026-08-17-v02-check.md F3). Separating the two is what makes
+    # that filter mean what operators are told it means. No ``status='success'``
+    # row is written with a NULL provider; ``tests/test_agent_ingest_wiring.py``
+    # pins that.
     model_provider: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     # Ordered array of tool-call records. Shape governed by the JSON Schema.

@@ -171,19 +171,17 @@ authority substitutes its own equivalents — the shape of each decision holds.
       email, account/card numbers, and an allowlist of known names. Confirm that
       set matches what your jurisdiction treats as personal data, and that the
       residual risk of a miss is accepted by the accountable owner.
-- [ ] **`agent_runs` provenance gaps understood — both of them.**
-      `model_provider = NULL` has two causes, and a reporting filter of
-      `model_provider IS NOT NULL` drops both. (a) Rows predating migration
-      `20260810_0001`, deliberately left un-backfilled rather than guessing into
-      an audit table; that set cannot grow. (b) Runs on the journey /
-      demo-ingestion path (`/v1/sandbox/complaints/granular`, which the
-      cockpit's `/app/ingestion` loop drives), which record NULL **today**,
-      including successful `triage` / `investigation` / `synthesis` rows. So on
-      a database that has seen `/app/ingestion` traffic that filter excludes
-      current analysis, not just history. The canonical Tier-1 and Tier-2 paths
-      record provenance correctly and `stage-h-full` asserts it. Confirm which
-      surfaces your deployment actually uses, and whether your reporting
-      tolerates (b).
+- [ ] **Historical `agent_runs` provenance gap understood.** As of v0.2.0
+      `model_provider = NULL` means one thing only: the row predates migration
+      `20260810_0001`, which added the column and deliberately did not backfill
+      it rather than guess into an audit table. That set cannot grow, so
+      `model_provider IS NOT NULL` is a safe provenance filter. Runs that call
+      no model record the explicit sentinel `none`, and no `status='success'`
+      row is written with a NULL provider. **If you inherit a database written
+      before v0.2.0**, note that NULL there also covered no-model-call runs on
+      the `/app/ingestion` surface, so the same filter drops some current
+      analysis on that data — decide whether to backfill those rows to `none`
+      or to scope your reporting by date.
 
 ---
 

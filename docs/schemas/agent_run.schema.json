@@ -39,8 +39,8 @@
     },
     "model_provider": {
       "type": ["string", "null"],
-      "enum": ["on_prem", "replay", "mock", "cloud", null],
-      "description": "Provider that ACTUALLY served this run's model calls, not the one configured: on_prem falls back to mock when no vLLM endpoint answers, and this records the substitution. Null for runs written before the field existed and for agents that make no model call. Optional so exports predating it still validate."
+      "enum": ["on_prem", "replay", "mock", "cloud", "none", null],
+      "description": "Provider that ACTUALLY served this run's model calls, not the one configured: on_prem falls back to mock when no vLLM endpoint answers, and this records the substitution. The sentinel \"none\" means the run made no model call by design (the live-ingestion orchestrator's deterministic anonymizer + data-quality row). Null means only that the row predates migration 20260810_0001, which added the column and did not backfill it; before v0.2.0 null also covered the no-model-call case, which made a provenance filter of `model_provider IS NOT NULL` drop live successful analysis. Optional so exports predating the field still validate."
     },
     "started_at": {
       "type": "string",

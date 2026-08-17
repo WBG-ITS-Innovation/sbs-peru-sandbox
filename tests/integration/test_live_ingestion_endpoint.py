@@ -224,6 +224,7 @@ async def test_demo_endpoint_writes_pii_free_agent_run(
         )
     body = res.json()
 
+    from sbs_api.agents.persistence import NO_MODEL_CALL
     from sbs_api.db.models.agent_run import AgentRun
 
     engine = create_async_engine(test_database_url)
@@ -241,6 +242,21 @@ async def test_demo_endpoint_writes_pii_free_agent_run(
     assert run.agent_name == "live-ingestion-orchestrator"
     assert run.agent_version.startswith("live-ingestion-orchestrator-")
     assert run.status == "success"
+
+    # Provenance is recorded explicitly, not left NULL. This run calls no
+    # model — its work is the deterministic anonymizer and DQ pass — so the
+    # honest value is the NO_MODEL_CALL sentinel rather than a provider name
+    # (which would put a guess into an audit table) or NULL (which is
+    # reserved for rows predating migration 20260810_0001). Leaving it NULL
+    # is what made `model_provider IS NOT NULL` — the filter every
+    # operator-facing document prescribes — drop live successful analysis;
+    # see docs/audit/2026-08-17-v02-check.md F3.
+    assert run.model_provider == NO_MODEL_CALL, (
+        f"live-ingestion-orchestrator recorded model_provider="
+        f"{run.model_provider!r}; expected the {NO_MODEL_CALL!r} sentinel so "
+        f"NULL keeps meaning 'predates migration 20260810_0001' only"
+    )
+    assert not (run.status == "success" and run.model_provider is None)
 
     serialised = json.dumps(
         {

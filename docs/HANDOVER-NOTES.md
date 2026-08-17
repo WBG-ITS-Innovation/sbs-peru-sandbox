@@ -35,28 +35,37 @@ and from the correlator; with `cloud` configured, the loop-driven agents record
 `cloud`. Rows written before this branch may record `mock` from the old
 fallback.
 
-**`model_provider` is NULL for two different reasons, and only one of them is
-history.** Filter on `model_provider IS NOT NULL` when you need rows whose
-provenance is known — but know what that filter drops.
+**`agent_runs.model_provider = NULL` means exactly one thing as of v0.2.0: the
+row predates migration `20260810_0001`.** That migration added the column
+nullable with no backfill, deliberately — inventing a provider for historical
+rows would put a guess into an audit table. Around 200 rows in a long-lived dev
+database are in this state, and **the number cannot grow.** So
+`model_provider IS NOT NULL` is a safe provenance filter.
 
-1. **Rows predating migration `20260810_0001`.** The column was added nullable
-   with no backfill, deliberately: inventing a provider for historical rows
-   would put a guess into an audit table. Around 200 rows in a long-lived dev
-   database are in this state, and the number cannot grow.
+It was not safe before v0.2.0, and this is worth knowing if you query a database
+that predates it. NULL used to carry a second meaning — "this run made no model
+call" — which the live-ingestion orchestrator's own row hit on every
+`/v1/sandbox/complaints/granular` submission, the surface the cockpit's
+`/app/ingestion` loop and `scripts/sandbox_send.py` drive. On such a database
+the prescribed filter silently drops current successful analysis along with the
+history.
 
-2. **Runs on the journey / demo-ingestion path, written today.** The
-   `/v1/sandbox/complaints/granular` surface — what the cockpit's
-   `/app/ingestion` loop and `scripts/sandbox_send.py` drive — records
-   `agent_runs` rows with a NULL provider, including `status=success` rows for
-   `triage`, `investigation` and `synthesis` and the
-   `live-ingestion-orchestrator` row itself. `finish_agent_run` applies the
-   column only `if model_provider is not None`, and that path passes None.
+**Fixed as of this release.** A run that calls no model now records the explicit
+sentinel `model_provider = 'none'` (`agents.persistence.NO_MODEL_CALL`), which is
+both true and queryable, rather than a provider name it never used. No
+`status='success'` row is written with a NULL provider;
+`tests/integration/test_live_ingestion_endpoint.py` pins it. The remaining NULL
+writers are the four agents' failed-loop paths, where the loop raised before any
+response arrived and the provenance is genuinely unknown — those rows carry
+`status='failed'`.
 
-The consequence is the part worth knowing: on a database that has seen
-`/app/ingestion` traffic, `model_provider IS NOT NULL` silently excludes current
-successful analysis, not merely pre-migration history. The canonical Tier-1 and
-Tier-2 paths are unaffected — they record `replay` / `cloud` / `on_prem`
-correctly, which is what `stage-h-full` asserts.
+Distinguish the two when reading old data:
+
+| `model_provider` | Meaning |
+|---|---|
+| `on_prem` / `replay` / `cloud` / `mock` | A model served the run; this is who actually served it |
+| `none` | No model call by design — the deterministic anonymizer + DQ row |
+| `NULL` | Row predates migration `20260810_0001` (or, pre-v0.2.0, made no model call) |
 
 Found by the independent check in
 [docs/audit/2026-08-17-v02-check.md](audit/2026-08-17-v02-check.md) (F3).

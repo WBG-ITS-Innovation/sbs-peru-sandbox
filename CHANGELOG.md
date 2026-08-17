@@ -47,6 +47,16 @@ and versioning is described in [CONTRIBUTING.md](CONTRIBUTING.md#versioning).
   attacker-influenced complaint narratives, making this a reachable
   denial-of-service surface. Both runs are now bounded. On 200,000 characters
   of adversarial input the engine went from roughly two minutes to 13.6 ms.
+- **`agent_runs.model_provider` no longer conflates "no model call" with
+  "unknown".** The live-ingestion orchestrator's own row — written on every
+  `/v1/sandbox/complaints/granular` submission, the surface the cockpit's
+  `/app/ingestion` loop drives — left the column NULL, so
+  `model_provider IS NOT NULL`, the provenance filter the operator
+  documentation prescribes, silently dropped current successful analysis rather
+  than only pre-migration history. Runs that call no model now record the
+  explicit sentinel `none`; NULL means only "predates migration
+  `20260810_0001`". No `status='success'` row is written with a NULL provider.
+  Found by the independent check in `docs/audit/2026-08-17-v02-check.md` (F3).
 
 ### Breaking
 
@@ -129,10 +139,10 @@ Carried forward deliberately; each is detailed in `docs/HANDOVER-NOTES.md`.
   and an ADR 0026 decision on amount/currency.
 - The cross-source correlator returns an empty result for every complaint
   except the golden one.
-- `agent_runs.model_provider` is NULL for two reasons: rows predating migration
-  `20260810_0001` (left un-backfilled rather than guessed), and runs on the
-  journey / demo-ingestion path, which record NULL today. A
-  `model_provider IS NOT NULL` filter drops both.
+- `agent_runs` rows predating migration `20260810_0001` have
+  `model_provider = NULL`, left un-backfilled rather than guessed. (Until
+  v0.2.0 NULL also covered runs that made no model call; see the Unreleased
+  section.)
 - `rank_features` returns a constant list; `reclamito`, `lupaman`, and
   `insight-chatbot` are registry entries with no runtime.
 

@@ -29,6 +29,22 @@ from sbs_api.db.models.agent_run import AgentRun
 # placeholder status for the in-flight row.
 IN_PROGRESS_STATUS = "in_progress"
 
+# ``model_provider`` for a run that calls no model at all — the
+# live-ingestion orchestrator's own row, whose work is the deterministic
+# anonymizer and data-quality pass.
+#
+# This exists so NULL can mean exactly one thing. Until v0.2.0 both "written
+# before migration 20260810_0001" and "made no model call" landed as NULL, so
+# the provenance filter every operator-facing document prescribes —
+# ``model_provider IS NOT NULL`` — silently dropped current successful analysis
+# along with the historical rows (docs/audit/2026-08-17-v02-check.md F3).
+#
+# Recording an actual provider name here instead would be worse: it would put a
+# guess into an audit table, claiming a model served a run that never called
+# one. The sentinel says "no model call" explicitly, which is both true and
+# queryable.
+NO_MODEL_CALL = "none"
+
 
 async def start_agent_run(
     session: AsyncSession,
@@ -80,8 +96,14 @@ async def finish_agent_run(
 
     ``model_provider`` is the provider that actually served the run's model
     calls (``LoopResult.served_by``) — "mock" when OnPremProvider fell back,
-    not the configured "on_prem". Left None by agents that make no model
-    call, and by callers written before the column existed."""
+    not the configured "on_prem". An agent that makes no model call passes
+    :data:`NO_MODEL_CALL` rather than leaving it None, so that NULL in the
+    column means only "row predates migration 20260810_0001".
+
+    Left None on the failed-loop paths, where the loop raised before any
+    response arrived and the provenance is genuinely unknown — those rows
+    carry ``status='failed'``, so a provenance filter over successful
+    analysis is unaffected."""
     if status not in ("success", "partial", "failed", "timeout"):
         raise ValueError(f"unsupported agent_run status: {status!r}")
     run.ended_at = datetime.now(tz=timezone.utc)

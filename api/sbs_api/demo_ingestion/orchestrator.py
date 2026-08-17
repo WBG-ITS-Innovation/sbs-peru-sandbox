@@ -40,6 +40,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from sbs_api.agents.orchestrator import run_agent_pipeline
+from sbs_api.agents.persistence import NO_MODEL_CALL
 from sbs_api.audit import record_audit_event
 from sbs_api.config import get_settings
 from sbs_api.db.models.agent_run import AgentRun as _AgentRunModel
@@ -642,6 +643,13 @@ async def run_demo_ingestion(
         tool_calls=[anonymizer_call],
         final_output=final_output,
         error=run_error,
+        # This run's work is the deterministic anonymizer and data-quality
+        # pass — no model is called, so there is no provider to name. Record
+        # that explicitly instead of leaving NULL, which is reserved for rows
+        # predating migration 20260810_0001. Leaving it NULL here is what made
+        # `model_provider IS NOT NULL` drop live successful analysis
+        # (docs/audit/2026-08-17-v02-check.md F3).
+        model_provider=NO_MODEL_CALL,
     )
     session.add(agent_run)
     await session.flush()
